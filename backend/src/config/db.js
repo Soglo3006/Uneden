@@ -5,12 +5,14 @@ dotenv.config();
 const { Pool } = pg;
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  host: "aws-1-ca-central-1.pooler.supabase.com",
+  port: 5432,
+  database: "postgres",
+  user: "postgres.ukepqavytmaotdgdxhum",
+  password: "w6Y0EgE4QoM7Ci5B",
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
-
-pool.connect()
-  .then(() => console.log("Connected to Supabase database"))
-  .catch(err => console.error("Database connection error:", err.stack));
 
 export default pool;
