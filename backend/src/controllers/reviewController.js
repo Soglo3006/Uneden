@@ -1,0 +1,59 @@
+import pool from "../config/db.js";
+
+export const createReview = async (req, res) => {
+  try {
+    const { booking_id, rating, comment } = req.body;
+
+    const booking = await pool.query("SELECT * FROM bookings WHERE id = $1", [booking_id]);
+    if (booking.rows.length === 0) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    const b = booking.rows[0];
+    if (b.client_id !== req.user.id && b.worker_id !== req.user.id) {
+      return res.status(403).json({ message: "You are not part of this booking" });
+    }
+
+    const existingReview = await pool.query(
+      `SELECT * FROM reviews WHERE booking_id = $1 AND reviewer_id = $2`,
+      [booking_id, req.user.id]
+    );
+    if (existingReview.rows.length > 0) {
+      return res.status(400).json({ message: "You already reviewed this booking" });
+    }
+
+    const target_id = b.client_id === req.user.id ? b.worker_id : b.client_id;
+
+    const result = await pool.query(
+      `INSERT INTO reviews (booking_id, reviewer_id, target_id, rating, comment)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [booking_id, req.user.id, target_id, rating, comment]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while creating review" });
+  }
+};
+
+export const getUserReviews = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const result = await pool.query(
+      `SELECT r.*, u.full_name AS reviewer_name
+       FROM reviews r
+       JOIN users u ON r.reviewer_id = u.id
+       WHERE r.target_id = $1
+       ORDER BY r.created_at DESC`,
+      [userId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while fetching reviews" });
+  }
+};
