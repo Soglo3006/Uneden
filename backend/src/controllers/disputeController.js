@@ -1,0 +1,82 @@
+import pool from "../config/db.js";
+
+export const CreateDispute = async (req, res) => {
+    try {
+        const { booking_id, description} = req.body;
+        const raised_by = req.user.id;
+        const status = "open";
+
+        const booking = await pool.query("SELECT * FROM bookings WHERE id = $1", [booking_id]);
+        if (booking.rows.length === 0) {
+            return res.status(404).json({message: "Booking not found" });
+        }
+        const b = booking.rows[0];
+        if (b.client_id !== req.user.id && b.worker_id !== req.user.id) {
+            return res.status(403).json({ message: "You are not part of this booking" });
+        }
+        const allowed = ["open", "resolved", "rejected"];
+        if (!allowed.includes(status)) {
+        return res.status(400).json({ message: "Invalid dispute status" });
+        }
+
+        const existing = await pool.query(
+        "SELECT * FROM disputes WHERE booking_id = $1",
+        [booking_id]
+        );
+
+        if (existing.rows.length > 0) {
+        return res.status(400).json({ message: "A dispute already exists for this booking" });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO disputes (booking_id, raised_by, description, status) VALUES ($1, $2, $3, $4) RETURNING *`,
+            [booking_id,raised_by, description, status]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err){
+        console.error(err);
+        res.status(500).json({ message: "Server error while creating dispute" });
+    }
+}
+
+export const GetDisputes = async (req, res) => {
+    try{
+        const { id } = req.params;
+
+        const result = await pool.query(
+            `SELECT * FROM disputes WHERE id = $1`,
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Dispute not found" });
+        }
+
+        res.status(200).json(result.rows[0]);
+
+    } catch(err){
+        console.error(err);
+        res.status(500).json({ message: "Server error while fetching dispute" });
+    }
+}
+
+export const UpdateDispute = async (req, res) => {
+    try{
+        const { id } = req.params;
+        const {status} = req.body;
+
+        const result = await pool.query(
+            `UPDATE disputes SET status = $1 WHERE id = $2 RETURNING *`,
+            [status, id]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Dispute not found" });
+        }
+        res.status(200).json(result.rows[0]);
+
+    } catch(err){
+        console.error(err);
+        res.status(500).json({ message: "Server error while updating dispute" });
+    }
+}
