@@ -49,6 +49,24 @@ export const getMyBookings = async (req, res) => {
   }
 };
 
+export const getReceivedBookings = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT b.*, s.title, s.price, u.full_name AS client_name
+       FROM bookings b
+       JOIN services s ON b.service_id = s.id
+       JOIN users u ON b.client_id = u.id
+       WHERE b.worker_id = $1
+       ORDER BY b.created_at DESC`,
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const updateBookingStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -58,15 +76,40 @@ export const updateBookingStatus = async (req, res) => {
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid booking status" });
     }
+    
+    const booking = await pool.query(
+      `SELECT * FROM bookings WHERE id = $1`,
+      [id]
+    );
+
+    if (booking.rows.length === 0) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    const b = booking.rows[0];
+
+    if (status === "accepted" || status === "rejected") {
+      if (b.worker_id !== req.user.id) {
+        return res.status(403).json({ message: "Only the worker can accept or reject bookings" });
+      }
+    }
+
+    if (status === "cancelled") {
+      if (b.client_id !== req.user.id && b.worker_id !== req.user.id) {
+        return res.status(403).json({ message: "You are not authorized to cancel this booking" });
+      }
+    }
+
+    if (status === "completed") {
+      if (b.worker_id !== req.user.id) {
+        return res.status(403).json({ message: "Only the worker can mark a booking as completed" });
+      }
+    }
 
     const result = await pool.query(
       `UPDATE bookings SET status = $1 WHERE id = $2 RETURNING *`,
       [status, id]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Booking not found" });
-    }
 
     res.json(result.rows[0]);
   } catch (err) {

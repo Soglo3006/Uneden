@@ -61,18 +61,38 @@ export const GetDisputes = async (req, res) => {
 }
 
 export const UpdateDispute = async (req, res) => {
-    try{
+    try {
         const { id } = req.params;
-        const {status} = req.body;
+        const { status } = req.body;
+
+        const allowed = ["open", "resolved", "rejected"];
+        if (!allowed.includes(status)) {
+            return res.status(400).json({ message: "Invalid dispute status" });
+        }
+
+        const dispute = await pool.query(
+            `SELECT d.*, b.client_id, b.worker_id 
+             FROM disputes d
+             JOIN bookings b ON d.booking_id = b.id
+             WHERE d.id = $1`,
+            [id]
+        );
+
+        if (dispute.rows.length === 0) {
+            return res.status(404).json({ message: "Dispute not found" });
+        }
+
+        const d = dispute.rows[0];
+
+        if (d.client_id !== req.user.id && d.worker_id !== req.user.id) {
+            return res.status(403).json({ message: "You are not authorized to update this dispute" });
+        }
 
         const result = await pool.query(
             `UPDATE disputes SET status = $1 WHERE id = $2 RETURNING *`,
             [status, id]
-        )
+        );
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: "Dispute not found" });
-        }
         res.status(200).json(result.rows[0]);
 
     } catch(err){
