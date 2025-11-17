@@ -28,16 +28,56 @@ export const createService = async (req, res) => {
 
 export const getAllServices = async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT s.*, u.full_name AS owner_name
-       FROM services s
-       JOIN users u ON s.user_id = u.id
-       ORDER BY s.created_at DESC`
-    );
+
+    const { category, location, minPrice, maxPrice, search } = req.query;
+    
+    let query = `
+      SELECT s.*, u.full_name AS owner_name
+      FROM services s
+      JOIN users u ON s.user_id = u.id
+      WHERE 1=1
+    `;
+    const params = [];
+    let paramCount = 1;
+
+    if (category) {
+      query += ` AND s.category = $${paramCount}`;
+      params.push(category);
+      paramCount++;
+    }
+
+    if (location) {
+      query += ` AND s.location ILIKE $${paramCount}`;
+      params.push(`%${location}%`);
+      paramCount++;
+    }
+
+    if (minPrice) {
+      query += ` AND s.price >= $${paramCount}`;
+      params.push(minPrice);
+      paramCount++;
+    }
+
+    if (maxPrice) {
+      query += ` AND s.price <= $${paramCount}`;
+      params.push(maxPrice);
+      paramCount++;
+    }
+
+    if (search) {
+      query += ` AND (s.title ILIKE $${paramCount} OR s.description ILIKE $${paramCount})`;
+      params.push(`%${search}%`);
+      paramCount++;
+    }
+
+    query += ` ORDER BY s.created_at DESC`;
+
+    const result = await pool.query(query, params);
     res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error while fetching services" });
+
+  } catch (err){
+    console.log(err);
+    return res.status(500).json({ message: "Server error while fetching services" });
   }
 };
 
