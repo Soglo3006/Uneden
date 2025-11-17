@@ -18,9 +18,15 @@ export const createReview = async (req, res) => {
       `SELECT * FROM reviews WHERE booking_id = $1 AND reviewer_id = $2`,
       [booking_id, req.user.id]
     );
+
     if (existingReview.rows.length > 0) {
       return res.status(400).json({ message: "You already reviewed this booking" });
     }
+
+    if (rating < 1 || rating > 5){
+      return res.status(400).json({ message: "The rating must be between 1 and 5"});
+    }
+
 
     const target_id = b.client_id === req.user.id ? b.worker_id : b.client_id;
 

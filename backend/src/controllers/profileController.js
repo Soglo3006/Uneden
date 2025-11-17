@@ -25,10 +25,6 @@ export const UpdateMyProfile = async (req,res) => {
 
         const { full_name, email} = req.body;
 
-        if (result.rows.length === 0){
-            return res.status(404).json({message: "Profile not found"});
-        }
-
         if (!full_name || !email){
             return res.status(400).json({message: "Please fill all fields"});
         }
@@ -41,6 +37,11 @@ export const UpdateMyProfile = async (req,res) => {
             `UPDATE users SET full_name = $1, email= $2 WHERE id = $3 RETURNING id, full_name, email, created_at`,
             [full_name, email, req.user.id]
         )
+
+        if (result.rows.length === 0){
+            return res.status(404).json({message: "Profile not found"});
+        }
+        
         res.json(result.rows[0]);
 
     } catch (err){

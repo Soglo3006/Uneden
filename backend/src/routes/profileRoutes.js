@@ -4,7 +4,7 @@ import {GetMyProfile, UpdateMyProfile, getUserProfile } from "../controllers/pro
 
 const router = express.Router();
 
-router.post("/me", protect, GetMyProfile);
+router.get("/me", protect, GetMyProfile);
 router.put("/me", protect, UpdateMyProfile);
 router.get("/:userId", getUserProfile);
 

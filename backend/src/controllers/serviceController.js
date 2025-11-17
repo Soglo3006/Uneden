@@ -8,6 +8,10 @@ export const createService = async (req, res) => {
       return res.status(400).json({ message: "Title and price are required" });
     }
 
+    if (price <= 0){
+      return res.status(400).json({ message: "Price must be a positive number" });
+    }
+
     const result = await pool.query(
       `INSERT INTO services (user_id, title, description, category, price, location)
        VALUES ($1, $2, $3, $4, $5, $6)
