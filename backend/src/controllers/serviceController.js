@@ -2,21 +2,21 @@ import pool from "../config/db.js";
 
 export const createService = async (req, res) => {
   try {
-    const { title, description, category, price, location } = req.body;
+    const { title, description, category_id, price, location } = req.body;
 
     if (!title || !price) {
       return res.status(400).json({ message: "Title and price are required" });
     }
 
-    if (price <= 0){
+    if (price <= 0) {
       return res.status(400).json({ message: "Price must be a positive number" });
     }
 
     const result = await pool.query(
-      `INSERT INTO services (user_id, title, description, category, price, location)
+      `INSERT INTO services (user_id, title, description, category_id, price, location)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [req.user.id, title, description, category, price, location]
+      [req.user.id, title, description, category_id, price, location]
     );
 
     res.status(201).json(result.rows[0]);
@@ -28,20 +28,23 @@ export const createService = async (req, res) => {
 
 export const getAllServices = async (req, res) => {
   try {
-
     const { category, location, minPrice, maxPrice, search } = req.query;
-    
+
     let query = `
-      SELECT s.*, u.full_name AS owner_name
+      SELECT 
+        s.*,
+        c.name AS category_name,
+        c.image_url
       FROM services s
-      JOIN users u ON s.user_id = u.id
+      LEFT JOIN categories c ON c.id = s.category_id
       WHERE 1=1
     `;
+
     const params = [];
     let paramCount = 1;
 
     if (category) {
-      query += ` AND s.category = $${paramCount}`;
+      query += ` AND s.category_id = $${paramCount}`;
       params.push(category);
       paramCount++;
     }
@@ -74,8 +77,7 @@ export const getAllServices = async (req, res) => {
 
     const result = await pool.query(query, params);
     res.json(result.rows);
-
-  } catch (err){
+  } catch (err) {
     console.log(err);
     return res.status(500).json({ message: "Server error while fetching services" });
   }
@@ -103,26 +105,32 @@ export const deleteService = async (req, res) => {
 };
 
 export const getMyServices = async (req, res) => {
-    try{
-        const result = await pool.query(
-            `SELECT * FROM services WHERE user_id = $1 ORDER BY created_at DESC`,
-            [req.user.id]
-        );
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Server error while fetching your services" });
-    }
-}
+  try {
+    const result = await pool.query(
+      `SELECT * FROM services WHERE user_id = $1 ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while fetching your services" });
+  }
+};
 
 export const getServiceById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const result = await pool.query(
-      `SELECT s.*, u.full_name AS owner_name, u.id AS owner_id
+      `SELECT 
+          s.*, 
+          u.full_name AS owner_name, 
+          u.id AS owner_id,
+          c.name AS category_name,
+          c.image_url
        FROM services s
        JOIN users u ON s.user_id = u.id
+       LEFT JOIN categories c ON c.id = s.category_id
        WHERE s.id = $1`,
       [id]
     );
@@ -138,11 +146,10 @@ export const getServiceById = async (req, res) => {
   }
 };
 
-
 export const updateService = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, category, price, location } = req.body;
+    const { title, description, category_id, price, location } = req.body;
 
     const check = await pool.query(
       `SELECT * FROM services WHERE id = $1 AND user_id = $2`,
@@ -154,15 +161,20 @@ export const updateService = async (req, res) => {
     }
 
     const existing = check.rows[0];
+
     const updated = await pool.query(
       `UPDATE services 
-       SET title = $1, description = $2, category = $3, price = $4, location = $5
+       SET title = $1, 
+           description = $2, 
+           category_id = $3, 
+           price = $4, 
+           location = $5
        WHERE id = $6
        RETURNING *`,
       [
         title || existing.title,
         description || existing.description,
-        category || existing.category,
+        category_id || existing.category_id,
         price || existing.price,
         location || existing.location,
         id,
