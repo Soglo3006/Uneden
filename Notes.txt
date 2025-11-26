@@ -1,0 +1,27 @@
+MVP FAIT POUR FIELDHEARTS:
+
+Backend:
+
+- User/login - Oui
+- Profile creation et editing - Oui
+- Search et discovery/ location-based search - Non
+- Create/ list a service - OUI
+- Booking + escrow payment - OUI
+- in app messaging - NON
+-rating et reviews - OUI
+- admin dashboard - NON
+- Dispute system - OUI
+-Notification - NON
+
+
+Frontend: 
+Les pages a faire:
+-Home
+-Listings
+-Listing Details
+-Create Listing
+-Register
+-Login
+-User Dashboard
+-User Profile
+-Edit Profile
