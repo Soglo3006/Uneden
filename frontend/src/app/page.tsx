@@ -208,6 +208,13 @@ export default function HomePage() {
               ))}
               </div>
             </div>
+
+            <div className="col-span-full mt-10 bg-green-800 rounded-2xl p-10 text-center text-white">
+              <h1 className="text-3xl font-bold mb-2">Together, we all bring something valuable</h1>
+              <h1>Join now to discover nearby help and new earning opportunities</h1>
+              <Button className="mt-4">Sign In</Button>
+            </div>
+
           </div>
 
           <div className="lg:col-span-1 space-y-6">
