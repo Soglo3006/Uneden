@@ -86,7 +86,6 @@ export default function HomePage() {
       <div className="w-full border-b border-gray-200 shadow-sm bg-white">
         <div className="flex items-center space-x-5 py-5 max-w-7xl mx-auto overflow-x-auto whitespace-nowrap px-5 no-scrollbar">
           <Button>View All Listing</Button>
-
           {categories.map((category) => (
             <Select key={category.name}>
               <SelectTrigger className="w-[180px]">
@@ -102,6 +101,118 @@ export default function HomePage() {
             </Select>
           ))}
         </div>
+      </div>
+
+      <div className=" bg-gradient-to-br from-green-500 to-blue-150 py-20 ">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-md p-10 text-center max-w-2xl mx-auto">
+            <h1 className="text-3xl font-semibold mb-2 ">Find the help you need. <br/>
+            Offer the skills you have.</h1>
+            <p className="text-gray-600">
+              Connect with your local community for services and opportunities
+            </p>
+          </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto p-5">
+        <h2 className="text-2xl font-bold mb-5">Recently added near you</h2>
+
+        <div className=" grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid lg:col-span-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+
+            <div>
+              <h1>Popular Categories</h1>
+              <div className="grid grid-cols-3 md:grid-cols-5 gap-5">
+                
+              </div>
+            </div>
+
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
+              <p className="text-green-700 font-semibold">$20–40/hr</p>
+              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
+              <p className="text-green-700 font-semibold">$30–50/hr</p>
+              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
+              <p className="text-green-700 font-semibold">$20–40/hr</p>
+              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
+              <p className="text-green-700 font-semibold">$30–50/hr</p>
+              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
+              <p className="text-green-700 font-semibold">$30–50/hr</p>
+              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
+              <p className="text-green-700 font-semibold">$20–40/hr</p>
+              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
+              <p className="text-green-700 font-semibold">$30–50/hr</p>
+              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
+              <p className="text-green-700 font-semibold">$30–50/hr</p>
+              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
+              <p className="text-green-700 font-semibold">$20–40/hr</p>
+              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
+              <p className="text-green-700 font-semibold">$30–50/hr</p>
+              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
+            </div>
+
+
+
+
+          </div>
+
+          <div className="lg:col-span-1 space-y-6">
+            <div className="border-2 border-dashed border-gray-300 rounded-xl h-[300px] flex items-center justify-center text-gray-500">
+              Advertisement<br/>300×600
+            </div>
+            <div className="border-2 border-dashed border-gray-300 rounded-xl h-[250px] flex items-center justify-center text-gray-500">
+              Advertisement<br/>300×250
+            </div>
+          </div>
+
+        </div>
+
       </div>
 
     </div>
