@@ -190,20 +190,22 @@ export default function HomePage() {
 
             <div className="col-span-full mt-10">
               <h1 className="text-3xl font-bold mb-5">Popular Categories</h1>
-              <div className="grid grid-cols-3 md:grid-cols-5 gap-5">
-                <div className="relative w-full h-28 rounded-xl overflow-hidden cursor-pointer group">
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-5">
+                {categories.map((category)=>(
+                  <div key={category.name} className="relative w-full aspect-[4/3] h-full rounded-xl overflow-hidden cursor-pointer group">
                   <img 
-                    src="/images/cleaning.jpg"
-                    alt="Cleaning"
+                    src={category.image}
+                    alt={category.name}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
                   />
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <h2 className="text-white text-lg font-semibold drop-shadow-lg">
-                      Cleaning
+                      {category.name}
                     </h2>
                   </div>
                 </div>
+              ))}
               </div>
             </div>
           </div>
