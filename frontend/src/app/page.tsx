@@ -15,14 +15,14 @@ import {
 } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-
-
+import { categories } from "@/lib/categories";
 
 
 export default function HomePage() {
+
   return (
     <div className="min-h-screen bg-white text-black">
-      <div className="flex justify-center items-center space-x-5 border-b border-gray-200 shadow-sm p-5">
+      <div className="flex justify-center items-center space-x-5 border-b border-gray-200 shadow-sm p-5 min-w-7xl mx-auto w-full">
         <h1 className="text-2xl font-bold text-green-800">FieldHearts</h1>
         <div className="flex items-center space-x-2">
           <Search/>
@@ -80,6 +80,21 @@ export default function HomePage() {
         <div>
           <Button>Post</Button>
         </div>
+      </div>
+      <div className="flex justify-center items-center space-x-5 py-5 border-b border-gray-200 shadow-sm mx-auto w-full">
+        <Button >View All Listing</Button>
+        {categories.map((category) => (
+          <Select key={category.name}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder={category.name} />
+          </SelectTrigger>
+          <SelectContent>
+            {category.subcategories?.map((subcategory) => (
+              <SelectItem key={subcategory} value={subcategory}>{subcategory}</SelectItem>
+            ))}
+          </SelectContent>
+          </Select>
+        ))}
       </div>
     </div>
   );
