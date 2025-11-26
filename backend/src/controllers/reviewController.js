@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { notifyNewReview } from "../services/emailService.js";
 
 export const createReview = async (req, res) => {
   try {
@@ -27,7 +28,6 @@ export const createReview = async (req, res) => {
       return res.status(400).json({ message: "The rating must be between 1 and 5"});
     }
 
-
     const target_id = b.client_id === req.user.id ? b.worker_id : b.client_id;
 
     const result = await pool.query(
@@ -36,6 +36,21 @@ export const createReview = async (req, res) => {
        RETURNING *`,
       [booking_id, req.user.id, target_id, rating, comment]
     );
+
+    const users = await pool.query(
+      `SELECT 
+        u1.email as target_email, 
+        u1.full_name as target_name,
+        u2.full_name as reviewer_name
+       FROM users u1, users u2
+       WHERE u1.id = $1 AND u2.id = $2`,
+      [target_id, req.user.id]
+    );
+
+    if (users.rows.length > 0) {
+      const { target_email, target_name, reviewer_name } = users.rows[0];
+      await notifyNewReview(target_email, target_name, reviewer_name, rating, comment);
+    }
 
     res.status(201).json(result.rows[0]);
   } catch (err) {

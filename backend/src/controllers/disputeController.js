@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { notifyDisputeCreated } from "../services/emailService.js";
 
 export const CreateDispute = async (req, res) => {
     try {
@@ -30,8 +31,26 @@ export const CreateDispute = async (req, res) => {
 
         const result = await pool.query(
             `INSERT INTO disputes (booking_id, raised_by, description, status) VALUES ($1, $2, $3, $4) RETURNING *`,
-            [booking_id,raised_by, description, status]
+            [booking_id, raised_by, description, status]
         );
+
+        const users = await pool.query(
+            `SELECT 
+                u1.email as client_email, 
+                u1.full_name as client_name,
+                u2.email as worker_email,
+                u2.full_name as worker_name
+            FROM users u1, users u2
+            WHERE u1.id = $1 AND u2.id = $2`,
+            [b.client_id, b.worker_id]
+        );
+
+        if (users.rows.length > 0) {
+            const { client_email, client_name, worker_email, worker_name } = users.rows[0];
+            await notifyDisputeCreated(client_email, client_name, booking_id, description);
+            await notifyDisputeCreated(worker_email, worker_name, booking_id, description);
+        }
+
         res.status(201).json(result.rows[0]);
     } catch (err){
         console.error(err);

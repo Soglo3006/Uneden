@@ -1,10 +1,10 @@
 import pool from "../config/db.js";
+import { notifyNewMessage } from "../services/emailService.js";
 
 export const sendMessage = async (req, res) => {
   try {
     const { receiver_id, booking_id, content } = req.body;
     const sender_id = req.user.id;
-
 
     if (!receiver_id || !content || !booking_id) {
       return res.status(400).json({ message: "Receiver, booking and content are required" });
@@ -20,7 +20,6 @@ export const sendMessage = async (req, res) => {
     }
 
     const b = booking.rows[0];
-    
     const isPartOfBooking = 
       (sender_id === b.client_id || sender_id === b.worker_id) &&
       (receiver_id === b.client_id || receiver_id === b.worker_id);
@@ -28,7 +27,6 @@ export const sendMessage = async (req, res) => {
     if (!isPartOfBooking) {
       return res.status(403).json({ message: "You can only message people from your bookings" });
     }
-
 
     if (sender_id === receiver_id) {
       return res.status(400).json({ message: "You cannot send a message to yourself" });
@@ -55,7 +53,6 @@ export const sendMessage = async (req, res) => {
       conversation_id = conversation.rows[0].id;
     }
 
-
     const message = await pool.query(
       `INSERT INTO messages (conversation_id, sender_id, receiver_id, content) 
        VALUES ($1, $2, $3, $4) 
@@ -63,11 +60,26 @@ export const sendMessage = async (req, res) => {
       [conversation_id, sender_id, receiver_id, content]
     );
 
-
     await pool.query(
       `UPDATE conversations SET last_message_at = NOW() WHERE id = $1`,
       [conversation_id]
     );
+
+    const users = await pool.query(
+      `SELECT 
+        u1.email as receiver_email, 
+        u1.full_name as receiver_name,
+        u2.full_name as sender_name
+       FROM users u1, users u2
+       WHERE u1.id = $1 AND u2.id = $2`,
+      [receiver_id, sender_id]
+    );
+
+    if (users.rows.length > 0) {
+      const { receiver_email, receiver_name, sender_name } = users.rows[0];
+      const messagePreview = content.length > 50 ? content.substring(0, 50) + "..." : content;
+      await notifyNewMessage(receiver_email, receiver_name, sender_name, messagePreview, conversation_id);
+    }
 
     res.status(201).json(message.rows[0]);
   } catch (err) {
@@ -75,7 +87,6 @@ export const sendMessage = async (req, res) => {
     res.status(500).json({ message: "Server error while sending message" });
   }
 };
-
 
 export const getMyConversations = async (req, res) => {
   try {
@@ -125,7 +136,6 @@ export const getConversationMessages = async (req, res) => {
     const { conversationId } = req.params;
     const user_id = req.user.id;
 
-
     const conversation = await pool.query(
       `SELECT * FROM conversations 
        WHERE id = $1 AND (user1_id = $2 OR user2_id = $2)`,
@@ -165,8 +175,6 @@ export const getConversationByBooking = async (req, res) => {
   try {
     const { bookingId } = req.params;
     const user_id = req.user.id;
-
-
     const booking = await pool.query(
       `SELECT * FROM bookings 
        WHERE id = $1 AND (client_id = $2 OR worker_id = $2)`,

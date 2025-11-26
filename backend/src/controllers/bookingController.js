@@ -1,19 +1,30 @@
 import pool from "../config/db.js";
+import { notifyBookingCreated, notifyBookingStatusUpdated } from "../services/emailService.js";
 
 export const createBooking = async (req, res) => {
   try {
     const { service_id } = req.body;
 
-    const service = await pool.query("SELECT * FROM services WHERE id = $1", [service_id]);
+    const service = await pool.query(
+      "SELECT s.*, u.email as worker_email, u.full_name as worker_name FROM services s JOIN users u ON s.user_id = u.id WHERE s.id = $1", 
+      [service_id]
+    );
+    
     if (service.rows.length === 0) {
       return res.status(404).json({ message: "Service not found" });
     }
 
     const worker_id = service.rows[0].user_id;
+    const workerEmail = service.rows[0].worker_email;
+    const workerName = service.rows[0].worker_name;
+    const serviceTitle = service.rows[0].title;
 
     if (worker_id === req.user.id) {
       return res.status(400).json({ message: "You can't book your own service" });
     }
+
+    const client = await pool.query("SELECT full_name FROM users WHERE id = $1", [req.user.id]);
+    const clientName = client.rows[0].full_name;
 
     const result = await pool.query(
       `INSERT INTO bookings (service_id, client_id, worker_id, status)
@@ -22,7 +33,11 @@ export const createBooking = async (req, res) => {
       [service_id, req.user.id, worker_id]
     );
 
-    res.status(201).json(result.rows[0]);
+    const booking = result.rows[0];
+
+    await notifyBookingCreated(workerEmail, workerName, clientName, serviceTitle, booking.id);
+
+    res.status(201).json(booking);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error while creating booking" });
@@ -72,13 +87,17 @@ export const updateBookingStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ["pending", "accepted", "completed", "cancelled"];
+    const validStatuses = ["pending", "accepted", "completed", "cancelled", "rejected"];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid booking status" });
     }
     
     const booking = await pool.query(
-      `SELECT * FROM bookings WHERE id = $1`,
+      `SELECT b.*, s.title, u.email as client_email, u.full_name as client_name 
+       FROM bookings b
+       JOIN services s ON b.service_id = s.id
+       JOIN users u ON b.client_id = u.id
+       WHERE b.id = $1`,
       [id]
     );
 
@@ -110,6 +129,16 @@ export const updateBookingStatus = async (req, res) => {
       `UPDATE bookings SET status = $1 WHERE id = $2 RETURNING *`,
       [status, id]
     );
+
+    if (status === "accepted" || status === "rejected") {
+      await notifyBookingStatusUpdated(
+        b.client_email, 
+        b.client_name, 
+        b.title, 
+        status, 
+        b.id
+      );
+    }
 
     res.json(result.rows[0]);
   } catch (err) {
