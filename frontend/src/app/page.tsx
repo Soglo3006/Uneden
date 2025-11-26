@@ -118,88 +118,94 @@ export default function HomePage() {
 
         <div className=" grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="grid lg:col-span-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
+              <p className="text-green-700 font-semibold">$20–40/hr</p>
+              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
+            </div>
 
-            <div>
-              <h1>Popular Categories</h1>
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
+              <p className="text-green-700 font-semibold">$30–50/hr</p>
+              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
+              <p className="text-green-700 font-semibold">$20–40/hr</p>
+              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
+              <p className="text-green-700 font-semibold">$30–50/hr</p>
+              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
+              <p className="text-green-700 font-semibold">$30–50/hr</p>
+              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
+              <p className="text-green-700 font-semibold">$20–40/hr</p>
+              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
+              <p className="text-green-700 font-semibold">$30–50/hr</p>
+              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
+              <p className="text-green-700 font-semibold">$30–50/hr</p>
+              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
+              <p className="text-green-700 font-semibold">$20–40/hr</p>
+              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
+            </div>
+
+            <div className="border rounded-xl shadow-sm p-3">
+              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
+              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
+              <p className="text-green-700 font-semibold">$30–50/hr</p>
+              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
+            </div>
+
+            <div className="col-span-full mt-10">
+              <h1 className="text-3xl font-bold mb-5">Popular Categories</h1>
               <div className="grid grid-cols-3 md:grid-cols-5 gap-5">
-                
+                <div className="relative w-full h-28 rounded-xl overflow-hidden cursor-pointer group">
+                  <img 
+                    src="/images/cleaning.jpg"
+                    alt="Cleaning"
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                  />
+                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <h2 className="text-white text-lg font-semibold drop-shadow-lg">
+                      Cleaning
+                    </h2>
+                  </div>
+                </div>
               </div>
             </div>
-
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
-              <p className="text-green-700 font-semibold">$20–40/hr</p>
-              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
-              <p className="text-green-700 font-semibold">$30–50/hr</p>
-              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
-              <p className="text-green-700 font-semibold">$20–40/hr</p>
-              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
-              <p className="text-green-700 font-semibold">$30–50/hr</p>
-              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
-              <p className="text-green-700 font-semibold">$30–50/hr</p>
-              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
-              <p className="text-green-700 font-semibold">$20–40/hr</p>
-              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
-              <p className="text-green-700 font-semibold">$30–50/hr</p>
-              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
-              <p className="text-green-700 font-semibold">$30–50/hr</p>
-              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
-              <p className="text-green-700 font-semibold">$20–40/hr</p>
-              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
-              <p className="text-green-700 font-semibold">$30–50/hr</p>
-              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
-            </div>
-
-
-
-
           </div>
 
           <div className="lg:col-span-1 space-y-6">
