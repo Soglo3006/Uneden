@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { categories } from "@/lib/categories";
+import { sampleListings } from "@/lib/listings";
 
 
 export default function HomePage() {
@@ -213,6 +214,25 @@ export default function HomePage() {
               <h1 className="text-3xl font-bold mb-2">Together, we all bring something valuable</h1>
               <h1>Join now to discover nearby help and new earning opportunities</h1>
               <Button className="mt-4">Sign In</Button>
+            </div>
+
+            <div className="border-2 border-dashed border-gray-300 rounded-xl h-[200px] col-span-full flex items-center justify-center text-gray-500">
+              Advertisement<br/>728×90
+            </div>
+
+            <div className="col-span-full mt-10 ">
+              <h1 className="text-2xl font-bold mb-5">Listing near you</h1>
+              <div className="grid lg:col-span-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {sampleListings.map((listing) => (
+                  <div key={listing.title} className="border rounded-xl shadow-sm p-3">
+                    <img src={listing.image} className="w-full h-32 object-cover rounded-lg" />
+                    <h3 className="font-semibold mt-3">{listing.title}</h3>
+                    <p className="text-green-700 font-semibold">{listing.price}</p>
+                    <p className="text-gray-500 text-sm">{listing.location} · {listing.created_at}</p>
+                  </div>
+                ))}
+              </div>
+
             </div>
 
           </div>

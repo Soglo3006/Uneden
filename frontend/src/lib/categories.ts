@@ -1,8 +1,4 @@
-export type Category = {
-    name: string;
-    subcategories?: string[];
-    image: string;
-  }
+import { Category } from "./types";
 
   export const categories: Category[] = [
     { name: "Cleaning", subcategories: ["House cleaning","Deep cleaning","Office cleaning"], image: "/Categories/cleaning.jpg" },
