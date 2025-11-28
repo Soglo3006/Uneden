@@ -18,6 +18,9 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { categories } from "@/lib/categories";
 import { sampleListings } from "@/lib/listings";
 import Link from "next/link"
+import Header  from "@/components/home/Header";
+import CategoryNav from "@/components/home/Category";
+import Footer from "@/components/home/Footer";
 
 
 
@@ -25,89 +28,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white text-black">
-      <div className="w-full border-b border-gray-200 shadow-sm bg-white">
-        <div className="flex justify-center items-center space-x-5 p-5 max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-green-800">FieldHearts</h1>
-        <div className="flex items-center space-x-2">
-          <Search/>
-          <Input
-          placeholder="What service are you looking for today"
-          type="text"
-          className="w-96"
-          />
-        </div>
-        <Select defaultValue="all">
-          <SelectTrigger className="w-[140px] border-gray-300 rounded-lg">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Posts</SelectItem>
-            <SelectItem value="find">Find Work</SelectItem>
-            <SelectItem value="hire">Hire Worker</SelectItem>
-          </SelectContent>
-        </Select>
-        <div>
-          <Select defaultValue="canada">
-            <SelectTrigger className="w-[140px] border-gray-300 rounded-lg">
-              <SelectValue placeholder="Location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Country</SelectLabel>
-                <SelectItem value="canada">Canada</SelectItem>
-                <SelectItem value="USA">USA</SelectItem>
-                <SelectItem value="UK">UK</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <ToggleGroup type="single" variant="outline" size="lg">
-            <ToggleGroupItem value="EN" >
-              <h1>EN</h1>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="FR" >
-              <h1>FR</h1>
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </div>
-        <div>
-          <ButtonGroup>
-            <div className="flex gap-4">
-              <Link href="/login">
-                <Button variant="outline" size="lg">Sign In</Button>
-              </Link>
-
-              <Link href="/register">
-                <Button variant="outline" size="lg">Register</Button>
-              </Link>
-            </div>
-          </ButtonGroup>
-        </div>
-        <div>
-          <Button>Post</Button>
-        </div>
-      </div>
-      </div>
-      <div className="w-full border-b border-gray-200 shadow-sm bg-white">
-        <div className="flex items-center space-x-5 py-5 max-w-7xl mx-auto overflow-x-auto whitespace-nowrap px-5 no-scrollbar">
-          <Button>View All Listing</Button>
-          {categories.map((category) => (
-            <Select key={category.name}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={category.name} />
-              </SelectTrigger>
-              <SelectContent>
-                {category.subcategories?.map((subcategory) => (
-                  <SelectItem key={subcategory} value={subcategory}>
-                    {subcategory}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ))}
-        </div>
-      </div>
+      <Header/>
+      <CategoryNav/>
 
       <div className=" bg-gradient-to-br from-green-500 to-blue-150 py-20 ">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-md p-10 text-center max-w-2xl mx-auto">
@@ -255,34 +177,7 @@ export default function HomePage() {
 
       </div>
 
-      <footer className="bg-white text-gray-700 py-10 mt-20 border-t border-gray-500">
-        <div className="max-w-7xl mx-auto px-5 py-8">
-        <div className="flex flex-row justify-between items-center">
-          <h1 className="justify-center">FieldHearts</h1>
-          <nav className="flex flex-wrap space-x-5 justify-center ">
-          <h1>About</h1>
-          <h1>Contact</h1>
-          <h1>Privacy Policy</h1>
-          <h1>Terms of use</h1>
-          </nav>
-          <div>
-            <ToggleGroup type="single" variant="outline" size="lg">
-              <ToggleGroupItem value="EN" >
-                <h1>EN</h1>
-              </ToggleGroupItem>
-              <ToggleGroupItem value="FR" >
-                <h1>FR</h1>
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-        </div>
-        </div>
-        <div className="border-t border-gray-400 max-w-7xl mx-auto"></div>
-        <div className="mt-5 text-center">
-          <p> © {new Date().getFullYear()} FieldHearts. All rights reserved.</p>
-        </div>
-      </footer>
-
-    </div>
+      <Footer/>
+      </div> 
   );
 }
