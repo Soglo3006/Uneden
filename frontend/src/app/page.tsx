@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { categories } from "@/lib/categories";
 import { sampleListings } from "@/lib/listings";
+import Link from "next/link"
+
 
 
 export default function HomePage() {
@@ -71,12 +73,15 @@ export default function HomePage() {
         </div>
         <div>
           <ButtonGroup>
-            <Button variant="outline" size="lg">
-              Sign In
-            </Button>
-            <Button variant="outline" size="lg">
-              Register
-            </Button>
+            <div className="flex gap-4">
+              <Link href="/login">
+                <Button variant="outline" size="lg">Sign In</Button>
+              </Link>
+
+              <Link href="/register">
+                <Button variant="outline" size="lg">Register</Button>
+              </Link>
+            </div>
           </ButtonGroup>
         </div>
         <div>

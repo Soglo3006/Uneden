@@ -58,7 +58,7 @@ export default function LoginPage() {
           Login
         </Button>
         <CardDescription>
-          Or
+          Or continue with
         </CardDescription>
         <Button variant="outline" className="w-full">
           Continue with Google

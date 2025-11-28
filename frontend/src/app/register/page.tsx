@@ -67,7 +67,7 @@ export default function RegisterPage() {
                 <Label htmlFor="number">Phone Number</Label>
                 <Input
                   id="number"
-                  type="number"
+                  type="text"
                   value={number}
                   onChange={(e) => setNumber(e.target.value)}
                   required
