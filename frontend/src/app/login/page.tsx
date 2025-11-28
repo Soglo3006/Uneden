@@ -1,7 +1,7 @@
+"use client";
 import { Button } from "@/components/ui/button"
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -10,29 +10,31 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import React, { useState } from "react"
 
-export default function RegisterPage() {
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4"> 
     <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle>Login to your account</CardTitle>
-        <CardDescription>
-          Enter your email below to login to your account
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+        <CardDescription className="font-semibold text-xs">
+          Sing in to access local opportunities and community services
         </CardDescription>
-        <CardAction>
-          <Button variant="link">Sign Up</Button>
-        </CardAction>
       </CardHeader>
       <CardContent>
         <form>
           <div className="flex flex-col gap-6">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="font-semibold text-sm">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
@@ -46,17 +48,26 @@ export default function RegisterPage() {
                   Forgot your password?
                 </a>
               </div>
-              <Input id="password" type="password" required />
+              <Input id="password" type="password"  className="font-semibold text-sm" value={password} onChange={(e)=> setPassword(e.target.value)} required />
             </div>
           </div>
         </form>
       </CardContent>
       <CardFooter className="flex-col gap-2">
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full bg-green-800 hover:bg-green-900">
           Login
         </Button>
+        <CardDescription>
+          Or
+        </CardDescription>
         <Button variant="outline" className="w-full">
-          Login with Google
+          Continue with Google
+        </Button>
+        <Button variant="outline" className="w-full">
+          Continue with Apple
+        </Button>
+        <Button variant="outline" className="w-full">
+          Continue with Facebook
         </Button>
       </CardFooter>
     </Card>
