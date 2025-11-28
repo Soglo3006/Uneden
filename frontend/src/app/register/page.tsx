@@ -10,15 +10,44 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import React, {useState} from "react"
+import React, { useState } from "react"
+import { useAuth } from "@/contexts/AuthContext"
+import Link from "next/link"
 
 export default function RegisterPage() {
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
+  const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [number, setNumber] = useState("")
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+  
+  const { register } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await register(fullName, email, password);
+    } catch (err: any) {
+      setError(err.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -31,25 +60,20 @@ export default function RegisterPage() {
         </CardHeader>
 
         <CardContent>
-          <form>
+          <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6 font-semibold text-sm">
+              {error && (
+                <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+                  {error}
+                </div>
+              )}
               <div className="grid gap-2">
-                <Label htmlFor="first_name">First Name</Label>
+                <Label htmlFor="full_name">Full Name</Label>
                 <Input
-                  id="first_name"
+                  id="full_name"
                   type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="last_name">Last Name</Label>
-                <Input
-                  id="last_name"
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   required
                 />
               </div>
@@ -60,16 +84,6 @@ export default function RegisterPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="number">Phone Number</Label>
-                <Input
-                  id="number"
-                  type="text"
-                  value={number}
-                  onChange={(e) => setNumber(e.target.value)}
                   required
                 />
               </div>
@@ -93,23 +107,27 @@ export default function RegisterPage() {
                   required
                 />
               </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-green-800 hover:bg-green-900"
+                disabled={loading}
+              >
+                {loading ? "Creating Account..." : "Create Account"}
+              </Button>
             </div>
           </form>
         </CardContent>
         <CardFooter className="flex-col gap-2">
-          <Button type="submit" className="w-full bg-green-800 hover:bg-green-900">
-            Create Account
-          </Button>
-          <CardDescription className="font-semibold text-xs text-center justify-center ">
+          <CardDescription className="font-semibold text-xs text-center justify-center">
             By creating an account, you agree to our Terms of Service and Privacy Policy.
           </CardDescription>
         </CardFooter>
       </Card>
       <p className="mt-4">
         Already have an account?{" "}
-        <a href="/login" className="text-green-600 hover:underline">
+        <Link href="/login" className="text-green-600 hover:underline">
           Sign in
-        </a>
+        </Link>
       </p>
     </div>
   )

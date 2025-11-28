@@ -9,7 +9,7 @@ export const registerUser = async (req, res) => {
     const { full_name, email, password } = req.body;
 
     if (!full_name || !email || !password) {
-      return res.status(400).json({ message: "Please fill all fields" });
+      return res.status(400).json({ message: "Please fill this field" });
     }
 
     const existingUser = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
