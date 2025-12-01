@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {categories} from "@/lib/categories.ts";
+import ListingsGrid from "@/components/listings/ListingsGrid";
 
 
 
@@ -162,12 +163,13 @@ export default function Listings() {
                             </Select>
                         </div>
 
-                        <div className="bg-gray-100 rounded-lg p-8 flex items-center justify-center border border-gray-200">
+                        <div className="bg-gray-100 rounded-lg p-8 flex items-center justify-center border border-gray-200 mt-4">
                             <span className="text-gray-500 text-sm font-medium">Ad placeholder</span>
                         </div>
-
                         </div>
-                        <div></div>
+                        <div className="w-full lg:w-3/4 space-y-6">
+                        <ListingsGrid />
+                        </div>
 
                     </div>
 
