@@ -17,9 +17,6 @@ import {categories} from "@/lib/categories.ts";
 import ListingsGrid from "@/components/listings/ListingsGrid";
 
 
-
-
-
 export default function Listings() {
     const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
     const [distance, setDistance] = useState([50]);
