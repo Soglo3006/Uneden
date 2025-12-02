@@ -248,7 +248,7 @@ return (
         </Card>
 
         <Card className="p-6">
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex items-start justify-between ">
             <div className="flex items-center gap-4">
             <CreditCard className="h-6 w-6 text-green-700" />
             <div>
@@ -274,7 +274,7 @@ return (
         </Card>
 
         <Card className="p-6">
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
             <BarChart3 className="h-6 w-6 text-green-700" />
             <div>
