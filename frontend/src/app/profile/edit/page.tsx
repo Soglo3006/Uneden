@@ -60,6 +60,10 @@ export default function EditProfilePage() {
   const [newSkill, setNewSkill] = useState("");
   const [newLanguage, setNewLanguage] = useState("");
 
+  const [showPortfolioModal, setShowPortfolioModal] = useState(false);
+  const [portfolioImage, setPortfolioImage] = useState<string | null>(null);
+  const [portfolioTitle, setPortfolioTitle] = useState("");
+
   const [showCropper, setShowCropper] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -134,6 +138,57 @@ const saveCroppedImage = async () => {
       portfolio: formData.portfolio.filter((item) => item.id !== id),
     });
   };
+  
+  const handlePortfolioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    alert("Please upload an image.");
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert("File size must be less than 5MB.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setPortfolioImage(reader.result as string);
+    setPortfolioTitle("");
+    setShowPortfolioModal(true);
+  };
+  reader.readAsDataURL(file);
+};
+
+const savePortfolioItem = () => {
+  if (!portfolioImage) return;
+  
+  if (!portfolioTitle.trim()) {
+    alert("Please enter a title for your portfolio item.");
+    return;
+  }
+
+  const newId = formData.portfolio.length > 0 
+    ? Math.max(...formData.portfolio.map(item => item.id)) + 1 
+    : 1;
+
+  const newPortfolioItem = {
+    id: newId,
+    image: portfolioImage,
+    title: portfolioTitle.trim(),
+  };
+
+  setFormData({
+    ...formData,
+    portfolio: [...formData.portfolio, newPortfolioItem],
+  });
+
+  setShowPortfolioModal(false);
+  setPortfolioImage(null);
+  setPortfolioTitle("");
+};
 
   const handleSave = () => {
     console.log("Saving profile data:", formData);
@@ -407,21 +462,30 @@ const saveCroppedImage = async () => {
             )}
 
             {/* Upload Zone */}
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-green-700 transition-colors cursor-pointer">
-              <Upload className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-green-700 transition-colors cursor-pointer"
+            onClick={() => document.getElementById("portfolioInput")?.click()}
+            >
+            <input
+                type="file"
+                accept="image/*"
+                id="portfolioInput"
+                onChange={handlePortfolioUpload}
+                className="hidden"
+            />
+            <Upload className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">
                 Upload Portfolio Images
-              </h3>
-              <p className="text-gray-500 text-sm mb-4">
+            </h3>
+            <p className="text-gray-500 text-sm mb-4">
                 Drag and drop your images here, or click to browse
-              </p>
-              <Button variant="outline" className="gap-2">
+            </p>
+            <Button variant="outline" className="gap-2" onChange={handlePortfolioUpload} className="cursor-pointer">
                 <Plus className="h-4 w-4" />
                 Choose Files
-              </Button>
-              <p className="text-xs text-gray-400 mt-3">
+            </Button>
+            <p className="text-xs text-gray-400 mt-3">
                 PNG, JPG or GIF. Max 5MB per file.
-              </p>
+            </p>
             </div>
           </Card>
 
@@ -446,6 +510,66 @@ const saveCroppedImage = async () => {
       </main>
 
       <Footer />
+      {/* Portfolio Image Modal */}
+      {showPortfolioModal && portfolioImage && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl">
+            <h2 className="text-xl font-semibold mb-4">Add Portfolio Item</h2>
+
+            {/* Image Preview */}
+            <div className="mb-6">
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-100">
+                <img
+                  src={portfolioImage}
+                  alt="Portfolio preview"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
+            {/* Title Input */}
+            <div className="space-y-2 mb-6">
+              <Label htmlFor="portfolioTitle" className="text-base font-medium text-gray-900">
+                Title <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="portfolioTitle"
+                type="text"
+                placeholder="e.g., Kitchen Renovation Project"
+                value={portfolioTitle}
+                onChange={(e) => setPortfolioTitle(e.target.value)}
+                className="h-12"
+                autoFocus
+              />
+              <p className="text-xs text-gray-500">
+                Give your portfolio item a descriptive title
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowPortfolioModal(false);
+                  setPortfolioImage(null);
+                  setPortfolioTitle("");
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={savePortfolioItem}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                disabled={!portfolioTitle.trim()}
+              >
+                Add to Portfolio
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       {showCropper && imageToCrop && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-6 w-[90%] max-w-xl">

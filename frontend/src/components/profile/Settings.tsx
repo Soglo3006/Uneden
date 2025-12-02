@@ -316,7 +316,7 @@ return (
             <ChevronRight className="h-4 w-4" />
             </Button>
         </div>
-        <p className="text-sm text-gray-500 mt-4">
+        <p className="text-sm text-gray-500">
             Deleting your account is permanent and cannot be undone. All your data will be removed.
         </p>
         </Card>
