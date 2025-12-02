@@ -104,8 +104,8 @@ const [newSkill, setNewSkill] = useState("");
 
 const [data, setData] = useState<OnboardingData>({
     avatar: "",
-    fullName: "John Doe",
-    email: "john.doe@example.com",
+    fullName: "Alexandre Booh Louha",
+    email: "alexandre.boohlouha@gmail.com",
     phone: "",
     adresse: "",
     ville: "",

@@ -18,11 +18,13 @@ Globe,
 Briefcase,
 ExternalLink,
 } from "lucide-react";
+import { useState } from "react";
+import SettingsPage from "@/components/profile/Settings"
 
 // Mock user data
 const userData = {
 id: 1,
-name: "Maria Santos",
+name: "Alexandre Booh Louha",
 avatar: "",
 tagline: "Professional Cleaner • 10 years experience",
 rating: 4.9,
@@ -104,7 +106,11 @@ image: "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400&q=80",
 },
 ];
 
+
+
 export default function UserProfilePage() {
+    const [showSettings, setShowSettings] = useState(false);
+
 return (
 <div className="min-h-screen bg-gray-50 flex flex-col">
     {/* Header */}
@@ -146,6 +152,10 @@ return (
                 <Button variant="outline" className="gap-2">
                 <Grid3x3 className="h-4 w-4" />
                 View all listings
+                </Button>
+                <Button variant="outline" className="gap-2" onClick={()=> setShowSettings(true)}>
+                <Grid3x3 className="h-4 w-4" />
+                Settings
                 </Button>
             </div>
             </div>
@@ -296,6 +306,17 @@ return (
     </div>
     </main>
     <Footer />
+    {showSettings && (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+        <div className="w-full max-w-3xl max-h-[90vh] bg-white rounded-xl shadow-xl p-6 overflow-y-auto animate-in fade-in duration-200">
+        <SettingsPage onClose={() => setShowSettings(false)} />
+        </div>
+
+    </div>
+    )}
+
+
+
 </div>
 );
 }
