@@ -20,6 +20,8 @@ import {
   Plus,
   Camera,
 } from "lucide-react";
+import Cropper from "react-easy-crop";
+import getCroppedImg from "@/utils/cropImage";
 
 // Mock user data
 const initialUserData = {
@@ -57,6 +59,39 @@ export default function EditProfilePage() {
   const [formData, setFormData] = useState(initialUserData);
   const [newSkill, setNewSkill] = useState("");
   const [newLanguage, setNewLanguage] = useState("");
+
+  const [showCropper, setShowCropper] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    alert("Please upload an image.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setImageToCrop(reader.result as string);
+    setShowCropper(true);
+  };
+  reader.readAsDataURL(file);
+};
+
+const saveCroppedImage = async () => {
+  try {
+    const croppedImage = await getCroppedImg(imageToCrop!, croppedAreaPixels);
+    setFormData({ ...formData, avatar: croppedImage });
+    setShowCropper(false);
+  } catch (err) {
+    console.error(err);
+  }
+};
   
 
   const handleAddSkill = () => {
@@ -150,9 +185,21 @@ export default function EditProfilePage() {
                     <AvatarFallback>{formData.fullName.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col gap-2">
-                    <Button variant="outline" className="gap-2">
-                      <Camera className="h-4 w-4" />
-                      Change Photo
+                    <input
+                    type="file"
+                    accept="image/*"
+                    id="avatarInput"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                    />
+
+                    <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => document.getElementById("avatarInput")?.click()}
+                    >
+                    <Camera className="h-4 w-4" />
+                    Upload Image
                     </Button>
                     <p className="text-xs text-gray-500">
                       JPG, PNG or GIF. Max size 2MB.
@@ -399,6 +446,35 @@ export default function EditProfilePage() {
       </main>
 
       <Footer />
+      {showCropper && imageToCrop && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-[90%] max-w-xl">
+            <h2 className="text-lg font-semibold mb-4">Adjust your profile photo</h2>
+
+            <div className="relative w-full h-64 bg-gray-200 rounded-xl overflow-hidden">
+                <Cropper
+                image={imageToCrop}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={(croppedArea, croppedPixels) =>
+                    setCroppedAreaPixels(croppedPixels)
+                }
+                />
+            </div>
+
+            <div className="mt-4 flex justify-between">
+                <Button variant="outline" onClick={() => setShowCropper(false)}>
+                Cancel
+                </Button>
+                <Button onClick={saveCroppedImage}>Save</Button>
+            </div>
+            </div>
+        </div>
+        )}
     </div>
   );
 }
