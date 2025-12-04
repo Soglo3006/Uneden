@@ -3,6 +3,7 @@
 import Header from "@/components/home/Header";
 import CategoryNav from "@/components/home/Category";
 import Footer from "@/components/home/Footer";
+import Link from "next/link"
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,10 +14,9 @@ Star,
 MapPin,
 MessageCircle,
 Grid3x3,
-Calendar,
-Globe,
-Briefcase,
 ExternalLink,
+ChevronRight,
+Settings,
 } from "lucide-react";
 import { useState } from "react";
 import SettingsPage from "@/components/profile/Settings"
@@ -113,14 +113,18 @@ export default function UserProfilePage() {
 
 return (
 <div className="min-h-screen bg-gray-50 flex flex-col">
-    {/* Header */}
     <Header />
     <CategoryNav />
 
-    {/* Main Content */}
     <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
     <div className="max-w-6xl mx-auto">
-        {/* SECTION 1 — USER HEADER */}
+        <div className="flex items-center text-sm text-gray-500 mb-4">
+            <Link href="/">
+            <span className="hover:text-green-700 cursor-pointer">Home</span>
+            </Link>
+            <ChevronRight className="h-4 w-4 mx-1" />
+            <span className="text-green-700 font-medium">Profile</span>
+        </div>
         <Card className="p-8 mb-8">
         <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
             <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
@@ -154,7 +158,7 @@ return (
                 View all listings
                 </Button>
                 <Button variant="outline" className="gap-2" onClick={()=> setShowSettings(true)}>
-                <Grid3x3 className="h-4 w-4" />
+                <Settings className="h-4 w-4" />
                 Settings
                 </Button>
             </div>
@@ -162,7 +166,7 @@ return (
         </div>
         </Card>
 
-        {/* SECTION 2 — USER PORTFOLIO PREVIEW */}
+
         <Card className="p-6 mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Portfolio</h2>
         {userData.portfolio.length > 0 ? (
@@ -189,7 +193,7 @@ return (
         )}
         </Card>
 
-        {/* SECTION 3 — ABOUT THE USER */}
+
         <Card className="p-6 mb-8">
         <h2 className="text-2xl font-bold text-gray-900">About Me</h2>
         <p className="text-gray-700 leading-relaxed">{userData.bio}</p>
@@ -237,7 +241,6 @@ return (
         </div>
         </Card>
 
-        {/* SECTION 4 — USER LISTINGS */}
         <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Listings by {userData.name}</h2>
         {userListings.length > 0 ? (

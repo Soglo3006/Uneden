@@ -82,7 +82,9 @@ export default function Header(){
           </ButtonGroup>
         </div>
         <div>
+          <Link href="/post">
           <Button className="bg-green-700 text-white hover:bg-green-800">Post</Button>
+          </Link>
         </div>
       </div>
       </div>

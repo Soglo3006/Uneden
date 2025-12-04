@@ -10,9 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+import Link from "next/link"
 import ProfilePictureUploader from "@/components/profile/ProfilePicture"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ChevronRight,
   Upload,
@@ -66,17 +65,22 @@ export default function EditProfilePage() {
   const [portfolioTitle, setPortfolioTitle] = useState("");
 
   const [showCropper, setShowCropper] = useState(false);
-  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
-  const [showmodified, setShowModied] = useState(false);
+  const [showModified, setShowModified] = useState(false);
   const [modifiedImage, setModifiedImage] = useState<string | null>(null);
+  const [editingPortfolioId, setEditingPortfolioId] = useState<number | null>(null);
+  const [editingPortfolioTitle, setEditingPortfolioTitle] = useState("");
 
-  const [userProfilePicture, setUserProfilePicture] = useState("");
+  const [portfolioImageToCrop, setPortfolioImageToCrop] = useState<string | null>(null);
+  const [portfolioCrop, setPortfolioCrop] = useState({ x: 0, y: 0 });
+  const [portfolioZoom, setPortfolioZoom] = useState(1);
+  const [portfolioCroppedAreaPixels, setPortfolioCroppedAreaPixels] = useState(null);
+  const [isEditingExisting, setIsEditingExisting] = useState(false);
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePortfolioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
 
@@ -85,24 +89,96 @@ export default function EditProfilePage() {
     return;
   }
 
+  if (file.size > 5 * 1024 * 1024) {
+    alert("File size must be less than 5MB.");
+    return;
+  }
+
   const reader = new FileReader();
   reader.onloadend = () => {
-    setImageToCrop(reader.result as string);
-    setShowCropper(true);
+    setPortfolioImage(reader.result as string);
+    setPortfolioTitle("");
+    setPortfolioCrop({ x: 0, y: 0 });
+    setPortfolioZoom(1);
+    setPortfolioCroppedAreaPixels(null);
+    setShowPortfolioModal(true);
+  };
+  reader.readAsDataURL(file);
+};
+  const handleModifiedImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    alert("Please upload an image.");
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert("File size must be less than 5MB.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setModifiedImage(reader.result as string);
   };
   reader.readAsDataURL(file);
 };
 
-const saveCroppedImage = async () => {
+
+  const handleEditPortfolioItem = (item: typeof formData.portfolio[0]) => {
+    setEditingPortfolioId(item.id);
+    setModifiedImage(item.image);
+    setEditingPortfolioTitle(item.title);
+    setShowModified(true);
+  };
+
+
+  const saveModifiedPortfolioItem = async () => {
+  if (!modifiedImage || !editingPortfolioId) return;
+  
+  if (!editingPortfolioTitle.trim()) {
+    alert("Please enter a title for your portfolio item.");
+    return;
+  }
+
   try {
-    const croppedImage = await getCroppedImg(imageToCrop!, croppedAreaPixels);
-    setFormData({ ...formData, avatar: croppedImage });
-    setShowCropper(false);
+    const croppedImage = await getCroppedImg(modifiedImage, portfolioCroppedAreaPixels);
+
+    setFormData({
+      ...formData,
+      portfolio: formData.portfolio.map(item => 
+        item.id === editingPortfolioId 
+          ? { ...item, image: croppedImage, title: editingPortfolioTitle.trim() }
+          : item
+      ),
+    });
+
+    setShowModified(false);
+    setModifiedImage(null);
+    setEditingPortfolioId(null);
+    setEditingPortfolioTitle("");
+    setPortfolioCrop({ x: 0, y: 0 });
+    setPortfolioZoom(1);
+    setPortfolioCroppedAreaPixels(null);
   } catch (err) {
-    console.error(err);
+    console.error("Error cropping image:", err);
+    alert("Failed to crop image. Please try again.");
   }
 };
-  
+
+
+  const saveCroppedImage = async () => {
+    try {
+      const croppedImage = await getCroppedImg(imageToCrop!, croppedAreaPixels);
+      setFormData({ ...formData, avatar: croppedImage });
+      setShowCropper(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+    
 
   const handleAddSkill = () => {
     if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
@@ -145,30 +221,8 @@ const saveCroppedImage = async () => {
     });
   };
   
-  const handlePortfolioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
 
-  if (!file.type.startsWith("image/")) {
-    alert("Please upload an image.");
-    return;
-  }
-
-  if (file.size > 5 * 1024 * 1024) {
-    alert("File size must be less than 5MB.");
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    setPortfolioImage(reader.result as string);
-    setPortfolioTitle("");
-    setShowPortfolioModal(true);
-  };
-  reader.readAsDataURL(file);
-};
-
-const savePortfolioItem = () => {
+const savePortfolioItem = async () => {
   if (!portfolioImage) return;
   
   if (!portfolioTitle.trim()) {
@@ -176,24 +230,34 @@ const savePortfolioItem = () => {
     return;
   }
 
-  const newId = formData.portfolio.length > 0 
-    ? Math.max(...formData.portfolio.map(item => item.id)) + 1 
-    : 1;
+  try {
+    const croppedImage = await getCroppedImg(portfolioImage, portfolioCroppedAreaPixels);
 
-  const newPortfolioItem = {
-    id: newId,
-    image: portfolioImage,
-    title: portfolioTitle.trim(),
-  };
+    const newId = formData.portfolio.length > 0 
+      ? Math.max(...formData.portfolio.map(item => item.id)) + 1 
+      : 1;
 
-  setFormData({
-    ...formData,
-    portfolio: [...formData.portfolio, newPortfolioItem],
-  });
+    const newPortfolioItem = {
+      id: newId,
+      image: croppedImage,
+      title: portfolioTitle.trim(),
+    };
 
-  setShowPortfolioModal(false);
-  setPortfolioImage(null);
-  setPortfolioTitle("");
+    setFormData({
+      ...formData,
+      portfolio: [...formData.portfolio, newPortfolioItem],
+    });
+
+    setShowPortfolioModal(false);
+    setPortfolioImage(null);
+    setPortfolioTitle("");
+    setPortfolioCrop({ x: 0, y: 0 });
+    setPortfolioZoom(1);
+    setPortfolioCroppedAreaPixels(null);
+  } catch (err) {
+    console.error("Error cropping image:", err);
+    alert("Failed to crop image. Please try again.");
+  }
 };
 
   const handleSave = () => {
@@ -201,27 +265,38 @@ const savePortfolioItem = () => {
     // Handle save logic here
   };
 
+  const isFormValid = () => {
+  return (
+    formData.fullName.trim() !== "" &&
+    formData.location.trim() !== "" &&
+    formData.phone.trim() !== ""
+  );
+  };
+
+  const isUnchanged = JSON.stringify(formData) === JSON.stringify(initialUserData);
+
+
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
       <Header />
       <CategoryNav />
 
-      {/* Main Content */}
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          {/* SECTION 1 — PAGE HEADER */}
           <div className="mb-8">
-            {/* Breadcrumb */}
             <div className="flex items-center text-sm text-gray-500 mb-4">
+              <Link href="/">
               <span className="hover:text-green-700 cursor-pointer">Home</span>
+              </Link>
               <ChevronRight className="h-4 w-4 mx-1" />
+              <Link href="/profile/1">
               <span className="hover:text-green-700 cursor-pointer">Profile</span>
+              </Link>
               <ChevronRight className="h-4 w-4 mx-1" />
               <span className="text-green-700 font-medium">Edit</span>
             </div>
 
-            {/* Title */}
             <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
               Edit Profile
             </h1>
@@ -231,9 +306,8 @@ const savePortfolioItem = () => {
           </div>
           <Card className="p-6 sm:p-8 mb-6">
             <h2 className="text-xl font-bold text-gray-900">Personal Information</h2>
-
             <div className="space-y-6">
-              <div>
+              <div className="flex flex-col items-center">
                 <Label className="text-base font-medium text-gray-900 mb-3 block">
                   Profile Picture
                 </Label>
@@ -276,7 +350,7 @@ const savePortfolioItem = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-base font-medium text-gray-900">
-                  Phone Number
+                  Phone Number <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="phone"
@@ -325,7 +399,7 @@ const savePortfolioItem = () => {
                     onKeyPress={(e) => e.key === "Enter" && handleAddSkill()}
                     className="h-10"
                   />
-                  <Button onClick={handleAddSkill} variant="outline" size="sm" className="gap-1">
+                  <Button onClick={handleAddSkill} variant="outline" size="sm" className="gap-1 h-auto">
                     <Plus className="h-4 w-4" />
                     Add
                   </Button>
@@ -359,7 +433,7 @@ const savePortfolioItem = () => {
                     onKeyPress={(e) => e.key === "Enter" && handleAddLanguage()}
                     className="h-10"
                   />
-                  <Button onClick={handleAddLanguage} variant="outline" size="sm" className="gap-1">
+                  <Button onClick={handleAddLanguage} variant="outline" size="sm" className="gap-1 h-auto">
                     <Plus className="h-4 w-4" />
                     Add
                   </Button>
@@ -369,7 +443,7 @@ const savePortfolioItem = () => {
                     <Badge
                       key={lang}
                       variant="secondary"
-                      className="bg-blue-100 text-blue-700 pl-3 pr-2 py-1.5 text-sm"
+                      className="bg-green-100 text-green-700 pl-3 pr-2 py-1.5 text-sm"
                     >
                       {lang}
                       <button
@@ -402,8 +476,31 @@ const savePortfolioItem = () => {
           </Card>
 
           <Card className="p-6 sm:p-8 mb-2">
-            <h2 className="text-xl font-bold text-gray-900">Portfolio</h2>
-            <p className="text-gray-600">Upload images that represent your work</p>
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Portfolio</h2>
+              <p className="text-gray-600 mb-4">Upload images that represent your work</p>
+              
+              {formData.portfolio.length === 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      <Camera className="h-5 w-5 text-green-600 mt-0.5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-green-900 mb-2">
+                        Tips for great portfolio images:
+                      </h3>
+                      <ul className="text-sm text-green-800 space-y-1.5">
+                        <li>• Show before & after results of your work</li>
+                        <li>• Include different types of projects you've completed</li>
+                        <li>• Use well-lit, clear photos that showcase quality</li>
+                        <li>• Add descriptive titles to help clients understand your work</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {formData.portfolio.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
@@ -416,43 +513,74 @@ const savePortfolioItem = () => {
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200" />
-                      <button
-                        onClick={() => handleRemovePortfolioItem(item.id)}
-                        className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleEditPortfolioItem(item)}
+                          className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700"
+                        >
+                          <Camera className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleRemovePortfolioItem(item.id)}
+                          className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-700 mt-2 text-center">{item.title}</p>
+                    <p className="text-sm text-gray-700 mt-2 text-center font-medium">{item.title}</p>
                   </div>
                 ))}
               </div>
             )}
 
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-green-700 transition-colors cursor-pointer"
-            onClick={() => document.getElementById("portfolioInput")?.click()}
+            <div 
+              className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-green-700 transition-colors cursor-pointer group"
+              onClick={() => document.getElementById("portfolioInput")?.click()}
             >
-            <input
+              <input
                 type="file"
                 accept="image/*"
                 id="portfolioInput"
                 onChange={handlePortfolioUpload}
                 className="hidden"
-            />
-            <Upload className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                Upload Portfolio Images
-            </h3>
-            <p className="text-gray-500 text-sm mb-4">
-                Drag and drop your images here, or click to browse
-            </p>
-            <Button variant="outline" className="gap-2" onChange={handlePortfolioUpload} className="cursor-pointer">
+              />
+              
+              <div className="mb-4">
+                <Upload className="h-12 w-12 text-gray-400 mx-auto mb-3 group-hover:text-green-600 transition-colors" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  Upload Portfolio Images
+                </h3>
+                <p className="text-gray-500 text-sm mb-4">
+                  Drag and drop your images here, or click to browse
+                </p>
+                <p className="text-gray-500 text-sm mb-2">
+                  Example:
+                </p>
+              </div>
+
+              <div className="flex justify-center gap-3 mb-2">
+                <div className="relative w-40 h-40 rounded-lg overflow-hidden border-2 border-gray-200">
+                  <img 
+                    src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=80&q=80" 
+                    alt="Example" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+
+              <p className="font-semibold text-gray-700 text-sm mb-4">
+                  Modern Kitchen Deep Clean
+                </p>
+
+              <Button variant="outline" className="gap-2 cursor-pointer mb-3">
                 <Plus className="h-4 w-4" />
                 Choose Files
-            </Button>
-            <p className="text-xs text-gray-400 mt-3">
+              </Button>
+              
+              <p className="text-xs text-gray-400">
                 PNG, JPG or GIF. Max 5MB per file.
-            </p>
+              </p>
             </div>
           </Card>
 
@@ -467,6 +595,7 @@ const savePortfolioItem = () => {
             <Button
               className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white order-1 sm:order-2"
               onClick={handleSave}
+              disabled={!isFormValid() || isUnchanged}
             >
               Save Changes
             </Button>
@@ -477,16 +606,56 @@ const savePortfolioItem = () => {
       <Footer />
       {showPortfolioModal && portfolioImage && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl">
+          <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-semibold mb-4">Add Portfolio Item</h2>
 
             <div className="mb-6">
-              <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-100">
-                <img
-                  src={portfolioImage}
-                  alt="Portfolio preview"
-                  className="w-full h-full object-cover"
+              <div className="relative w-full h-96 bg-gray-200 rounded-xl overflow-hidden mb-4">
+                <Cropper
+                  image={portfolioImage}
+                  crop={portfolioCrop}
+                  zoom={portfolioZoom}
+                  aspect={16 / 9}
+                  cropShape="rect"
+                  onCropChange={setPortfolioCrop}
+                  onZoomChange={setPortfolioZoom}
+                  onCropComplete={(croppedArea, croppedPixels) =>
+                    setPortfolioCroppedAreaPixels(croppedPixels)
+                  }
                 />
+              </div>
+
+              <div className="mb-4">
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Zoom
+                </Label>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  value={portfolioZoom}
+                  onChange={(e) => setPortfolioZoom(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="mt-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="changePortfolioInput"
+                  onChange={handlePortfolioUpload}
+                  className="hidden"
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => document.getElementById("changePortfolioInput")?.click()}
+                  className="w-full gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Change Image
+                </Button>
               </div>
             </div>
 
@@ -515,6 +684,9 @@ const savePortfolioItem = () => {
                   setShowPortfolioModal(false);
                   setPortfolioImage(null);
                   setPortfolioTitle("");
+                  setPortfolioCrop({ x: 0, y: 0 });
+                  setPortfolioZoom(1);
+                  setPortfolioCroppedAreaPixels(null);
                 }}
                 className="flex-1"
               >
@@ -531,35 +703,106 @@ const savePortfolioItem = () => {
           </div>
         </div>
       )}
-      {showCropper && imageToCrop && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-[90%] max-w-xl">
-            <h2 className="text-lg font-semibold mb-4">Adjust your profile photo</h2>
 
-            <div className="relative w-full h-64 bg-gray-200 rounded-xl overflow-hidden">
-                <Cropper
-                image={imageToCrop}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                cropShape="round"
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
+      {showModified && modifiedImage && (
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <h2 className="text-xl font-semibold mb-4">Edit Portfolio Item</h2>
+
+          <div className="mb-6">
+            <div className="relative w-full h-96 bg-gray-200 rounded-xl overflow-hidden mb-4">
+              <Cropper
+                image={modifiedImage}
+                crop={portfolioCrop}
+                zoom={portfolioZoom}
+                aspect={16 / 9}
+                cropShape="rect"
+                onCropChange={setPortfolioCrop}
+                onZoomChange={setPortfolioZoom}
                 onCropComplete={(croppedArea, croppedPixels) =>
-                    setCroppedAreaPixels(croppedPixels)
+                  setPortfolioCroppedAreaPixels(croppedPixels)
                 }
-                />
+              />
             </div>
 
-            <div className="mt-4 flex justify-between">
-                <Button variant="outline" onClick={() => setShowCropper(false)}>
-                Cancel
-                </Button>
-                <Button onClick={saveCroppedImage}>Save</Button>
+            <div className="mb-4">
+              <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                Zoom
+              </Label>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.1}
+                value={portfolioZoom}
+                onChange={(e) => setPortfolioZoom(Number(e.target.value))}
+                className="w-full"
+              />
             </div>
+
+            <div className="mt-3">
+              <input
+                type="file"
+                accept="image/*"
+                id="modifiedImageInput"
+                onChange={handleModifiedImageUpload}
+                className="hidden"
+              />
+              <Button 
+                variant="outline" 
+                onClick={() => document.getElementById("modifiedImageInput")?.click()}
+                className="w-full gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Change Image
+              </Button>
             </div>
+          </div>
+
+          <div className="space-y-2 mb-6">
+            <Label htmlFor="editPortfolioTitle" className="text-base font-medium text-gray-900">
+              Title <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="editPortfolioTitle"
+              type="text"
+              placeholder="e.g., Kitchen Renovation Project"
+              value={editingPortfolioTitle}
+              onChange={(e) => setEditingPortfolioTitle(e.target.value)}
+              className="h-12"
+              autoFocus
+            />
+            <p className="text-xs text-gray-500">
+              Give your portfolio item a descriptive title
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowModified(false);
+                setModifiedImage(null);
+                setEditingPortfolioId(null);
+                setEditingPortfolioTitle("");
+                setPortfolioCrop({ x: 0, y: 0 });
+                setPortfolioZoom(1);
+              }}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={saveModifiedPortfolioItem}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              disabled={!editingPortfolioTitle.trim()}
+            >
+              Save Changes
+            </Button>
+          </div>
         </div>
-        )}
+      </div>
+    )}
     </div>
   );
 }

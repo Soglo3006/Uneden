@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import ProfilePictureUploader from "@/components/profile/ProfilePicture"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Link from "next/link"
 import {
 User,
 Lock,
@@ -13,7 +12,7 @@ CreditCard,
 BarChart3,
 LogOut,
 Trash2,
-Camera,
+Settings,
 ChevronRight,
 Mail,
 Phone,
@@ -89,10 +88,12 @@ return (
                 <p className="text-sm text-gray-600">Update your personal details and profile picture</p>
             </div>
             </div>
+            <Link href="/profile/edit">
             <Button variant="outline" size="sm">
             Edit Profile
             <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
+            </Link>
         </div>
 
         <div className="flex flex-col md:flex-row gap-6">
