@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import getCroppedImg from "@/utils/cropImage";
 import Cropper from "react-easy-crop";
+import ProfilePictureUploader from "@/components/profile/ProfilePicture"
 import {
 Select,
 SelectContent,
@@ -219,6 +220,7 @@ const [imageToCrop, setImageToCrop] = useState<string | null>(null);
 const [crop, setCrop] = useState({ x: 0, y: 0 });
 const [zoom, setZoom] = useState(1);
 const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+const [userProfilePicture, setUserProfilePicture] = useState("");
 
 const saveCroppedImage = async () => {
   try {
@@ -277,11 +279,6 @@ const handleUpdatePortfolio = (id: number, field: keyof PortfolioItem, value: st
     });
 };
 
-
-
-
-
-// Success Modal
 if (showSuccess) {
     return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -308,22 +305,12 @@ if (showSuccess) {
 
 return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-    {/* Header with Progress */}
     <div className="bg-white border-b border-gray-200 top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Complete Your Profile</h1>
         <p className="text-gray-600 mb-6">Step {currentStep} of {totalSteps}</p>
 
-        {/* Progress Bar */}
         <div className="relative">
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-                className="h-full bg-green-700 transition-all duration-500 ease-out rounded-full"
-                style={{ width: `${progress}%` }}
-            />
-            </div>
-
-            {/* Step Indicators */}
             <div className="flex justify-between mt-4">
             {stepTitles.map((title, index) => {
                 const StepIcon = stepIcons[index];
@@ -358,46 +345,23 @@ return (
         </div>
         </div>
     </div>
-
-    {/* Main Content */}
     <main className="flex-1 py-8 px-4">
         <div className="max-w-2xl mx-auto">
-        {/* STEP 1 — Profile Picture & Basic Info */}
         {currentStep === 1 && (
             <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
             <h2 className="text-xl font-bold text-gray-900 mb-2">Profile Picture & Basic Info</h2>
             <p className="text-gray-600 mb-6">Let's start with the basics</p>
 
             <div className="space-y-6">
-                {/* Avatar Upload */}
                 <div className="flex flex-col items-center">
-                <Avatar className="w-32 h-32 border-4 border-gray-100 mb-4">
-                    <AvatarImage src={data.avatar} alt={data.fullName} />
-                    <AvatarFallback>{data.fullName.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col items-center gap-2">
-                    <input
-                    type="file"
-                    accept="image/*"
-                    id="avatarInput"
-                    onChange={handleAvatarUpload}
-                    className="hidden"
-                    />
-
-                    <Button
-                    variant="outline"
-                    className="gap-2"
-                    onClick={() => document.getElementById("avatarInput")?.click()}
-                    >
-                    <Camera className="h-4 w-4" />
-                    Upload Image
-                    </Button>       
-                    <p className="text-xs text-gray-500">JPG, PNG or GIF. Max 2MB.</p>
+                <ProfilePictureUploader
+                currentProfilePicture={data.avatar}
+                userName={data.fullName}
+                onProfileChange={(newProfilePicture) => setData({ ...data, avatar: newProfilePicture })}
+                size="md"
+                showLabel={true}
+                />
                 </div>
-                </div>
-
-
-                {/* Full Name */}
                 <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-base font-medium text-gray-900">
                     Full Name

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import ProfilePictureUploader from "@/components/profile/ProfilePicture"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ChevronRight,
@@ -69,6 +70,11 @@ export default function EditProfilePage() {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+  const [showmodified, setShowModied] = useState(false);
+  const [modifiedImage, setModifiedImage] = useState<string | null>(null);
+
+  const [userProfilePicture, setUserProfilePicture] = useState("");
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
@@ -212,7 +218,7 @@ const savePortfolioItem = () => {
               <ChevronRight className="h-4 w-4 mx-1" />
               <span className="hover:text-green-700 cursor-pointer">Profile</span>
               <ChevronRight className="h-4 w-4 mx-1" />
-              <span className="text-gray-900 font-medium">Edit</span>
+              <span className="text-green-700 font-medium">Edit</span>
             </div>
 
             {/* Title */}
@@ -223,47 +229,24 @@ const savePortfolioItem = () => {
               Update your personal information
             </p>
           </div>
-
-          {/* SECTION 2 — PERSONAL INFORMATION FORM */}
           <Card className="p-6 sm:p-8 mb-6">
             <h2 className="text-xl font-bold text-gray-900">Personal Information</h2>
 
             <div className="space-y-6">
-              {/* Profile Picture */}
               <div>
                 <Label className="text-base font-medium text-gray-900 mb-3 block">
                   Profile Picture
                 </Label>
                 <div className="flex items-center gap-6">
-                  <Avatar className="w-24 h-24 border-4 border-gray-100">
-                    <AvatarImage src={formData.avatar} alt={formData.fullName} />
-                    <AvatarFallback>{formData.fullName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col gap-2">
-                    <input
-                    type="file"
-                    accept="image/*"
-                    id="avatarInput"
-                    onChange={handleAvatarUpload}
-                    className="hidden"
-                    />
-
-                    <Button
-                    variant="outline"
-                    className="gap-2"
-                    onClick={() => document.getElementById("avatarInput")?.click()}
-                    >
-                    <Camera className="h-4 w-4" />
-                    Upload Image
-                    </Button>
-                    <p className="text-xs text-gray-500">
-                      JPG, PNG or GIF. Max size 2MB.
-                    </p>
-                  </div>
+                  <ProfilePictureUploader
+                  currentProfilePicture={formData.avatar}
+                  userName={formData.fullName}
+                  onProfileChange={(newProfilePicture) => setFormData({ ...formData, avatar: newProfilePicture })}
+                  size="md"
+                  showLabel={true}
+                  />
                 </div>
               </div>
-
-              {/* Full Name */}
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-base font-medium text-gray-900">
                   Full Name <span className="text-red-500">*</span>
@@ -276,8 +259,6 @@ const savePortfolioItem = () => {
                   className="h-12"
                 />
               </div>
-
-              {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-base font-medium text-gray-900">
                   Email <span className="text-red-500">*</span>
@@ -293,8 +274,6 @@ const savePortfolioItem = () => {
                   Email cannot be changed. Contact support if needed.
                 </p>
               </div>
-
-              {/* Phone Number */}
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-base font-medium text-gray-900">
                   Phone Number
@@ -307,8 +286,6 @@ const savePortfolioItem = () => {
                   className="h-12"
                 />
               </div>
-
-              {/* Location */}
               <div className="space-y-2">
                 <Label htmlFor="location" className="text-base font-medium text-gray-900">
                   Location <span className="text-red-500">*</span>
@@ -322,8 +299,6 @@ const savePortfolioItem = () => {
                   className="h-12"
                 />
               </div>
-
-              {/* Bio */}
               <div className="space-y-2">
                 <Label htmlFor="bio" className="text-base font-medium text-gray-900">
                   Short Bio / Description
@@ -339,8 +314,6 @@ const savePortfolioItem = () => {
                   {formData.bio.length} / 500 characters
                 </p>
               </div>
-
-              {/* Skills */}
               <div className="space-y-2">
                 <Label className="text-base font-medium text-gray-900">Skills</Label>
                 <div className="flex gap-2">
@@ -375,8 +348,6 @@ const savePortfolioItem = () => {
                   ))}
                 </div>
               </div>
-
-              {/* Languages */}
               <div className="space-y-2">
                 <Label className="text-base font-medium text-gray-900">Languages Spoken</Label>
                 <div className="flex gap-2">
@@ -412,7 +383,6 @@ const savePortfolioItem = () => {
                 </div>
               </div>
 
-              {/* Years of Experience */}
               <div className="space-y-2">
                 <Label htmlFor="experience" className="text-base font-medium text-gray-900">
                   Years of Experience
@@ -431,12 +401,10 @@ const savePortfolioItem = () => {
             </div>
           </Card>
 
-          {/* SECTION 3 — PORTFOLIO MANAGEMENT */}
           <Card className="p-6 sm:p-8 mb-2">
             <h2 className="text-xl font-bold text-gray-900">Portfolio</h2>
             <p className="text-gray-600">Upload images that represent your work</p>
 
-            {/* Existing Portfolio Items */}
             {formData.portfolio.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 {formData.portfolio.map((item) => (
@@ -461,7 +429,6 @@ const savePortfolioItem = () => {
               </div>
             )}
 
-            {/* Upload Zone */}
             <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-green-700 transition-colors cursor-pointer"
             onClick={() => document.getElementById("portfolioInput")?.click()}
             >
@@ -489,8 +456,6 @@ const savePortfolioItem = () => {
             </div>
           </Card>
 
-
-          {/* SECTION 4 — ACTION BUTTONS */}
           <div className="flex flex-col sm:flex-row gap-3 sm:justify-end mt-4">
             <Button
               variant="outline"
@@ -510,13 +475,11 @@ const savePortfolioItem = () => {
       </main>
 
       <Footer />
-      {/* Portfolio Image Modal */}
       {showPortfolioModal && portfolioImage && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-2xl">
             <h2 className="text-xl font-semibold mb-4">Add Portfolio Item</h2>
 
-            {/* Image Preview */}
             <div className="mb-6">
               <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-100">
                 <img
@@ -527,7 +490,6 @@ const savePortfolioItem = () => {
               </div>
             </div>
 
-            {/* Title Input */}
             <div className="space-y-2 mb-6">
               <Label htmlFor="portfolioTitle" className="text-base font-medium text-gray-900">
                 Title <span className="text-red-500">*</span>
@@ -546,7 +508,6 @@ const savePortfolioItem = () => {
               </p>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-3">
               <Button 
                 variant="outline" 

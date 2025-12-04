@@ -82,7 +82,7 @@ export default function Header(){
           </ButtonGroup>
         </div>
         <div>
-          <Button>Post</Button>
+          <Button className="bg-green-700 text-white hover:bg-green-800">Post</Button>
         </div>
       </div>
       </div>

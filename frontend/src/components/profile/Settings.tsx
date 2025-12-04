@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import ProfilePictureUploader from "@/components/profile/ProfilePicture"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 User,
@@ -20,6 +21,10 @@ MapPin,
 } from "lucide-react";
 
 export default function SettingsPage({onClose}) {
+
+    const [userProfilePicture, setUserProfilePicture] = useState("");
+
+
 const [notifications, setNotifications] = useState({
 email: true,
 sms: false,
@@ -92,14 +97,13 @@ return (
 
         <div className="flex flex-col md:flex-row gap-6">
             <div className="flex flex-col items-center gap-3">
-            <Avatar className="w-24 h-24 border-4 border-gray-100">
-                <AvatarImage src="" alt="User" />
-                <AvatarFallback className="text-2xl">AB</AvatarFallback>
-            </Avatar>
-            <Button variant="outline" size="sm" className="gap-2">
-                <Camera className="h-4 w-4" />
-                Change Photo
-            </Button>
+            <ProfilePictureUploader
+            currentProfilePicture={userProfilePicture}
+            userName="Alexandre Booh Louha"
+            onProfileChange={(newProfilePicture) => setUserProfilePicture(newProfilePicture)}
+            size="md"
+            showLabel={true}
+            />
             </div>
 
             <div className="flex-1 space-y-3">

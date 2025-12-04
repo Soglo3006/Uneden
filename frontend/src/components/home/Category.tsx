@@ -13,7 +13,7 @@ export default function CategoryNav() {
   return (
     <div className="w-full border-b border-gray-200 shadow-sm bg-white">
       <div className="flex items-center space-x-5 py-5 max-w-7xl mx-auto overflow-x-auto whitespace-nowrap px-5 no-scrollbar">
-        <Button>View All Listing</Button>
+        <Button className="bg-green-700 text-white hover:bg-green-800">View All Listing</Button>
         {categories.map((category) => (
           <Select key={category.name}>
             <SelectTrigger className="w-[180px]">
