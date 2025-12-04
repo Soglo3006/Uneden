@@ -57,6 +57,8 @@ description: string;
 }
 
 interface OnboardingData {
+accountType: "person" | "company"| "";
+
 // Step 1
 avatar: string;
 fullName: string;
@@ -109,6 +111,7 @@ const [data, setData] = useState<OnboardingData>({
     email: "alexandre.boohlouha@gmail.com",
     phone: "",
     adresse: "",
+    accountType: "",
     ville: "",
     province: "",
     bio: "",
@@ -119,20 +122,20 @@ const [data, setData] = useState<OnboardingData>({
     portfolio: [],
 });
 
-const totalSteps = 5;
-const progress = (currentStep / totalSteps) * 100;
+const totalSteps = 6;
 
 // Step validation
-const isStep1Valid = data.phone.trim() !== "" && data.adresse.trim() !== "" && data.ville.trim() !== "" && data.province.trim() !== "";
-const isStep2Valid = data.bio.length >= 80 && data.profession.trim() !== "";
-const isStep3Valid = data.skills.length > 0 && data.languages.length > 0;
-const isStep4Valid = true; // Experience is optional
-const isStep5Valid = true; // Portfolio is optional
+const isStep1Valid = data.accountType.trim() !== "";
+const isStep2Valid = data.phone.trim() !== "" && data.adresse.trim() !== "" && data.ville.trim() !== "" && data.province.trim() !== "";
+const isStep3Valid = data.bio.length >= 80 && data.profession.trim() !== "";
+const isStep4Valid = data.skills.length > 0 && data.languages.length > 0;
+const isStep5Valid = true; // Experience is optional
+const isStep6Valid = true; // Portfolio is optional
 
 const canProceed = () => {
     switch (currentStep) {
     case 1:
-        return isStep1Valid;
+        return isStep1Valid
     case 2:
         return isStep2Valid;
     case 3:
@@ -141,6 +144,8 @@ const canProceed = () => {
         return isStep4Valid;
     case 5:
         return isStep5Valid;
+    case 6:
+        return isStep6Valid;
     default:
         return false;
     }
@@ -229,24 +234,6 @@ const saveCroppedImage = async () => {
   } catch (err) {
     console.error(err);
   }
-};
-
-
-const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  if (!file.type.startsWith("image/")) {
-    alert("Please upload an image.");
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    setImageToCrop(reader.result as string);
-    setShowCropper(true); 
-  };
-  reader.readAsDataURL(file);
 };
 
 
@@ -347,6 +334,51 @@ return (
     <main className="flex-1 py-8 px-4">
         <div className="max-w-2xl mx-auto">
         {currentStep === 1 && (
+            <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                    Are you creating a Personal or Company account?
+                </h2>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                    <button
+                    onClick={() => setData({ ...data, accountType: "person" })}
+                    className={`
+                        cursor-pointer border rounded-xl p-6 flex flex-col items-center gap-3 transition-all
+                        ${data.accountType === "person" 
+                        ? "border-green-600 bg-green-50 shadow-sm" 
+                        : "border-gray-300 hover:border-green-400"}
+                    `}
+                    type="button"
+                    >
+                    <User className="h-10 w-10 text-green-700" />
+                    <h3 className="text-lg font-semibold text-gray-900">Personal Account</h3>
+                    <p className="text-sm text-gray-500 text-center">
+                        Ideal for individuals offering services.
+                    </p>
+                    </button>
+
+                    <button
+                    onClick={() => setData({ ...data, accountType: "company" })}
+                    className={`
+                        cursor-pointer border rounded-xl p-6 flex flex-col items-center gap-3 transition-all
+                        ${data.accountType === "company" 
+                        ? "border-green-600 bg-green-50 shadow-sm" 
+                        : "border-gray-300 hover:border-green-400"}
+                    `}
+                    type="button"
+                    >
+                    <Briefcase className="h-10 w-10 text-green-700" />
+                    <h3 className="text-lg font-semibold text-gray-900">Company Account</h3>
+                    <p className="text-sm text-gray-500 text-center">
+                        Perfect for businesses managing multiple services.
+                    </p>
+                    </button>
+                </div>
+                </Card>
+
+        )}
+
+        {currentStep === 2 && (
             <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
             <h2 className="text-xl font-bold text-gray-900 mb-2">Profile Picture & Basic Info</h2>
             <p className="text-gray-600 mb-6">Let's start with the basics</p>
@@ -461,8 +493,7 @@ return (
             </Card>
         )}
 
-        {/* STEP 2 — Bio / Description */}
-        {currentStep === 2 && (
+        {currentStep === 3 && (
             <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
             <h2 className="text-xl font-bold text-gray-900 mb-2">Tell us about yourself</h2>
             <p className="text-gray-600 mb-6">Your bio helps customers understand who you are</p>
@@ -508,8 +539,7 @@ return (
             </Card>
         )}
 
-        {/* STEP 3 — Skills & Languages */}
-        {currentStep === 3 && (
+        {currentStep === 4 && (
             <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
             <h2 className="text-xl font-bold text-gray-900 mb-2">Skills & Languages</h2>
             <p className="text-gray-600 mb-6">Help customers find you based on your expertise</p>
@@ -628,8 +658,7 @@ return (
             </Card>
         )}
 
-        {/* STEP 4 — Experience */}
-        {currentStep === 4 && (
+        {currentStep === 5 && (
             <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
             <h2 className="text-xl font-bold text-gray-900 mb-2">Work Experience</h2>
             <p className="text-gray-600 mb-6">
@@ -719,8 +748,7 @@ return (
             </Card>
         )}
 
-        {/* STEP 5 — Portfolio */}
-        {currentStep === 5 && (
+        {currentStep === 6 && (
             <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
             <h2 className="text-xl font-bold text-gray-900 mb-2">Portfolio</h2>
             <p className="text-gray-600 mb-6">
@@ -786,7 +814,6 @@ return (
             </Card>
         )}
 
-        {/* Navigation Buttons */}
         <div className="flex justify-between mt-8">
             <Button
             variant="outline"
@@ -818,8 +845,8 @@ return (
                     image={imageToCrop}
                     crop={crop}
                     zoom={zoom}
-                    aspect={1} // carré pour profil
-                    cropShape="round" // rond, optionnel
+                    aspect={1} 
+                    cropShape="round" 
                     onCropChange={setCrop}
                     onZoomChange={setZoom}
                     onCropComplete={(croppedArea, croppedPixels) =>
