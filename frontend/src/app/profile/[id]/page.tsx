@@ -166,34 +166,6 @@ return (
         </div>
         </Card>
 
-
-        <Card className="p-6 mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Portfolio</h2>
-        {userData.portfolio.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {userData.portfolio.map((item) => (
-                <div key={item.id} className="group cursor-pointer">
-                <div className="relative overflow-hidden rounded-lg mb-2 aspect-square">
-                    <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300" />
-                </div>
-                <p className="text-sm font-medium text-gray-700 text-center">{item.title}</p>
-                </div>
-            ))}
-            </div>
-        ) : (
-            <div className="text-center py-12">
-            <Grid3x3 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No portfolio uploaded yet.</p>
-            </div>
-        )}
-        </Card>
-
-
         <Card className="p-6 mb-8">
         <h2 className="text-2xl font-bold text-gray-900">About Me</h2>
         <p className="text-gray-700 leading-relaxed">{userData.bio}</p>
@@ -240,6 +212,36 @@ return (
             </div>
         </div>
         </Card>
+
+
+        <Card className="p-6 mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Portfolio</h2>
+        {userData.portfolio.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {userData.portfolio.map((item) => (
+                <div key={item.id} className="group cursor-pointer">
+                <div className="relative overflow-hidden rounded-lg mb-2 aspect-square">
+                    <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300" />
+                </div>
+                <p className="text-sm font-medium text-gray-700 text-center">{item.title}</p>
+                </div>
+            ))}
+            </div>
+        ) : (
+            <div className="text-center py-12">
+            <Grid3x3 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">No portfolio uploaded yet.</p>
+            </div>
+        )}
+        </Card>
+
+
+    
 
         <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Listings by {userData.name}</h2>

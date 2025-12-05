@@ -15,7 +15,6 @@ SelectTrigger,
 SelectValue,
 } from "@/components/ui/select";
 import {categories} from "@/lib/categories.ts";
-import { Briefcase, Wrench } from "lucide-react";
 
 
 const urgencyLevels = [
@@ -45,21 +44,51 @@ const [jobBudgetMax, setJobBudgetMax] = useState("");
 const [jobLocation, setJobLocation] = useState("");
 const [jobUrgency, setJobUrgency] = useState("");
 
+const [servicePosterType, setServicePosterType] = useState("");
+const [serviceAvailability, setServiceAvailability] = useState("");
+const [serviceLanguage, setServiceLanguage] = useState("");
+const [serviceMobility, setServiceMobility] = useState("");
+const [serviceDuration, setServiceDuration] = useState("");
+const [serviceImage, setServiceImage] = useState<File | null>(null);
+const [serviceSubcategory, setServiceSubcategory] = useState("");
+
+
+const [jobPosterType, setJobPosterType] = useState("");
+const [jobAvailability, setJobAvailability] = useState("");
+const [jobLanguage, setJobLanguage] = useState("");
+const [jobMobility, setJobMobility] = useState("");
+const [jobDuration, setJobDuration] = useState("");
+const [jobImage, setJobImage] = useState<File | null>(null);
+const [jobSubcategory, setJobSubcategory] = useState("");
+
+
+
 const handleServiceSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log({
+  e.preventDefault();
+
+  console.log({
     type: "service",
     serviceTitle,
     serviceDescription,
     serviceCategory,
     priceRange: { min: servicePriceMin, max: servicePriceMax },
     serviceLocation,
-    });
+
+    posterType: servicePosterType,
+    subcategory: serviceSubcategory,
+    availability: serviceAvailability,
+    language: serviceLanguage,
+    mobility: serviceMobility,
+    duration: serviceDuration,
+    image: serviceImage ? serviceImage.name : null,
+  });
 };
 
+
 const handleJobSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log({
+  e.preventDefault();
+
+  console.log({
     type: "job",
     jobTitle,
     jobDescription,
@@ -67,8 +96,17 @@ const handleJobSubmit = (e: React.FormEvent) => {
     budgetRange: { min: jobBudgetMin, max: jobBudgetMax },
     jobLocation,
     jobUrgency,
-    });
+
+    posterType: jobPosterType,
+    subcategory: jobSubcategory,
+    availability: jobAvailability,
+    language: jobLanguage,
+    mobility: jobMobility,
+    duration: jobDuration,
+    image: jobImage ? jobImage.name : null,
+  });
 };
+
 
 return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -76,7 +114,6 @@ return (
     <CategoryNav/>
     <main className="flex-1 py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
-        {/* Page Header */}
         <div className="text-center mb-6">
             <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">
             Create a New Post
@@ -86,7 +123,6 @@ return (
             </p>
         </div>
 
-        {/* Mode Selector */}
         <div className="flex gap-4 mb-6">
             <button
             type="button"
@@ -145,24 +181,6 @@ return (
                 </div>
 
                 <div className="space-y-2">
-                <Label htmlFor="serviceCategory" className="text-base font-medium text-gray-900">
-                    Category <span className="text-red-500">*</span>
-                </Label>
-                <Select value={serviceCategory} onValueChange={setServiceCategory}>
-                    <SelectTrigger className="h-12">
-                    <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    {categories.map((cat) => (
-                        <SelectItem key={cat.name} value={cat.name }>
-                        {cat.name}
-                        </SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
-                </div>
-
-                <div className="space-y-2">
                 <Label className="text-base font-medium text-gray-900">
                     Price Range <span className="text-red-500">*</span>
                 </Label>
@@ -214,6 +232,154 @@ return (
                 />
                 </div>
 
+                <div className="pb-6 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                    <Label className="text-base font-medium text-gray-900">
+                        Category <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={serviceCategory} onValueChange={setServiceCategory}>
+                        <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        {categories.map((cat) => (
+                            <SelectItem key={cat.name} value={cat.name}>
+                            {cat.name}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-base font-medium text-gray-900">
+                            Subcategory <span className="text-red-500">*</span>
+                        </Label>
+
+                        <Select
+                            value={serviceSubcategory}
+                            onValueChange={setServiceSubcategory}
+                            disabled={!serviceCategory}  // bloque si aucune catégorie choisie
+                        >
+                            <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Select a subcategory" />
+                            </SelectTrigger>
+
+                            <SelectContent>
+                            {categories
+                                .find((c) => c.name === serviceCategory)
+                                ?.subcategories.map((sub) => (
+                                <SelectItem key={sub} value={sub}>
+                                    {sub}
+                                </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        </div>
+
+
+                    <div className="space-y-2">
+                    <Label className="text-base font-medium text-gray-900">
+                        Type of Poster <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={servicePosterType} onValueChange={setServicePosterType}>
+                        <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Individual or Company" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="company">Company</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    </div>
+                </div>
+                </div>
+
+                <div className="pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                    <Label className="text-base font-medium text-gray-900">
+                        Availability <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={serviceAvailability} onValueChange={setServiceAvailability}>
+                        <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select availability" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="anytime">Anytime</SelectItem>
+                        <SelectItem value="weekends">Weekends</SelectItem>
+                        <SelectItem value="weekdays">Weekdays</SelectItem>
+                        <SelectItem value="evenings">Evenings</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-base font-medium text-gray-900">
+                            Spoken Language <span className="text-red-500">*</span>
+                        </Label>
+                        <Select value={serviceLanguage} onValueChange={setServiceLanguage}>
+                            <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Preferred language" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            <SelectItem value="french">French</SelectItem>
+                            <SelectItem value="english">English</SelectItem>
+                            <SelectItem value="bilingual">Bilingual</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                    <Label className="text-base font-medium text-gray-900">
+                        Mobility <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={serviceMobility} onValueChange={setServiceMobility}>
+                        <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Can you travel?" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="limited">Limited distance</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    </div>
+                </div>
+                </div>
+
+                <div className="space-y-2">
+                <Label className="text-base font-medium text-gray-900">
+                    Approx. Job Duration <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                    type="text"
+                    placeholder="Ex: 2 hours, 1 day, 1 week"
+                    value={serviceDuration}
+                    onChange={(e) => setServiceDuration(e.target.value)}
+                    className="h-12"
+                />
+                </div>
+
+                <div className="space-y-2">
+                <Label className="text-base font-medium text-gray-900">
+                    Upload an Image (optional)
+                </Label>
+                <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setServiceImage(e.target.files?.[0] || null)}
+                    className="h-12"
+                />
+                {serviceImage  && (
+                    <p className="text-sm text-gray-600">
+                    Selected: <span className="font-medium">{serviceImage .name}</span>
+                    </p>
+                )}
+                </div>
+
+
                 <div className="pt-4">
                 <Button
                     type="submit"
@@ -258,23 +424,6 @@ return (
                 />
                 </div>
 
-                <div className="space-y-2">
-                <Label htmlFor="jobCategory" className="text-base font-medium text-gray-900">
-                    Category <span className="text-red-500">*</span>
-                </Label>
-                <Select value={jobCategory} onValueChange={setJobCategory}>
-                    <SelectTrigger className="h-12">
-                    <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    {categories.map((cat) => (
-                        <SelectItem key={cat.name}  value={cat.name}>
-                        {cat.name}
-                        </SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
-                </div>
 
                 <div className="space-y-2">
                 <Label className="text-base font-medium text-gray-900">
@@ -344,6 +493,157 @@ return (
                     ))}
                     </SelectContent>
                 </Select>
+                </div>
+
+                <div className="pb-6 ">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                    <Label htmlFor="jobCategory" className="text-base font-medium text-gray-900">
+                        Category <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={jobCategory} onValueChange={setJobCategory}>
+                        <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        {categories.map((cat) => (
+                            <SelectItem key={cat.name}  value={cat.name}>
+                            {cat.name}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                    <Label className="text-base font-medium text-gray-900">
+                        Subcategory <span className="text-red-500">*</span>
+                    </Label>
+
+                    <Select
+                    value={jobSubcategory}
+                    onValueChange={setJobSubcategory}
+                    disabled={!jobCategory}
+                    >
+                    <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select a subcategory" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                        {categories
+                        .find((c) => c.name === jobCategory)
+                        ?.subcategories.map((sub) => (
+                            <SelectItem key={sub} value={sub}>
+                            {sub}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                    </div>
+
+
+
+                    <div className="space-y-2">
+                    <Label className="text-base font-medium text-gray-900">
+                        Type of Poster <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={jobPosterType} onValueChange={setJobPosterType}>
+                        <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Individual or Company" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="company">Company</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    </div>
+                </div>
+                </div>
+
+                <div className="pb-6 ">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                    <Label className="text-base font-medium text-gray-900">
+                        Availability <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={jobAvailability} onValueChange={setJobAvailability}>
+                        <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select availability" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="anytime">Anytime</SelectItem>
+                        <SelectItem value="weekends">Weekends</SelectItem>
+                        <SelectItem value="weekdays">Weekdays</SelectItem>
+                        <SelectItem value="evenings">Evenings</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-base font-medium text-gray-900">
+                            Spoken Language <span className="text-red-500">*</span>
+                        </Label>
+                        <Select value={jobLanguage} onValueChange={setJobLanguage}>
+                            <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Preferred language" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            <SelectItem value="french">French</SelectItem>
+                            <SelectItem value="english">English</SelectItem>
+                            <SelectItem value="bilingual">Bilingual</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                    <Label className="text-base font-medium text-gray-900">
+                        Mobility <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={jobMobility} onValueChange={setJobMobility}>
+                        <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Can you travel?" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="limited">Limited distance</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    </div>
+
+                </div>
+                </div>
+
+                <div className="space-y-2">
+                <Label className="text-base font-medium text-gray-900">
+                    Approx. Job Duration <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                    type="text"
+                    placeholder="Ex: 2 hours, 1 day, 1 week"
+                    value={jobDuration}
+                    onChange={(e) => setJobDuration(e.target.value)}
+                    className="h-12"
+                />
+                </div>
+
+
+                {/* Image Upload */}
+                <div className="space-y-2">
+                <Label className="text-base font-medium text-gray-900">
+                    Upload an Image (optional)
+                </Label>
+                <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setJobImage(e.target.files?.[0] || null)}
+                    className="h-12"
+                />
+                {jobImage  && (
+                    <p className="text-sm text-gray-600">
+                    Selected: <span className="font-medium">{jobImage .name}</span>
+                    </p>
+                )}
                 </div>
 
                 <div className="pt-4">
