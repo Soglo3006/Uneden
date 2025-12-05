@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import ImageUploader from "@/components/ui/ImageUploader";
 import {
 Select,
 SelectContent,
@@ -49,7 +50,7 @@ const [serviceAvailability, setServiceAvailability] = useState("");
 const [serviceLanguage, setServiceLanguage] = useState("");
 const [serviceMobility, setServiceMobility] = useState("");
 const [serviceDuration, setServiceDuration] = useState("");
-const [serviceImage, setServiceImage] = useState<File | null>(null);
+const [serviceImage, setServiceImage] = useState<string | null>(null);
 const [serviceSubcategory, setServiceSubcategory] = useState("");
 
 
@@ -58,9 +59,39 @@ const [jobAvailability, setJobAvailability] = useState("");
 const [jobLanguage, setJobLanguage] = useState("");
 const [jobMobility, setJobMobility] = useState("");
 const [jobDuration, setJobDuration] = useState("");
-const [jobImage, setJobImage] = useState<File | null>(null);
+const [jobImage, setJobImage] = useState<string | null>(null);
 const [jobSubcategory, setJobSubcategory] = useState("");
 
+const isServiceValid =
+  serviceTitle.trim() !== "" &&
+  serviceDescription.trim() !== "" &&
+  serviceCategory.trim() !== "" &&
+  serviceSubcategory.trim() !== "" &&
+  servicePosterType.trim() !== "" &&
+  serviceAvailability.trim() !== "" &&
+  serviceLanguage.trim() !== "" &&
+  serviceMobility.trim() !== "" &&
+  serviceDuration.trim() !== "" &&
+  servicePriceMin.trim() !== "" &&
+  servicePriceMax.trim() !== "" &&
+  serviceLocation.trim() !== ""
+  Number(servicePriceMax) > Number(servicePriceMin);
+
+const isJobValid =
+  jobTitle.trim() !== "" &&
+  jobDescription.trim() !== "" &&
+  jobCategory.trim() !== "" &&
+  jobSubcategory.trim() !== "" &&
+  jobPosterType.trim() !== "" &&
+  jobAvailability.trim() !== "" &&
+  jobLanguage.trim() !== "" &&
+  jobMobility.trim() !== "" &&
+  jobDuration.trim() !== "" &&
+  jobBudgetMin.trim() !== "" &&
+  jobBudgetMax.trim() !== "" &&
+  jobLocation.trim() !== "" &&
+  jobUrgency.trim() !== ""
+  Number(jobBudgetMax) > Number(jobBudgetMin);
 
 
 const handleServiceSubmit = (e: React.FormEvent) => {
@@ -215,6 +246,11 @@ return (
                     />
                     </div>
                 </div>
+                {servicePriceMin && servicePriceMax && Number(servicePriceMax) <= Number(servicePriceMin) && (
+                <p className="text-red-600 text-sm">
+                    Max price must be greater than min price.
+                </p>
+                )}
                 </div>
 
                 <div className="space-y-2">
@@ -366,17 +402,12 @@ return (
                 <Label className="text-base font-medium text-gray-900">
                     Upload an Image (optional)
                 </Label>
-                <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setServiceImage(e.target.files?.[0] || null)}
-                    className="h-12"
+                <ImageUploader
+                    currentImage={serviceImage}
+                    onImageChange={(newImage) => setServiceImage(newImage)}
+                    label="Upload Service Image"
+                    aspectRatio={16 / 9}
                 />
-                {serviceImage  && (
-                    <p className="text-sm text-gray-600">
-                    Selected: <span className="font-medium">{serviceImage .name}</span>
-                    </p>
-                )}
                 </div>
 
 
@@ -384,6 +415,7 @@ return (
                 <Button
                     type="submit"
                     className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold rounded-xl h-14"
+                    disabled= {!isServiceValid}
                 >
                     Post Service
                 </Button>
@@ -460,6 +492,11 @@ return (
                     />
                     </div>
                 </div>
+                {jobBudgetMin && jobBudgetMax && Number(jobBudgetMax) <= Number(jobBudgetMin) && (
+                    <p className="text-red-600 text-sm">
+                        Max budget must be greater than min budget.
+                    </p>
+                    )}
                 </div>
 
                 <div className="space-y-2">
@@ -627,29 +664,23 @@ return (
                 />
                 </div>
 
-
-                {/* Image Upload */}
                 <div className="space-y-2">
                 <Label className="text-base font-medium text-gray-900">
                     Upload an Image (optional)
                 </Label>
-                <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setJobImage(e.target.files?.[0] || null)}
-                    className="h-12"
+                <ImageUploader
+                    currentImage={jobImage}
+                    onImageChange={(newImage) => setJobImage(newImage)}
+                    label="Upload Job Image"
+                    aspectRatio={16 / 9}
                 />
-                {jobImage  && (
-                    <p className="text-sm text-gray-600">
-                    Selected: <span className="font-medium">{jobImage .name}</span>
-                    </p>
-                )}
                 </div>
 
                 <div className="pt-4">
                 <Button
                     type="submit"
                     className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold rounded-xl h-14"
+                    disabled= {!isJobValid }
                 >
                     Post Job Request
                 </Button>
