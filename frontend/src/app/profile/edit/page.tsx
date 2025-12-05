@@ -491,10 +491,9 @@ const savePortfolioItem = async () => {
                         Tips for great portfolio images:
                       </h3>
                       <ul className="text-sm text-green-800 space-y-1.5">
-                        <li>• Show before & after results of your work</li>
-                        <li>• Include different types of projects you've completed</li>
-                        <li>• Use well-lit, clear photos that showcase quality</li>
-                        <li>• Add descriptive titles to help clients understand your work</li>
+                        <li>• Use clear, high-quality images that represent your services.</li>
+                        <li>• Include different project examples so clients can see your full range of services.</li>
+                        <li>• Use bright images with a simple, descriptive title.</li>
                       </ul>
                     </div>
                   </div>
@@ -609,13 +608,13 @@ const savePortfolioItem = async () => {
           <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-semibold mb-4">Add Portfolio Item</h2>
 
-            <div className="mb-6">
+            <div className="">
               <div className="relative w-full h-96 bg-gray-200 rounded-xl overflow-hidden mb-4">
                 <Cropper
                   image={portfolioImage}
                   crop={portfolioCrop}
                   zoom={portfolioZoom}
-                  aspect={16 / 9}
+                  aspect={1}
                   cropShape="rect"
                   onCropChange={setPortfolioCrop}
                   onZoomChange={setPortfolioZoom}
@@ -709,13 +708,13 @@ const savePortfolioItem = async () => {
         <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
           <h2 className="text-xl font-semibold mb-4">Edit Portfolio Item</h2>
 
-          <div className="mb-6">
+          <div className="">
             <div className="relative w-full h-96 bg-gray-200 rounded-xl overflow-hidden mb-4">
               <Cropper
                 image={modifiedImage}
                 crop={portfolioCrop}
                 zoom={portfolioZoom}
-                aspect={16 / 9}
+                aspect={1}
                 cropShape="rect"
                 onCropChange={setPortfolioCrop}
                 onZoomChange={setPortfolioZoom}
