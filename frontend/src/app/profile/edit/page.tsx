@@ -794,6 +794,8 @@ const savePortfolioItem = async () => {
                 A title is required to save this portfolio item.
               </p>
             )}
+
+
             <p className="text-xs text-gray-500">
               Give your portfolio item a descriptive title
             </p>

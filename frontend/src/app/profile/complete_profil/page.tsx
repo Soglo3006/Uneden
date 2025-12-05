@@ -32,7 +32,7 @@ UserPen,
 FileText,
 Languages,
 Briefcase,
-Image,
+FileUser,
 } from "lucide-react";
 
 // Types
@@ -100,11 +100,11 @@ const languageOptions = [
 
 const proficiencyOptions = ["Basic", "Conversational", "Fluent", "Native"];
 
-const personIcons = [User ,UserPen , FileText, Languages, Briefcase, Image];
-const companyIcons = [Users, Building2,FileText,null,null,Image];
+const personIcons = [User ,UserPen , FileText, Languages, Briefcase, FileUser ];
+const companyIcons = [Users, Building2,FileText,FileUser ];
 
-const companyStepTitles = [ "Company Info", "About the Company","Portfolio"];
-const personStepTitles = ["Basic Info","About You","Skills","Experience","Portfolio"];
+const companyStepTitles = [ "Company Info", "About the Company","Portfolio", "Summary"];
+const personStepTitles = ["Basic Info","About You","Skills","Experience","Portfolio", "Summary"];
 
 
 export default function OnboardingPage() {
@@ -144,13 +144,39 @@ export default function OnboardingPage() {
     setData(prev => ({ ...prev, accountType }));
     }, [accountType]);
 
+    useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key !== "Enter") return;
+
+        const target = e.target as HTMLElement;
+
+        // ⛔️ NE PAS passer au step suivant quand on est dans l'input de skills
+        if (target.id === "skill-input") {
+        return; // laisse l'input gérer l'Enter
+        }
+
+        // ⛔️ NE PAS casser les Textareas
+        if (target.tagName === "TEXTAREA") return;
+
+        // NEXT STEP (si valide)
+        if (canProceed()) {
+        e.preventDefault();
+        handleNext();
+        }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [currentStep, data]);
+
+
+
     const titles = accountType === "company" ? companyStepTitles : personStepTitles;
     const icons  = accountType === "company" ? companyIcons : personIcons;
 
 
-    const totalSteps = accountType === "company" ? 3 : 5;
+    const totalSteps = accountType === "company" ? 4 : 6;
 
-    // Step validation
     const isStep1Valid =
     accountType === "person"
         ? data.fullName.trim() !== "" &&
@@ -626,44 +652,54 @@ export default function OnboardingPage() {
                     <>
                     <div>
                         <Label className="text-base font-medium text-gray-900 mb-3 block">
-                        Skills <span className="text-red-500">*</span>
-                        <span className="text-gray-500 font-normal text-sm ml-2">
+                            Skills <span className="text-red-500">*</span>
+                            <span className="text-gray-500 font-normal text-sm ml-2">
                             ({data.skills.length}/10)
-                        </span>
+                            </span>
                         </Label>
 
                         <div className="flex gap-2">
-                        <Input
+                            <Input
+                            id="skill-input"
                             type="text"
                             placeholder="Type your skill and press Enter"
                             value={newSkill}
                             onChange={(e) => setNewSkill(e.target.value)}
-                            onKeyPress={(e) => e.key === "Enter" && handleAddSkill()}
+                            onKeyDown={(e) => e.key === "Enter" && handleAddSkill()}
                             className="h-12"
                             disabled={data.skills.length >= 10}
-                        />
+                            />
+
+                            <Button 
+                            onClick={handleAddSkill}
+                            className="h-12 px-4 bg-green-600 text-white hover:bg-green-700"
+                            disabled={!newSkill.trim() || data.skills.length >= 10}
+                            >
+                            Add
+                            </Button>
                         </div>
 
                         {data.skills.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-4">
+                            <div className="flex flex-wrap gap-2 mt-4">
                             {data.skills.map((skill) => (
-                            <Badge
+                                <Badge
                                 key={skill}
                                 variant="secondary"
                                 className="bg-green-100 text-green-700 pl-3 pr-2 py-1.5 text-sm"
-                            >
+                                >
                                 {skill}
                                 <button
-                                onClick={() => handleRemoveSkill(skill)}
-                                className="ml-2 hover:text-red-600"
+                                    onClick={() => handleRemoveSkill(skill)}
+                                    className="ml-2 hover:text-red-600"
                                 >
-                                <X className="h-3 w-3" />
+                                    <X className="h-3 w-3" />
                                 </button>
-                            </Badge>
+                                </Badge>
                             ))}
-                        </div>
+                            </div>
                         )}
-                    </div>
+                        </div>
+
 
                     {/* LANGUAGES */}
                     <div>
@@ -742,12 +778,20 @@ export default function OnboardingPage() {
                         <div className="flex gap-2">
                         <Input
                             type="text"
+                            id="skill-input"
                             placeholder="e.g., Residential Cleaning, Electrical Repair"
                             value={newSkill}
                             onChange={(e) => setNewSkill(e.target.value)}
-                            onKeyPress={(e) => e.key === "Enter" && handleAddSkill()}
+                            onKeyDown={(e) => e.key === "Enter" && handleAddSkill()}
                             className="h-12"
                         />
+                        <Button 
+                        onClick={handleAddSkill}
+                        className="h-12 px-4 bg-green-600 text-white hover:bg-green-700"
+                        disabled={!newSkill.trim() || data.skills.length >= 10}
+                        >
+                        Add
+                        </Button>
                         </div>
 
                         {data.skills.length > 0 && (
@@ -824,7 +868,7 @@ export default function OnboardingPage() {
             )}
 
 
-            {currentStep === 4 && (
+            {accountType === "person" && currentStep === 4 && (
                 <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
                 <h2 className="text-xl font-bold text-gray-900 mb-2">Work Experience</h2>
                 <p className="text-gray-600 mb-6">
@@ -979,6 +1023,95 @@ export default function OnboardingPage() {
                 </div>
                 </Card>
             )}
+
+            {currentStep === totalSteps && (
+            <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Summary</h2>
+                <p className="text-gray-600 mb-6">
+                Review your information before finishing your profile.
+                </p>
+                <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                    <img 
+                    src={data.avatar || "/default-avatar.png"}
+                    alt="avatar"
+                    className="w-16 h-16 rounded-full object-cover"
+                    />
+                    <div>
+                    <h3 className="text-lg font-semibold">{data.fullName || data.companyName}</h3>
+                    <p className="text-gray-600">{accountType === "person" ? data.profession : data.industry}</p>
+                    </div>
+                </div>
+                <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Contact</h4>
+                    <p className="text-gray-700"><strong>Email:</strong> {data.email}</p>
+                    <p className="text-gray-700"><strong>Phone:</strong> {data.phone}</p>
+                    <p className="text-gray-700"><strong>Address:</strong> {data.adresse}, {data.ville}, {data.province}</p>
+                </div>
+                <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                    {accountType === "person" ? "Bio" : "Company Description"}
+                    </h4>
+                    <p className="text-gray-700 whitespace-pre-line">{accountType === "person" ? data.bio : data.companyBio}</p>
+                </div>
+                {data.skills.length > 0 && (
+                    <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Skills / Services</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {data.skills.map((skill) => (
+                        <span key={skill} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+                            {skill}
+                        </span>
+                        ))}
+                    </div>
+                    </div>
+                )}
+                {accountType === "person" && (
+                    <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Languages</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {data.languages.map((lang) => (
+                        <span key={lang.id} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                            {lang.language} – {lang.proficiency}
+                        </span>
+                        ))}
+                    </div>
+                    </div>
+                )}
+                {data.experiences.length > 0 && (
+                    <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Experience</h4>
+                    <div className="space-y-4">
+                        {data.experiences.map((exp) => (
+                        <div key={exp.id} className="border border-gray-200 rounded-lg p-4">
+                            <h5 className="font-medium">{exp.title} @ {exp.company}</h5>
+                            <p className="text-sm text-gray-500">{exp.period}</p>
+                            <p className="text-gray-700 mt-2">{exp.description}</p>
+                        </div>
+                        ))}
+                    </div>
+                    </div>
+                )}
+                {data.portfolio.length > 0 && (
+                    <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Portfolio</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {data.portfolio.map((item) => (
+                        <img
+                            key={item.id}
+                            src={item.image}
+                            alt={item.title}
+                            className="w-full aspect-square rounded-lg object-cover"
+                        />
+                        ))}
+                    </div>
+                    </div>
+                )}
+
+                </div>
+            </Card>
+            )}
+
 
             <div className="flex justify-between mt-8">
                 <Button
