@@ -79,6 +79,9 @@ export default function EditProfilePage() {
   const [portfolioZoom, setPortfolioZoom] = useState(1);
   const [portfolioCroppedAreaPixels, setPortfolioCroppedAreaPixels] = useState(null);
   const [isEditingExisting, setIsEditingExisting] = useState(false);
+  const [errorPortfolio, setErrorPortfolio] = useState(false);
+  const [errorEditPortfolio, setErrorEditPortfolio] = useState(false);
+
 
   const handlePortfolioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
@@ -139,7 +142,7 @@ export default function EditProfilePage() {
   if (!modifiedImage || !editingPortfolioId) return;
   
   if (!editingPortfolioTitle.trim()) {
-    alert("Please enter a title for your portfolio item.");
+    setErrorEditPortfolio(true);
     return;
   }
 
@@ -226,7 +229,7 @@ const savePortfolioItem = async () => {
   if (!portfolioImage) return;
   
   if (!portfolioTitle.trim()) {
-    alert("Please enter a title for your portfolio item.");
+    setErrorPortfolio(true);
     return;
   }
 
@@ -476,9 +479,9 @@ const savePortfolioItem = async () => {
           </Card>
 
           <Card className="p-6 sm:p-8 mb-2">
-            <div className="mb-6">
+            <div className="">
               <h2 className="text-xl font-bold text-gray-900 mb-2">Portfolio</h2>
-              <p className="text-gray-600 mb-4">Upload images that represent your work</p>
+              <p className="text-gray-600">Upload images that represent your work</p>
               
               {formData.portfolio.length === 0 && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -502,10 +505,10 @@ const savePortfolioItem = async () => {
             </div>
 
             {formData.portfolio.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {formData.portfolio.map((item) => (
                   <div key={item.id} className="relative group">
-                    <div className="relative overflow-hidden rounded-lg aspect-square">
+                    <div className="relative overflow-hidden rounded-lg aspect-square max-w-[300px] mx-auto">
                       <img
                         src={item.image}
                         alt={item.title}
@@ -667,10 +670,16 @@ const savePortfolioItem = async () => {
                 type="text"
                 placeholder="e.g., Kitchen Renovation Project"
                 value={portfolioTitle}
-                onChange={(e) => setPortfolioTitle(e.target.value)}
+                onChange={(e) => {setPortfolioTitle(e.target.value); if (errorPortfolio) setErrorPortfolio(false);}}
+                onKeyDown={(e) => e.key === "Enter" && savePortfolioItem()}
                 className="h-12"
                 autoFocus
               />
+              {errorPortfolio && (
+                <p className="text-red-500 text-sm mt-1">
+                  A title is required to add this portfolio item.
+                </p>
+              )}
               <p className="text-xs text-gray-500">
                 Give your portfolio item a descriptive title
               </p>
@@ -763,14 +772,28 @@ const savePortfolioItem = async () => {
               Title <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="editPortfolioTitle"
-              type="text"
-              placeholder="e.g., Kitchen Renovation Project"
-              value={editingPortfolioTitle}
-              onChange={(e) => setEditingPortfolioTitle(e.target.value)}
-              className="h-12"
-              autoFocus
+            id="editPortfolioTitle"
+            type="text"
+            placeholder="e.g., Kitchen Renovation Project"
+            value={editingPortfolioTitle}
+            onChange={(e) => {
+              setEditingPortfolioTitle(e.target.value);
+              if (errorEditPortfolio) setErrorEditPortfolio(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                saveModifiedPortfolioItem();
+              }
+            }}
+            className="h-12"
+            autoFocus
             />
+            {errorEditPortfolio && (
+              <p className="text-red-500 text-sm mt-1">
+                A title is required to save this portfolio item.
+              </p>
+            )}
             <p className="text-xs text-gray-500">
               Give your portfolio item a descriptive title
             </p>

@@ -215,12 +215,12 @@ return (
 
 
         <Card className="p-6 mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Portfolio</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Portfolio</h2>
         {userData.portfolio.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {userData.portfolio.map((item) => (
                 <div key={item.id} className="group cursor-pointer">
-                <div className="relative overflow-hidden rounded-lg mb-2 aspect-square">
+                <div className="relative overflow-hidden rounded-lg mb-2 aspect-square max-w-[300px] mx-auto">
                     <img
                     src={item.image}
                     alt={item.title}
