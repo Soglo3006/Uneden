@@ -101,10 +101,109 @@ const languageOptions = [
 
 const proficiencyOptions = ["Basic", "Conversational", "Fluent", "Native"];
 
+// Suggestions for professions
+const professionSuggestions = [
+    "Electrician",
+    "Plumber",
+    "Carpenter",
+    "House Cleaner",
+    "Math Tutor",
+    "English Tutor",
+    "Personal Trainer",
+    "Graphic Designer",
+    "Web Developer",
+    "Photographer",
+    "Videographer",
+    "Painter",
+    "Landscaper",
+    "Handyman",
+    "HVAC Technician",
+    "Mechanic",
+    "Dog Walker",
+    "Pet Sitter",
+    "Babysitter",
+    "Chef",
+    "Massage Therapist",
+    "Yoga Instructor",
+    "Music Teacher",
+    "Piano Teacher",
+    "Guitar Teacher",
+];
+
+// Suggestions for skills (person)
+const skillSuggestions = [
+    "Electrical Work",
+    "Plumbing",
+    "Carpentry",
+    "House Cleaning",
+    "Deep Cleaning",
+    "Tutoring",
+    "Math",
+    "English",
+    "French",
+    "Personal Training",
+    "Graphic Design",
+    "Web Development",
+    "Photography",
+    "Video Editing",
+    "Painting",
+    "Landscaping",
+    "Garden Maintenance",
+    "Home Repairs",
+    "HVAC Repair",
+    "Auto Repair",
+    "Dog Training",
+    "Pet Care",
+    "Child Care",
+    "Cooking",
+    "Massage",
+    "Yoga",
+    "Piano",
+    "Guitar",
+    "Microsoft Office",
+    "Adobe Photoshop",
+    "Customer Service",
+];
+
+const serviceSuggestions = [
+    "Residential Cleaning",
+    "Commercial Cleaning",
+    "Deep Cleaning",
+    "Electrical Services",
+    "Electrical Repair",
+    "Electrical Installation",
+    "Plumbing Services",
+    "Plumbing Repair",
+    "Drain Cleaning",
+    "Construction",
+    "Home Renovation",
+    "Kitchen Renovation",
+    "Bathroom Renovation",
+    "Roofing",
+    "HVAC Services",
+    "Heating & Cooling",
+    "Landscaping Services",
+    "Lawn Care",
+    "Snow Removal",
+    "Moving Services",
+    "Pest Control",
+    "Painting Services",
+    "Interior Painting",
+    "Exterior Painting",
+    "Carpet Cleaning",
+    "Window Cleaning",
+    "Pressure Washing",
+    "Web Design",
+    "Digital Marketing",
+    "SEO Services",
+    "Catering",
+    "Event Planning",
+];
+
 const personIcons = [User ,UserPen , FileText, Languages, Briefcase, FileUser ];
 const companyIcons = [Users, Building2,FileText,FileUser ];
 
-const companyStepTitles = [ "Company Info", "About the Company","Portfolio", "Summary"];
+const companyStepTitles = [ "Company Info", "About the Company","Services", "Summary"];
 const personStepTitles = ["Basic Info","About You","Skills","Experience","Portfolio", "Summary"];
 
 
@@ -112,6 +211,9 @@ export default function OnboardingPage() {
     const [currentStep, setCurrentStep] = useState(1);
     const [showSuccess, setShowSuccess] = useState(false);
     const [newSkill, setNewSkill] = useState("");
+    const [professionInput, setProfessionInput] = useState("");
+    const [showProfessionSuggestions, setShowProfessionSuggestions] = useState(false);
+
 
     const [data, setData] = useState<OnboardingData>({
     accountType: "",
@@ -229,13 +331,15 @@ export default function OnboardingPage() {
         }
     };
 
-    // Skills handlers
     const handleAddSkill = () => {
-        if (newSkill.trim() && !data.skills.includes(newSkill.trim()) && data.skills.length < 10) {
-        setData({ ...data, skills: [...data.skills, newSkill.trim()] });
+        const skill = newSkill.trim();
+
+        if (!skill) return;
+        if (data.skills.includes(skill)) return;
+        setData({ ...data, skills: [...data.skills, skill] });
         setNewSkill("");
-        }
-    };
+        };
+
 
     const handleRemoveSkill = (skill: string) => {
         setData({ ...data, skills: data.skills.filter((s) => s !== skill) });
@@ -550,19 +654,54 @@ export default function OnboardingPage() {
                     {/* Profession */}
                     {accountType === "person" && (
                         <>
-                        <div className="space-y-2">
-                            <Label htmlFor="profession" className="text-base font-medium text-gray-900">
-                            Profession / Title <span className="text-red-500">*</span>
+                        <div className="space-y-2 relative">
+                            <Label className="text-base font-medium text-gray-900">
+                                Profession / Title <span className="text-red-500">*</span>
                             </Label>
+
                             <Input
-                            id="profession"
-                            type="text"
-                            placeholder="e.g., Electrician, Math Tutor, House Cleaner"
-                            value={data.profession}
-                            onChange={(e) => setData({ ...data, profession: e.target.value })}
-                            className="h-12"
+                                id="profession"
+                                type="text"
+                                placeholder="e.g., Electrician, Math Tutor, House Cleaner"
+                                value={professionInput}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setProfessionInput(value);
+                                    setData({ ...data, profession: value });
+                                    setShowProfessionSuggestions(!!value.trim());
+                                }}
+                                className="h-12"
+                                onFocus={() => {
+                                    if (professionInput.trim()) setShowProfessionSuggestions(true);
+                                }}
+                                onBlur={() => {
+                                    setTimeout(() => setShowProfessionSuggestions(false), 150);
+                                }}
                             />
+                                {showProfessionSuggestions && professionInput.length > 0 && (
+                                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-20 max-h-38 overflow-y-auto">
+                                        {professionSuggestions
+                                            .filter((p) =>
+                                                p.toLowerCase().includes(professionInput.toLowerCase())
+                                            )
+                                            .slice(0, 6)
+                                            .map((suggestion) => (
+                                                <div
+                                                    key={suggestion}
+                                                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                                    onMouseDown={() => {
+                                                        setData({ ...data, profession: suggestion });
+                                                        setProfessionInput(suggestion);
+                                                        setShowProfessionSuggestions(false);
+                                                    }}
+                                                >
+                                                    {suggestion}
+                                                </div>
+                                            ))}
+                                    </div>
+                                )}
                         </div>
+
 
                         {/* Bio */}
                         <div className="space-y-2">
@@ -674,6 +813,7 @@ export default function OnboardingPage() {
                         </Label>
 
                         <div className="flex gap-2">
+                             <div className="relative flex-1">
                             <Input
                             id="skill-input"
                             type="text"
@@ -684,7 +824,33 @@ export default function OnboardingPage() {
                             className="h-12"
                             disabled={data.skills.length >= 10}
                             />
-
+                            {newSkill.length > 0 && (
+                                <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-20 max-h-38 overflow-y-auto">
+                                    {skillSuggestions
+                                    .filter((s) =>
+                                        s.toLowerCase().includes(newSkill.toLowerCase())
+                                    )
+                                    .slice(0, 6)
+                                    .map((suggestion) => (
+                                        <div
+                                        key={suggestion}
+                                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                        onMouseDown={() => {
+                                        if (!data.skills.includes(suggestion)) {
+                                            setData({
+                                            ...data,
+                                            skills: [...data.skills, suggestion],
+                                            });
+                                        }
+                                        setNewSkill(""); 
+                                        }}
+                                        >
+                                        {suggestion}
+                                        </div>
+                                    ))}
+                                </div>
+                                )}
+                            </div>
                             <Button 
                             onClick={handleAddSkill}
                             className="h-12 px-4 bg-green-600 text-white hover:bg-green-700"
@@ -791,6 +957,7 @@ export default function OnboardingPage() {
                         </Label>
 
                         <div className="flex gap-2">
+                             <div className="relative flex-1">
                         <Input
                             type="text"
                             id="skill-input"
@@ -800,6 +967,34 @@ export default function OnboardingPage() {
                             onKeyDown={(e) => e.key === "Enter" && handleAddSkill()}
                             className="h-12"
                         />
+
+                        {newSkill.length > 0 && (
+                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-20 max-h-38 overflow-y-auto">
+                                {serviceSuggestions
+                                .filter((s) =>
+                                    s.toLowerCase().includes(newSkill.toLowerCase())
+                                )
+                                .slice(0, 6)
+                                .map((suggestion) => (
+                                    <div
+                                    key={suggestion}
+                                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                    onMouseDown={() => {
+                                    if (!data.skills.includes(suggestion)) {
+                                        setData({
+                                        ...data,
+                                        skills: [...data.skills, suggestion],
+                                        });
+                                    }
+                                    setNewSkill("");
+                                    }}
+                                    >
+                                    {suggestion}
+                                    </div>
+                                ))}
+                            </div>
+                            )}
+                        </div>
                         <Button 
                         onClick={handleAddSkill}
                         className="h-12 px-4 bg-green-600 text-white hover:bg-green-700"
