@@ -127,7 +127,7 @@ return (
         </div>
         <Card className="p-8 mb-8">
         <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
+            <Avatar className="w-45 h-45 border-4 border-white shadow-lg">
             <AvatarImage src={userData.avatar} alt={userData.name} />
             <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
             </Avatar>

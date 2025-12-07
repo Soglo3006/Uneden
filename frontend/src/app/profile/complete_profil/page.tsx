@@ -33,6 +33,7 @@ FileText,
 Languages,
 Briefcase,
 FileUser,
+ImageIcon,
 } from "lucide-react";
 
 // Types
@@ -192,7 +193,7 @@ export default function OnboardingPage() {
 
     const isStep2Valid = accountType === "person" ? data.bio.length >= 80 && data.profession.trim() !== "" : (data.companyBio?.length ?? 0) >= 80 && data.industry.trim() !== "";
     const isStep3Valid = accountType === "person" ? data.skills.length > 0 && data.languages.length > 0 : data.skills.length > 0;
-    const isStep4Valid = true; // Experience is optional
+    const isStep4Valid = true; // Experience is optional and for the summary
     const isStep5Valid = true; // Portfolio is optional
 
     const canProceed = () => {
@@ -207,6 +208,8 @@ export default function OnboardingPage() {
             return isStep4Valid;
         case 5:
             return isStep5Valid;
+        case 6:
+            return true;
         default:
             return false;
         }
@@ -400,16 +403,17 @@ export default function OnboardingPage() {
                 <p className="text-gray-600">Let's start with the basics</p>
 
                 <div className="space-y-6">
-                    <div className="flex flex-col items-center">
+                    {accountType === "person" && (
+                    <div>
+                        <div className="flex flex-col items-center">
                     <ProfilePictureUploader
                     currentProfilePicture={data.avatar}
                     userName={data.fullName}
                     onProfileChange={(newProfilePicture) => setData({ ...data, avatar: newProfilePicture })}
-                    size="md"
+                    size="xl"
                     showLabel={true}
                     />
                     </div>
-                    {accountType === "person" && (
                     <div className="space-y-2">
                         <Label htmlFor="fullName" className="text-base font-medium text-gray-900">
                         Full Name
@@ -422,9 +426,20 @@ export default function OnboardingPage() {
                         className="h-12"
                         />
                     </div>
+                    </div>
                     )}
 
                     {accountType === "company" && (
+                        <div>
+                        <div className="flex flex-col items-center">
+                    <ProfilePictureUploader
+                    currentProfilePicture={data.avatar}
+                    userName={data.companyName}
+                    onProfileChange={(newProfilePicture) => setData({ ...data, avatar: newProfilePicture })}
+                    size="xl"
+                    showLabel={true}
+                    />
+                    </div>
                     <div className="space-y-2">
                         <Label htmlFor="companyName" className="text-base font-medium text-gray-900">
                         Company Name
@@ -437,9 +452,9 @@ export default function OnboardingPage() {
                         className="h-12"
                         />
                     </div>
+                    </div>
                     )}
 
-                    {/* Email */}
                     <div className="space-y-2">
                     <Label htmlFor="email" className="text-base font-medium text-gray-900">
                         {accountType === "company" ? "Company Email" : "Email"}
@@ -1011,7 +1026,7 @@ export default function OnboardingPage() {
 
                     {data.portfolio.length === 0 && (
                     <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">
-                        <Image className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                        <ImageIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-500 mb-4">No portfolio items yet</p>
                     </div>
                     )}
@@ -1026,8 +1041,8 @@ export default function OnboardingPage() {
 
             {currentStep === totalSteps && (
             <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Summary</h2>
-                <p className="text-gray-600 mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Summary</h2>
+                <p className="text-gray-600">
                 Review your information before finishing your profile.
                 </p>
                 <div className="space-y-6">
@@ -1035,7 +1050,7 @@ export default function OnboardingPage() {
                     <img 
                     src={data.avatar || "/default-avatar.png"}
                     alt="avatar"
-                    className="w-16 h-16 rounded-full object-cover"
+                    className="w-45 h-45 rounded-full object-cover"
                     />
                     <div>
                     <h3 className="text-lg font-semibold">{data.fullName || data.companyName}</h3>

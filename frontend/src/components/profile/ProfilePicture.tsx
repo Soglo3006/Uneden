@@ -11,7 +11,7 @@ interface ProfilePictureUploaderProps {
 currentProfilePicture: string;
 userName: string;
 onProfileChange: (newProfilePicture: string) => void;
-size?: "sm" | "md" | "lg";
+size?: "sm" | "md" | "lg" | "xl" | "2xl";
 showLabel?: boolean;
 }
 
@@ -31,6 +31,7 @@ export default function ProfilePictureUploader({
             sm: "w-16 h-16",
             md: "w-24 h-24",
             lg: "w-32 h-32",
+            xl: "w-45 h-45",
         };
 
         const handleProfileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

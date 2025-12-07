@@ -96,18 +96,18 @@ return (
             </Link>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-6">
-            <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col md:flex-row gap-6 items-start">
+            <div className="flex flex-col items-start gap-3">
             <ProfilePictureUploader
             currentProfilePicture={userProfilePicture}
             userName="Alexandre Booh Louha"
             onProfileChange={(newProfilePicture) => setUserProfilePicture(newProfilePicture)}
-            size="md"
+            size="xl"
             showLabel={true}
             />
             </div>
 
-            <div className="flex-1 space-y-3">
+            <div className="flex-1 space-y-3 my-6">
             <div className="flex items-center gap-3 text-gray-700">
                 <User className="h-4 w-4 text-gray-400" />
                 <span className="font-medium">Alexandre Booh Louha</span>

@@ -319,7 +319,7 @@ const savePortfolioItem = async () => {
                   currentProfilePicture={formData.avatar}
                   userName={formData.fullName}
                   onProfileChange={(newProfilePicture) => setFormData({ ...formData, avatar: newProfilePicture })}
-                  size="md"
+                  size="xl"
                   showLabel={true}
                   />
                 </div>
