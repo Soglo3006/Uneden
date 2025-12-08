@@ -104,12 +104,161 @@ rating: 4.9,
 reviews: 22,
 image: "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400&q=80",
 },
+{
+id: 5,
+title: "Move-in/Move-out Cleaning Service",
+price: 120,
+location: "Toronto, ON",
+rating: 5.0,
+reviews: 32,
+image: "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=400&q=80",
+},
+{
+id: 6,
+title: "Office Cleaning - Weekly Service",
+price: 95,
+location: "Toronto, ON",
+rating: 4.8,
+reviews: 28,
+image: "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400&q=80",
+},
+{
+id: 7,
+title: "Carpet & Upholstery Deep Clean",
+price: 85,
+location: "Toronto, ON",
+rating: 4.9,
+reviews: 22,
+image: "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400&q=80",
+},
+{
+id: 8,
+title: "Move-in/Move-out Cleaning Service",
+price: 120,
+location: "Toronto, ON",
+rating: 5.0,
+reviews: 32,
+image: "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=400&q=80",
+},
+{
+id: 9,
+title: "Office Cleaning - Weekly Service",
+price: 95,
+location: "Toronto, ON",
+rating: 4.8,
+reviews: 28,
+image: "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400&q=80",
+},
+{
+id: 10,
+title: "Carpet & Upholstery Deep Clean",
+price: 85,
+location: "Toronto, ON",
+rating: 4.9,
+reviews: 22,
+image: "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400&q=80",
+},
+{
+id: 11,
+title: "Professional Deep House Cleaning",
+price: 75,
+location: "Toronto, ON",
+rating: 4.9,
+reviews: 45,
+image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&q=80",
+},
+{
+id: 12,
+title: "Move-in/Move-out Cleaning Service",
+price: 120,
+location: "Toronto, ON",
+rating: 5.0,
+reviews: 32,
+image: "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=400&q=80",
+},
+{
+id: 13,
+title: "Office Cleaning - Weekly Service",
+price: 95,
+location: "Toronto, ON",
+rating: 4.8,
+reviews: 28,
+image: "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400&q=80",
+},
+{
+id: 14,
+title: "Carpet & Upholstery Deep Clean",
+price: 85,
+location: "Toronto, ON",
+rating: 4.9,
+reviews: 22,
+image: "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400&q=80",
+},
+{
+id: 15,
+title: "Move-in/Move-out Cleaning Service",
+price: 120,
+location: "Toronto, ON",
+rating: 5.0,
+reviews: 32,
+image: "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=400&q=80",
+},
+{
+id: 16,
+title: "Office Cleaning - Weekly Service",
+price: 95,
+location: "Toronto, ON",
+rating: 4.8,
+reviews: 28,
+image: "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400&q=80",
+},
+{
+id: 17,
+title: "Carpet & Upholstery Deep Clean",
+price: 85,
+location: "Toronto, ON",
+rating: 4.9,
+reviews: 22,
+image: "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400&q=80",
+},
+{
+id: 18,
+title: "Move-in/Move-out Cleaning Service",
+price: 120,
+location: "Toronto, ON",
+rating: 5.0,
+reviews: 32,
+image: "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=400&q=80",
+},
+{
+id: 19,
+title: "Office Cleaning - Weekly Service",
+price: 95,
+location: "Toronto, ON",
+rating: 4.8,
+reviews: 28,
+image: "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400&q=80",
+},
+{
+id: 20,
+title: "Carpet & Upholstery Deep Clean",
+price: 85,
+location: "Toronto, ON",
+rating: 4.9,
+reviews: 22,
+image: "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400&q=80",
+},
 ];
 
 
 
 export default function UserProfilePage() {
     const [showSettings, setShowSettings] = useState(false);
+    const [selectedPortfolio, setSelectedPortfolio] = useState(null);
+    const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false);
+    const MAX_DISPLAY = 8;
+    const visibleListings = userListings.slice(0, MAX_DISPLAY);
+
 
 return (
 <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -151,11 +300,11 @@ return (
             <div className="flex flex-wrap gap-3">
                 <Button className="bg-green-700 hover:bg-green-700 text-white gap-2">
                 <MessageCircle className="h-4 w-4" />
-                Contact me
+                View Messages
                 </Button>
                 <Button variant="outline" className="gap-2">
                 <Grid3x3 className="h-4 w-4" />
-                View all listings
+                View all my listings
                 </Button>
                 <Button variant="outline" className="gap-2" onClick={()=> setShowSettings(true)}>
                 <Settings className="h-4 w-4" />
@@ -219,7 +368,10 @@ return (
         {userData.portfolio.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {userData.portfolio.map((item) => (
-                <div key={item.id} className="group cursor-pointer">
+                <div key={item.id} className="group cursor-pointer" onClick={()=> {
+                    setSelectedPortfolio(item);
+                    setIsPortfolioModalOpen(true);
+                }}>
                 <div className="relative overflow-hidden rounded-lg mb-2 aspect-square max-w-[300px] mx-auto">
                     <img
                     src={item.image}
@@ -239,17 +391,13 @@ return (
             </div>
         )}
         </Card>
-
-
-    
-
         <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Listings by {userData.name}</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Listings made by you</h2>
         {userListings.length > 0 ? (
+            <div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {userListings.map((listing, index) => (
+            {visibleListings.map((listing, index) => (
                 <>
-                {/* Listing Card */}
                 <Card key={listing.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="relative h-48 overflow-hidden">
                     <img
@@ -283,7 +431,6 @@ return (
                     </div>
                 </Card>
 
-                {/* Ad Placeholder every 6 listings */}
                 {(index + 1) % 6 === 0 && index !== userListings.length - 1 && (
                     <Card className="overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300">
                     <div className="h-full flex items-center justify-center p-8">
@@ -294,6 +441,19 @@ return (
                 </>
             ))}
             </div>
+            {userListings.length > MAX_DISPLAY && (
+                <div className="flex justify-center mt-6">
+                    <Button 
+                        size="lg" 
+                        variant="outline" 
+                        className="gap-1"
+                    >
+                        View More
+                    </Button>
+                </div>
+            )}
+            </div>
+            
         ) : (
             <Card className="p-12">
             <div className="text-center">
@@ -317,6 +477,29 @@ return (
         <SettingsPage onClose={() => setShowSettings(false)} />
         </div>
 
+    </div>
+    )}
+
+    {isPortfolioModalOpen && selectedPortfolio && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-xl max-w-3xl p-4 relative animate-in fade-in duration-200">
+            <Button 
+                className="absolute top-6 right-6 p-2 bg-black/50 hover:bg-black/70 text-white rounded"
+                onClick={() => setIsPortfolioModalOpen(false)}
+            >
+                ✕
+            </Button>
+            <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-200 max-w-[500px] mx-auto">
+                <img 
+                    src={selectedPortfolio.image} 
+                    alt={selectedPortfolio.title}
+                    className="w-full h-full object-cover"
+                />
+            </div>
+            <h3 className="text-xl font-semibold text-center mt-4">
+                {selectedPortfolio.title}
+            </h3>
+        </div>
     </div>
     )}
 
