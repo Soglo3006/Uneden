@@ -101,7 +101,6 @@ const languageOptions = [
 
 const proficiencyOptions = ["Basic", "Conversational", "Fluent", "Native"];
 
-// Suggestions for professions
 const professionSuggestions = [
     "Electrician",
     "Plumber",
@@ -130,7 +129,6 @@ const professionSuggestions = [
     "Guitar Teacher",
 ];
 
-// Suggestions for skills (person)
 const skillSuggestions = [
     "Electrical Work",
     "Plumbing",
@@ -214,6 +212,15 @@ export default function OnboardingPage() {
     const [professionInput, setProfessionInput] = useState("");
     const [showProfessionSuggestions, setShowProfessionSuggestions] = useState(false);
 
+    const [showPortfolioModal, setShowPortfolioModal] = useState(false);
+    const [portfolioImage, setPortfolioImage] = useState<string | null>(null);
+    const [portfolioTitle, setPortfolioTitle] = useState("");
+    const [portfolioCrop, setPortfolioCrop] = useState({ x: 0, y: 0 });
+    const [portfolioZoom, setPortfolioZoom] = useState(1);
+    const [portfolioCroppedAreaPixels, setPortfolioCroppedAreaPixels] = useState(null);
+    const [errorPortfolio, setErrorPortfolio] = useState(false);
+
+
 
     const [data, setData] = useState<OnboardingData>({
     accountType: "",
@@ -244,24 +251,28 @@ export default function OnboardingPage() {
     const accountType = searchParams.get("type") || "person";
 
     useEffect(() => {
-    setData(prev => ({ ...prev, accountType }));
-    }, [accountType]);
+        setData(prev => ({ ...prev, accountType }));
+        }, [accountType]);
 
-    useEffect(() => {
+        useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key !== "Enter") return;
 
         const target = e.target as HTMLElement;
 
-        // ⛔️ NE PAS passer au step suivant quand on est dans l'input de skills
-        if (target.id === "skill-input") {
-        return; // laisse l'input gérer l'Enter
+        if (showPortfolioModal) {
+        e.preventDefault(); 
+
+        if (portfolioTitle.trim().length > 0) {
+            savePortfolioItem();
         }
 
-        // ⛔️ NE PAS casser les Textareas
+        return;
+        }
+
+        if (target.id === "skill-input") return;
         if (target.tagName === "TEXTAREA") return;
 
-        // NEXT STEP (si valide)
         if (canProceed()) {
         e.preventDefault();
         handleNext();
@@ -270,14 +281,10 @@ export default function OnboardingPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [currentStep, data]);
-
-
+    }, [currentStep, data, showPortfolioModal, portfolioTitle]);
 
     const titles = accountType === "company" ? companyStepTitles : personStepTitles;
     const icons  = accountType === "company" ? companyIcons : personIcons;
-
-
     const totalSteps = accountType === "company" ? 4 : 6;
 
     const isStep1Valid =
@@ -345,7 +352,6 @@ export default function OnboardingPage() {
         setData({ ...data, skills: data.skills.filter((s) => s !== skill) });
     };
 
-    // Language handlers
     const handleAddLanguage = () => {
         const newId = Math.max(0, ...data.languages.map((l) => l.id)) + 1;
         setData({
@@ -365,7 +371,6 @@ export default function OnboardingPage() {
         });
     };
 
-    // Experience handlers
     const handleAddExperience = () => {
         const newId = Math.max(0, ...data.experiences.map((e) => e.id)) + 1;
         setData({
@@ -404,22 +409,62 @@ export default function OnboardingPage() {
     }
     };
 
+    const handlePortfolioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-    // Portfolio handlers
-    const handleAddPortfolio = () => {
-        const newId = Math.max(0, ...data.portfolio.map((p) => p.id)) + 1;
-        setData({
-        ...data,
-        portfolio: [
-            ...data.portfolio,
-            {
-            id: newId,
-            image: `https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&q=80`,
-            title: "",
-            description: "",
-            },
-        ],
-        });
+        if (!file.type.startsWith("image/")) {
+            alert("Please upload an image file.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setPortfolioImage(reader.result as string);
+            setPortfolioCrop({ x: 0, y: 0 });
+            setPortfolioZoom(1);
+            setPortfolioTitle("");
+            setShowPortfolioModal(true);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const savePortfolioItem = async () => {
+        if (!portfolioImage || !portfolioTitle.trim()) {
+            setErrorPortfolio(true);
+            return;
+        }
+
+        try {
+            const cropped = await getCroppedImg(portfolioImage, portfolioCroppedAreaPixels);
+
+            const newItem = {
+                id: data.portfolio.length + 1,
+                image: cropped,
+                title: portfolioTitle.trim(),
+                description: ""
+            };
+
+            setData({
+                ...data,
+                portfolio: [...data.portfolio, newItem],
+            });
+
+            closePortfolioModal();
+        } catch (err) {
+            console.error("Cropping error:", err);
+            alert("Failed to crop image.");
+        }
+    };
+
+    const closePortfolioModal = () => {
+        setShowPortfolioModal(false);
+        setPortfolioImage(null);
+        setPortfolioTitle("");
+        setPortfolioCrop({ x: 0, y: 0 });
+        setPortfolioZoom(1);
+        setPortfolioCroppedAreaPixels(null);
+        setErrorPortfolio(false);
     };
 
     const handleRemovePortfolio = (id: number) => {
@@ -462,7 +507,7 @@ export default function OnboardingPage() {
         <div className="bg-white border-b border-gray-200 top-0 z-10">
             <div className="max-w-3xl mx-auto px-4 py-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-1">Complete Your Profile</h1>
-            <p className="text-gray-600 mb-6">Step {currentStep} of {totalSteps}</p>
+            <p className="text-gray-600">Step {currentStep} of {totalSteps}</p>
 
             <div className="relative">
                 <div className="flex justify-between mt-4">
@@ -503,7 +548,7 @@ export default function OnboardingPage() {
             <div className="max-w-2xl mx-auto">
             {currentStep === 1 && (
                 <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
-                <h2 className="text-xl font-bold text-gray-900">Profile Picture & Basic Info</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-0">Profile Picture & Basic Info</h2>
                 <p className="text-gray-600">Let's start with the basics</p>
 
                 <div className="space-y-6">
@@ -1043,7 +1088,12 @@ export default function OnboardingPage() {
                                 <SelectTrigger className="h-12 flex-1">
                                 <SelectValue placeholder="Select language" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent
+                                position="popper"
+                                side="bottom"
+                                sideOffset={0} 
+                                avoidCollisions={false}
+                                className="max-h-60">
                                 {languageOptions.map((option) => (
                                     <SelectItem key={option} value={option}>
                                     {option}
@@ -1080,8 +1130,8 @@ export default function OnboardingPage() {
 
             {accountType === "person" && currentStep === 4 && (
                 <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Work Experience</h2>
-                <p className="text-gray-600 mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Work Experience</h2>
+                <p className="text-gray-600">
                     Add your relevant work experience (Optional)
                 </p>
 
@@ -1170,8 +1220,8 @@ export default function OnboardingPage() {
 
             {currentStep === 5 && (
                 <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Portfolio</h2>
-                <p className="text-gray-600 mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Portfolio</h2>
+                <p className="text-gray-600">
                     Upload images that showcase your work (Optional)
                 </p>
 
@@ -1183,7 +1233,7 @@ export default function OnboardingPage() {
                             key={item.id}
                             className="border border-gray-200 rounded-xl overflow-hidden"
                         >
-                            <div className="relative aspect-video bg-gray-100">
+                            <div className="relative aspect-square bg-gray-100">
                             <img
                                 src={item.image}
                                 alt={item.title || "Portfolio item"}
@@ -1205,14 +1255,6 @@ export default function OnboardingPage() {
                                 }
                                 className="h-10"
                             />
-                            <Textarea
-                                placeholder="Short description..."
-                                value={item.description}
-                                onChange={(e) =>
-                                handleUpdatePortfolio(item.id, "description", e.target.value)
-                                }
-                                className="min-h-16 resize-none text-sm"
-                            />
                             </div>
                         </div>
                         ))}
@@ -1226,13 +1268,26 @@ export default function OnboardingPage() {
                     </div>
                     )}
 
-                    <Button variant="outline" onClick={handleAddPortfolio} className="w-full gap-2">
+                    <Button
+                    variant="outline"
+                    onClick={() => document.getElementById("portfolioInput")?.click()}
+                    className="w-full gap-2 cursor-pointer"
+                    >
                     <Plus className="h-4 w-4" />
                     Add Portfolio Item
                     </Button>
+
+                    <input
+                    type="file"
+                    accept="image/*"
+                    id="portfolioInput"
+                    className="hidden"
+                    onChange={handlePortfolioUpload}
+                    />
                 </div>
                 </Card>
             )}
+            
 
             {currentStep === totalSteps && (
             <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
@@ -1248,7 +1303,7 @@ export default function OnboardingPage() {
                     className="w-45 h-45 rounded-full object-cover"
                     />
                     <div>
-                    <h3 className="text-lg font-semibold">{data.fullName || data.companyName}</h3>
+                    <h3 className="text-lg font-semibold">{accountType === "person" ? data.fullName : data.companyName}</h3>
                     <p className="text-gray-600">{accountType === "person" ? data.profession : data.industry}</p>
                     </div>
                 </div>
@@ -1258,12 +1313,22 @@ export default function OnboardingPage() {
                     <p className="text-gray-700"><strong>Phone:</strong> {data.phone}</p>
                     <p className="text-gray-700"><strong>Address:</strong> {data.adresse}, {data.ville}, {data.province}</p>
                 </div>
-                <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">
-                    {accountType === "person" ? "Bio" : "Company Description"}
-                    </h4>
-                    <p className="text-gray-700 whitespace-pre-line">{accountType === "person" ? data.bio : data.companyBio}</p>
-                </div>
+                {(accountType === "person" ? data.bio.trim().length > 0 : (data.companyBio ?? "").trim().length > 0) && (
+                    <div>
+                        <h4 className="font-semibold text-gray-900 mb-2">
+                            {accountType === "person" ? "Bio" : "Company Description"}
+                        </h4>
+                        <p className="text-gray-700 whitespace-pre-line">
+                            {accountType === "person" ? data.bio : data.companyBio}
+                        </p>
+                    </div>
+                )}
+                {accountType === "company" && data.teamSize?.trim() && (
+                    <div>
+                        <h4 className="font-semibold text-gray-900 mb-2">Team Size</h4>
+                        <p className="text-gray-700">{data.teamSize}</p>
+                    </div>
+                )}
                 {data.skills.length > 0 && (
                     <div>
                     <h4 className="font-semibold text-gray-900 mb-2">Skills / Services</h4>
@@ -1276,44 +1341,58 @@ export default function OnboardingPage() {
                     </div>
                     </div>
                 )}
-                {accountType === "person" && (
+                {data.languages.length > 0 && (
                     <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Languages</h4>
-                    <div className="flex flex-wrap gap-2">
-                        {data.languages.map((lang) => (
-                        <span key={lang.id} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                            {lang.language} – {lang.proficiency}
-                        </span>
-                        ))}
-                    </div>
+                        <h4 className="font-semibold text-gray-900 mb-2">Languages</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {data.languages.map((lang) => (
+                                <span
+                                    key={lang.id}
+                                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                                >
+                                    {lang.language}
+                                    {lang.proficiency ? ` – ${lang.proficiency}` : ""}
+                                </span>
+                            ))}
+                        </div>
                     </div>
                 )}
-                {data.experiences.length > 0 && (
+                {data.experiences.some(exp =>
+                    exp.title.trim() ||
+                    exp.company.trim() ||
+                    exp.description.trim()
+                ) && (
                     <div>
-                    <h4 className="font-semibold text-gray-900 mb-2">Experience</h4>
-                    <div className="space-y-4">
-                        {data.experiences.map((exp) => (
-                        <div key={exp.id} className="border border-gray-200 rounded-lg p-4">
-                            <h5 className="font-medium">{exp.title} @ {exp.company}</h5>
-                            <p className="text-sm text-gray-500">{exp.period}</p>
-                            <p className="text-gray-700 mt-2">{exp.description}</p>
+                        <h4 className="font-semibold text-gray-900 mb-2">Experience</h4>
+                        <div className="space-y-4">
+                            {data.experiences
+                                .filter(exp =>
+                                    exp.title.trim() ||
+                                    exp.company.trim() ||
+                                    exp.description.trim()
+                                )
+                                .map((exp) => (
+                                    <div key={exp.id} className="border border-gray-200 rounded-lg p-4">
+                                        <h5 className="font-medium">{exp.title} @ {exp.company}</h5>
+                                        <p className="text-sm text-gray-500">{exp.period}</p>
+                                        <p className="text-gray-700 mt-2">{exp.description}</p>
+                                    </div>
+                                ))}
                         </div>
-                        ))}
-                    </div>
                     </div>
                 )}
                 {data.portfolio.length > 0 && (
                     <div>
                     <h4 className="font-semibold text-gray-900 mb-2">Portfolio</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {data.portfolio.map((item) => (
-                        <img
-                            key={item.id}
-                            src={item.image}
-                            alt={item.title}
-                            className="w-full aspect-square rounded-lg object-cover"
-                        />
-                        ))}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                    {data.portfolio.map((item) => (
+                        <div key={item.id} className="border rounded-lg overflow-hidden">
+                            <div className="relative aspect-square">
+                        <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                        </div>
+                        <p className="text-center p-2 text-sm font-medium">{item.title}</p>
+                        </div>
+                    ))}
                     </div>
                     </div>
                 )}
@@ -1373,6 +1452,45 @@ export default function OnboardingPage() {
                     </div>
                 </div>
                 )}
+            {showPortfolioModal && portfolioImage && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-3xl">
+                    
+                    <h2 className="text-xl font-semibold mb-4">Add Portfolio Item</h2>
+
+                    <div className="relative w-full h-80 bg-gray-200 rounded-lg overflow-hidden mb-4">
+                        <Cropper
+                        image={portfolioImage}
+                        crop={portfolioCrop}
+                        zoom={portfolioZoom}
+                        aspect={1}
+                        onCropChange={setPortfolioCrop}
+                        onCropComplete={( _, pixels ) => setPortfolioCroppedAreaPixels(pixels)}
+                        onZoomChange={setPortfolioZoom}
+                        />
+                    </div>
+
+                    <div className="space-y-2 mb-6">
+                        <Label>Title <span className="text-red-500">*</span></Label>
+                        <Input
+                        value={portfolioTitle}
+                        onChange={(e) => setPortfolioTitle(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="flex gap-3">
+                        <Button variant="outline" onClick={closePortfolioModal} className="flex-1">
+                        Cancel
+                        </Button>
+                        <Button onClick={savePortfolioItem} disabled={!portfolioTitle.trim()} className="flex-1 bg-green-600 text-white">
+                        Add to Portfolio
+                        </Button>
+                    </div>
+
+                    </div>
+                </div>
+                )}
+
         </main>
         </div>
     );
