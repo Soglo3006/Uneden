@@ -1,10 +1,13 @@
+// src/lib/types.ts
 export type Listing = {
-  id?: string; 
+  id: number;
   title: string;
   description?: string; 
-  price: number | string;
+  price: number;
   location: string;
   image: string;
+  imageUrl?: string; // alias pour image
+  postedTime?: string; // alias pour created_at
   created_at?: string;
 };
 

@@ -22,10 +22,7 @@ import Header  from "@/components/home/Header";
 import CategoryNav from "@/components/home/Category";
 import Footer from "@/components/home/Footer";
 
-
-
 export default function HomePage() {
-
   return (
     <div className="min-h-screen bg-white text-black">
       <Header/>
@@ -46,75 +43,16 @@ export default function HomePage() {
 
         <div className=" grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="grid lg:col-span-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
-              <p className="text-green-700 font-semibold">$20–40/hr</p>
-              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
-              <p className="text-green-700 font-semibold">$30–50/hr</p>
-              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
-              <p className="text-green-700 font-semibold">$20–40/hr</p>
-              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
-              <p className="text-green-700 font-semibold">$30–50/hr</p>
-              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
-              <p className="text-green-700 font-semibold">$30–50/hr</p>
-              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
-              <p className="text-green-700 font-semibold">$20–40/hr</p>
-              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
-              <p className="text-green-700 font-semibold">$30–50/hr</p>
-              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
-              <p className="text-green-700 font-semibold">$30–50/hr</p>
-              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Professional House Cleaning</h3>
-              <p className="text-green-700 font-semibold">$20–40/hr</p>
-              <p className="text-gray-500 text-sm">Toronto, ON · 2 hours ago</p>
-            </div>
-
-            <div className="border rounded-xl shadow-sm p-3">
-              <img src="/placeholder.jpg" className="w-full h-32 object-cover rounded-lg" />
-              <h3 className="font-semibold mt-3">Math Tutoring for High School</h3>
-              <p className="text-green-700 font-semibold">$30–50/hr</p>
-              <p className="text-gray-500 text-sm">Vancouver, BC · 5 hours ago</p>
-            </div>
+            {sampleListings.slice(0, 9).map((listing) => (
+              <Link key={listing.id} href={`/serviceDetail/${listing.id}`}>
+                <div className="border rounded-xl shadow-sm p-3 hover:shadow-md transition-shadow cursor-pointer">
+                  <img src={listing.image} className="w-full h-32 object-cover rounded-lg" />
+                  <h3 className="font-semibold mt-3">{listing.title}</h3>
+                  <p className="text-green-700 font-semibold">${listing.price}</p>
+                  <p className="text-gray-500 text-sm">{listing.location} · {listing.created_at}</p>
+                </div>
+              </Link>
+            ))}
 
             <div className="col-span-full mt-10">
               <h1 className="text-3xl font-bold mb-5">Popular Categories</h1>
@@ -148,18 +86,24 @@ export default function HomePage() {
             </div>
 
             <div className="col-span-full mt-10 ">
-              <h1 className="text-2xl font-bold mb-5">Listing near you</h1>
+              <h1 className="text-2xl font-bold mb-5">Listings near you</h1>
               <div className="grid lg:col-span-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                {sampleListings.map((listing) => (
-                  <div key={listing.title} className="border rounded-xl shadow-sm p-3">
-                    <img src={listing.image} className="w-full h-32 object-cover rounded-lg" />
-                    <h3 className="font-semibold mt-3">{listing.title}</h3>
-                    <p className="text-green-700 font-semibold">{listing.price}</p>
-                    <p className="text-gray-500 text-sm">{listing.location} · {listing.created_at}</p>
-                  </div>
+                {sampleListings.slice(9, 12).map((listing) => (
+                  <Link key={listing.id} href={`/serviceDetail/${listing.id}`}>
+                    <div className="border rounded-xl shadow-sm p-3 hover:shadow-md transition-shadow cursor-pointer">
+                      <img src={listing.image} className="w-full h-32 object-cover rounded-lg" />
+                      <h3 className="font-semibold mt-3">{listing.title}</h3>
+                      <p className="text-green-700 font-semibold">${listing.price}</p>
+                      <p className="text-gray-500 text-sm">{listing.location} · {listing.created_at}</p>
+                    </div>
+                  </Link>
                 ))}
               </div>
-
+              <Link href="/listings">
+                <Button className="mt-6 w-full bg-green-700 text-white hover:bg-green-800">
+                  View All Listings
+                </Button>
+              </Link>
             </div>
 
           </div>
