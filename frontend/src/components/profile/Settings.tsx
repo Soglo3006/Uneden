@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect  } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import ProfilePictureUploader from "@/components/profile/ProfilePicture"
@@ -18,28 +18,60 @@ Phone,
 MapPin,
 } from "lucide-react";
 
-export default function SettingsPage({onClose}) {
+export default function SettingsPage({onClose, scrollRef }) {
 
     const [userProfilePicture, setUserProfilePicture] = useState("");
 
+    const [screen, setScreen] = useState("default"); 
 
-const [notifications, setNotifications] = useState({
-email: true,
-sms: false,
-push: true,
-marketing: false,
+
+    useEffect(() => {
+        if (scrollRef?.current) {
+            scrollRef.current.scrollTop = 0;
+        }
+    }, [screen]);
+
+
+const [notifications, setNotifications] = useState(() => {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("fh_notifications");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          email: true,
+          sms: false,
+          push: true,
+          marketing: false,
+        };
+  }
 });
 
-const [privacy, setPrivacy] = useState({
-showProfile: true,
-showReviews: true,
-showLocation: false,
+const [privacy, setPrivacy] = useState(() => {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("fh_privacy");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          showProfile: true,
+          showReviews: true,
+          showLocation: false,
+        };
+  }
 });
 
-const [security, setSecurity] = useState({
-twoFactor: false,
-loginAlerts: true,
+
+const [security, setSecurity] = useState(() => {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("fh_security");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          twoFactor: false,
+          loginAlerts: true,
+        };
+  }
 });
+
 
 const toggleNotification = (key) => {
 setNotifications({ ...notifications, [key]: !notifications[key] });
@@ -59,8 +91,28 @@ const Toggle = ({ checked }) => (
 </div>
 );
 
+useEffect(() => {
+    localStorage.setItem("fh_notifications", JSON.stringify(notifications));
+    }, [notifications]);
+
+    useEffect(() => {
+    localStorage.setItem("fh_privacy", JSON.stringify(privacy));
+    }, [privacy]);
+
+    useEffect(() => {
+    localStorage.setItem("fh_security", JSON.stringify(security));
+    }, [security]);
+
+if (screen === "changePassword") return <ChangePasswordPage onBack={() => setScreen("default")} onClose={onClose} />;
+if (screen === "blockedUsers") return <BlockedUsersPage onBack={() => setScreen("default")} onClose={onClose} />;
+if (screen === "paymentMethods") return <PaymentMethodsPage onBack={() => setScreen("default")} onClose={onClose} />;
+if (screen === "billingHistory") return <BillingHistoryPage onBack={() => setScreen("default")} onClose={onClose} />;
+if (screen === "logout") return <LogoutPage onBack={() => setScreen("default")} onClose={onClose} />;
+if (screen === "deleteAccount") return <DeleteAccountPage onBack={() => setScreen("default")} onClose={onClose} />;
+
+
 return (
-<div className="min-h-screen bg-gray-50">
+<div className="bg-gray-50">
     <div className="bg-white border-b relative">
         <button
         onClick={onClose}
@@ -139,7 +191,7 @@ return (
         </div>
 
         <div className="space-y-4">
-            <Button variant="outline" className="w-full justify-between cursor-pointer">
+            <Button variant="outline" className="w-full justify-between cursor-pointer" onClick={() => setScreen("changePassword")}>
             <span>Change Password</span>
             <ChevronRight className="h-4 w-4" />
             </Button>
@@ -244,7 +296,7 @@ return (
             <Toggle checked={privacy.showLocation} />
             </div>
 
-            <Button variant="outline" className="w-full justify-between cursor-pointer">
+            <Button variant="outline" className="w-full justify-between cursor-pointer" onClick={() => setScreen("blockedUsers")}>
             <span>Blocked Users</span>
             <ChevronRight className="h-4 w-4" />
             </Button>
@@ -264,12 +316,12 @@ return (
 
         <div className="space-y-4">
 
-            <Button variant="outline" className="w-full justify-between cursor-pointer">
+            <Button variant="outline" className="w-full justify-between cursor-pointer" onClick={() => setScreen("paymentMethods")}>
             <span>Payment Methods</span>
             <ChevronRight className="h-4 w-4" />
             </Button>
 
-            <Button variant="outline" className="w-full justify-between cursor-pointer">
+            <Button variant="outline" className="w-full justify-between cursor-pointer" onClick={() => setScreen("billingHistory")}>
             <span>Billing History</span>
             <ChevronRight className="h-4 w-4" />
             </Button>
@@ -301,6 +353,7 @@ return (
             <Button
             variant="outline"
             className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50 cursor-pointer"
+            onClick={() => setScreen("logout")}
             >
             <span className="flex items-center gap-2">
                 <LogOut className="h-4 w-4" />
@@ -312,6 +365,7 @@ return (
             <Button
             variant="outline"
             className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50 cursor-pointer"
+            onClick={() => setScreen("deleteAccount")}
             >
             <span className="flex items-center gap-2">
                 <Trash2 className="h-4 w-4" />
@@ -328,4 +382,150 @@ return (
     </div>
 </div>
 );
+}
+
+function ChangePasswordPage({ onBack, onClose }) {
+  return (
+    <div className="bg-gray-50">
+      <div className="bg-white border-b relative">
+        <button onClick={onClose} className="absolute top-1 right-4 text-xl cursor-pointer">✕</button>
+        <button onClick={onBack} className="absolute top-1 left-4 text-gray-600 cursor-pointer">← Back</button>
+
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold text-gray-900">Change Password</h1>
+        </div>
+      </div>
+
+      <div className="mx-auto px-4 py-8 space-y-4">
+        <Card className="p-6">
+          <input type="password" placeholder="Old Password" className="w-full border rounded-lg p-3" />
+          <input type="password" placeholder="New Password" className="w-full border rounded-lg p-3" />
+          <input type="password" placeholder="Confirm New Password" className="w-full border rounded-lg p-3" />
+          <Button className="w-full bg-green-700 text-white hover:bg-green-800 cursor-pointer">
+            Update Password
+          </Button>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function BlockedUsersPage({ onBack, onClose }) {
+  const blocked = [
+    "John Smith",
+    "Emily Carter",
+    "Mario Lopez"
+  ];
+
+  return (
+    <div className=" bg-gray-50">
+      <div className="bg-white border-b relative">
+        <button onClick={onClose} className="absolute top-1 cursor-pointer right-4 text-xl">✕</button>
+        <button onClick={onBack} className="absolute top-1 cursor-pointer left-4 text-gray-600">← Back</button>
+
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold text-gray-900">Blocked Users</h1>
+        </div>
+      </div>
+
+      <div className="mx-auto px-4 py-8 space-y-4">
+        {blocked.map((u, i) => (
+          <Card key={i} className="p-4 flex justify-between items-center">
+            <span>{u}</span>
+            <Button variant="outline" className="cursor-pointer">Unblock</Button>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PaymentMethodsPage({ onBack, onClose }) {
+  return (
+    <div className="bg-gray-50">
+      <div className="bg-white border-b relative">
+        <button onClick={onClose} className="absolute top-1 cursor-pointer right-4 text-xl">✕</button>
+        <button onClick={onBack} className="absolute top-1 cursor-pointer left-4 text-gray-600">← Back</button>
+
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold text-gray-900">Payment Methods</h1>
+        </div>
+      </div>
+
+      <div className="mx-auto px-4 py-8 space-y-4">
+        <Card className="p-6">Coming soon...</Card>
+      </div>
+    </div>
+  );
+}
+
+function BillingHistoryPage({ onBack, onClose }) {
+  return (
+    <div className="bg-gray-50">
+      <div className="bg-white border-b relative">
+        <button onClick={onClose} className="absolute top-1 cursor-pointer right-4 text-xl">✕</button>
+        <button onClick={onBack} className="absolute top-1 cursor-pointer left-4 text-gray-600">← Back</button>
+
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold text-gray-900">Billing History</h1>
+        </div>
+      </div>
+
+      <div className="mx-auto px-4 py-8 space-y-4">
+        <Card className="p-6">Coming soon...</Card>
+      </div>
+    </div>
+  );
+}
+
+
+function LogoutPage({ onBack, onClose }) {
+  return (
+    <div className="bg-gray-50">
+      <div className="bg-white border-b relative">
+        <button onClick={onClose} className="absolute top-1 cursor-pointer right-4 text-xl">✕</button>
+        <button onClick={onBack} className="absolute top-1 cursor-pointer left-4 text-gray-600">← Back</button>
+
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold text-gray-900">Logout</h1>
+        </div>
+      </div>
+
+      <div className="mx-auto px-4 py-8 space-y-4">
+        <Card className="p-6">
+          <p className="text-gray-700 flex justify-center font-medium text-2xl">Are you sure you want to logout?</p>
+          <Button className="w-full bg-red-600 text-white cursor-pointer">Logout</Button>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+
+function DeleteAccountPage({ onBack, onClose }) {
+  return (
+    <div className="bg-gray-50">
+      <div className="bg-white border-b relative">
+        <button onClick={onClose} className="absolute top-1 cursor-pointer right-4 text-xl">✕</button>
+        <button onClick={onBack} className="absolute top-1 cursor-pointer left-4 text-gray-600">← Back</button>
+
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold text-red-600">Delete Account</h1>
+        </div>
+      </div>
+
+      <div className="mx-auto px-4 py-8 space-y-4">
+        <Card className="p-6 border-red-300">
+          <p className="text-gray-700 flex justify-center font-medium text-2xl">
+            Deleting your account is permanent.  
+            All your data, history, messages, and listings will be permanently removed.
+          </p>
+
+          <Button className="w-full bg-red-600 text-white hover:bg-red-700 cursor-pointer">
+            Confirm Delete
+          </Button>
+        </Card>
+      </div>
+    </div>
+  );
 }

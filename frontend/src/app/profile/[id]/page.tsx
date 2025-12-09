@@ -21,7 +21,7 @@ Ellipsis,
 UserStar,
 HeartPlus,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {useParams} from "next/navigation";
 import SettingsPage from "@/components/profile/Settings"
 import EllipsisPage from "@/components/profile/Ellipsis";
@@ -350,6 +350,9 @@ export default function UserProfilePage() {
 
     const visibleListings = (isOwner ? userData.userListings : userData2.userListings).slice(0, MAX_DISPLAY);
 
+    const settingsScrollRef = useRef(null);
+
+
     useEffect(() => {
         if (showSettings || showEllipsis || isPortfolioModalOpen) {
             document.body.style.overflow = 'hidden';
@@ -615,8 +618,9 @@ return (
     <Footer />
     {showSettings && (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
-        <div className="w-full max-w-3xl max-h-[90vh] bg-white rounded-xl shadow-xl p-6 overflow-y-auto animate-in fade-in duration-200">
-        <SettingsPage onClose={() => setShowSettings(false)} />
+        <div className="w-full max-w-3xl max-h-[90vh] bg-white rounded-xl shadow-xl p-6 overflow-y-auto animate-in fade-in duration-200"
+        ref={settingsScrollRef}>
+        <SettingsPage onClose={() => setShowSettings(false)} scrollRef={settingsScrollRef}/>
         </div>
     </div>
     )}
