@@ -74,7 +74,7 @@ export default function ImageUploader({
         <Button
           type="button"
           variant="outline"
-          className="w-full gap-2"
+          className="w-full gap-2 cursor-pointer"
           onClick={() => document.getElementById(`image-upload-${label}`)?.click()}
         >
           <Upload className="h-4 w-4" />
@@ -131,7 +131,7 @@ export default function ImageUploader({
                 step={0.1}
                 value={zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
-                className="w-full"
+                className="w-full cursor-pointer"
               />
             </div>
 
@@ -143,11 +143,11 @@ export default function ImageUploader({
                   setCrop({ x: 0, y: 0 });
                   setZoom(1);
                 }}
-                className="flex-1"
+                className="flex-1 cursor-pointer"
               >
                 Cancel
               </Button>
-              <Button onClick={saveCroppedImage} className="flex-1">
+              <Button onClick={saveCroppedImage} className="flex-1 cursor-pointer">
                 Save
               </Button>
             </div>

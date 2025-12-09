@@ -78,7 +78,7 @@ export default function ProfilePictureUploader({
 
             <Button
                 variant="outline"
-                className="gap-2"
+                className="gap-2 cursor-pointer"
                 onClick={() => document.getElementById("profileInput")?.click()}
                 type="button"
             >
@@ -113,10 +113,10 @@ export default function ProfilePictureUploader({
                 </div>
 
                 <div className="mt-4 flex justify-between">
-                <Button variant="outline" onClick={() => setShowCropper(false)} type="button">
+                <Button variant="outline" onClick={() => setShowCropper(false)} type="button" className="cursor-pointer">
                     Cancel
                 </Button>
-                <Button onClick={saveCroppedImage} type="button">Save</Button>
+                <Button onClick={saveCroppedImage} type="button" className="cursor-pointer">Save</Button>
                 </div>
             </div>
             </div>

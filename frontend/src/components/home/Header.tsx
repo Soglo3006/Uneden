@@ -24,7 +24,7 @@ export default function Header(){
     return (
         <div className="w-full border-b border-gray-200 shadow-sm bg-white">
         <div className="flex justify-center items-center space-x-5 p-5 max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-green-800">FieldHearts</h1>
+        <h1 className="text-2xl font-bold text-green-800 cursor-pointer">FieldHearts</h1>
         <div className="flex items-center space-x-2">
           <Search/>
           <Input
@@ -34,36 +34,36 @@ export default function Header(){
           />
         </div>
         <Select defaultValue="all">
-          <SelectTrigger className="w-[140px] border-gray-300 rounded-lg">
+          <SelectTrigger className="w-[140px] border-gray-300 rounded-lg cursor-pointer">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Posts</SelectItem>
-            <SelectItem value="find">Find Work</SelectItem>
-            <SelectItem value="hire">Hire Worker</SelectItem>
+            <SelectItem value="all"  className="cursor-pointer">All Posts</SelectItem>
+            <SelectItem value="find" className="cursor-pointer">Find Work</SelectItem>
+            <SelectItem value="hire" className="cursor-pointer">Hire Worker</SelectItem>
           </SelectContent>
         </Select>
         <div>
           <Select defaultValue="canada">
-            <SelectTrigger className="w-[140px] border-gray-300 rounded-lg">
+            <SelectTrigger className="w-[140px] border-gray-300 rounded-lg cursor-pointer">
               <SelectValue placeholder="Location" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>Country</SelectLabel>
-                <SelectItem value="canada">Canada</SelectItem>
-                <SelectItem value="USA">USA</SelectItem>
-                <SelectItem value="UK">UK</SelectItem>
+                <SelectItem value="canada" className="cursor-pointer">Canada</SelectItem>
+                <SelectItem value="USA" className="cursor-pointer">USA</SelectItem>
+                <SelectItem value="UK" className="cursor-pointer">UK</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
         </div>
         <div>
           <ToggleGroup type="single" variant="outline" size="lg">
-            <ToggleGroupItem value="EN" >
+            <ToggleGroupItem value="EN" className="cursor-pointer">
               <h1>EN</h1>
             </ToggleGroupItem>
-            <ToggleGroupItem value="FR" >
+            <ToggleGroupItem value="FR" className="cursor-pointer">
               <h1>FR</h1>
             </ToggleGroupItem>
           </ToggleGroup>
@@ -72,18 +72,18 @@ export default function Header(){
           <ButtonGroup>
             <div className="flex gap-4">
               <Link href="/login">
-                <Button variant="outline" size="lg">Sign In</Button>
+                <Button variant="outline" size="lg" className="cursor-pointer">Sign In</Button>
               </Link>
 
               <Link href="/register">
-                <Button variant="outline" size="lg">Register</Button>
+                <Button variant="outline" size="lg" className="cursor-pointer">Register</Button>
               </Link>
             </div>
           </ButtonGroup>
         </div>
         <div>
           <Link href="/post">
-          <Button className="bg-green-700 text-white hover:bg-green-800">Post</Button>
+          <Button className="bg-green-700 text-white hover:bg-green-800 cursor-pointer">Post</Button>
           </Link>
         </div>
       </div>

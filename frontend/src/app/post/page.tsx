@@ -161,7 +161,7 @@ return (
             className={`flex-1 flex items-center justify-center gap-3 py-4 px-6 rounded-xl border-2 transition-all duration-200 font-semibold text-lg ${
                 mode === "offer"
                 ? "bg-green-700 text-white border-green-700 shadow-lg"
-                : "bg-white text-gray-700 border-gray-200 hover:border-green-700 hover:bg-green-50"
+                : "bg-white text-gray-700 border-gray-200 hover:border-green-700 hover:bg-green-50 cursor-pointer"
             }`}
             >
             <span>Offer a Service</span>
@@ -172,7 +172,7 @@ return (
             className={`flex-1 flex items-center justify-center gap-3 py-4 px-6 rounded-xl border-2 transition-all duration-200 font-semibold text-lg ${
                 mode === "looking"
                 ? "bg-green-700 text-white border-green-700 shadow-lg"
-                : "bg-white text-gray-700 border-gray-200 hover:border-green-700 hover:bg-green-50"
+                : "bg-white text-gray-700 border-gray-200 hover:border-green-700 hover:bg-green-50 cursor-pointer"
             }`}
             >
             <span>Looking for a Worker</span>
@@ -275,12 +275,12 @@ return (
                         Category <span className="text-red-500">*</span>
                     </Label>
                     <Select value={serviceCategory} onValueChange={setServiceCategory}>
-                        <SelectTrigger className="h-12">
+                        <SelectTrigger className="h-12 cursor-pointer">
                         <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent>
                         {categories.map((cat) => (
-                            <SelectItem key={cat.name} value={cat.name}>
+                            <SelectItem key={cat.name} value={cat.name} className="cursor-pointer">
                             {cat.name}
                             </SelectItem>
                         ))}
@@ -296,9 +296,9 @@ return (
                         <Select
                             value={serviceSubcategory}
                             onValueChange={setServiceSubcategory}
-                            disabled={!serviceCategory}  // bloque si aucune catégorie choisie
+                            disabled={!serviceCategory}  
                         >
-                            <SelectTrigger className="h-12">
+                            <SelectTrigger className="h-12 cursor-pointer">
                             <SelectValue placeholder="Select a subcategory" />
                             </SelectTrigger>
 
@@ -306,7 +306,7 @@ return (
                             {categories
                                 .find((c) => c.name === serviceCategory)
                                 ?.subcategories.map((sub) => (
-                                <SelectItem key={sub} value={sub}>
+                                <SelectItem key={sub} value={sub} className="cursor-pointer">
                                     {sub}
                                 </SelectItem>
                                 ))}
@@ -320,12 +320,12 @@ return (
                         Type of Poster <span className="text-red-500">*</span>
                     </Label>
                     <Select value={servicePosterType} onValueChange={setServicePosterType}>
-                        <SelectTrigger className="h-12">
+                        <SelectTrigger className="h-12 cursor-pointer">
                         <SelectValue placeholder="Individual or Company" />
                         </SelectTrigger>
                         <SelectContent>
-                        <SelectItem value="individual">Individual</SelectItem>
-                        <SelectItem value="company">Company</SelectItem>
+                        <SelectItem value="individual" className="cursor-pointer">Individual</SelectItem>
+                        <SelectItem value="company" className="cursor-pointer">Company</SelectItem>
                         </SelectContent>
                     </Select>
                     </div>
@@ -339,14 +339,14 @@ return (
                         Availability <span className="text-red-500">*</span>
                     </Label>
                     <Select value={serviceAvailability} onValueChange={setServiceAvailability}>
-                        <SelectTrigger className="h-12">
+                        <SelectTrigger className="h-12 cursor-pointer">
                         <SelectValue placeholder="Select availability" />
                         </SelectTrigger>
                         <SelectContent>
-                        <SelectItem value="anytime">Anytime</SelectItem>
-                        <SelectItem value="weekends">Weekends</SelectItem>
-                        <SelectItem value="weekdays">Weekdays</SelectItem>
-                        <SelectItem value="evenings">Evenings</SelectItem>
+                        <SelectItem value="anytime" className="cursor-pointer">Anytime</SelectItem>
+                        <SelectItem value="weekends" className="cursor-pointer">Weekends</SelectItem>
+                        <SelectItem value="weekdays" className="cursor-pointer">Weekdays</SelectItem>
+                        <SelectItem value="evenings" className="cursor-pointer">Evenings</SelectItem>
                         </SelectContent>
                     </Select>
                     </div>
@@ -356,13 +356,13 @@ return (
                             Spoken Language <span className="text-red-500">*</span>
                         </Label>
                         <Select value={serviceLanguage} onValueChange={setServiceLanguage}>
-                            <SelectTrigger className="h-12">
+                            <SelectTrigger className="h-12 cursor-pointer">
                             <SelectValue placeholder="Preferred language" />
                             </SelectTrigger>
                             <SelectContent>
-                            <SelectItem value="french">French</SelectItem>
-                            <SelectItem value="english">English</SelectItem>
-                            <SelectItem value="bilingual">Bilingual</SelectItem>
+                            <SelectItem value="french" className="cursor-pointer">French</SelectItem>
+                            <SelectItem value="english" className="cursor-pointer">English</SelectItem>
+                            <SelectItem value="bilingual" className="cursor-pointer">Bilingual</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -372,13 +372,13 @@ return (
                         Mobility <span className="text-red-500">*</span>
                     </Label>
                     <Select value={serviceMobility} onValueChange={setServiceMobility}>
-                        <SelectTrigger className="h-12">
+                        <SelectTrigger className="h-12 cursor-pointer">
                         <SelectValue placeholder="Can you travel?" />
                         </SelectTrigger>
                         <SelectContent>
-                        <SelectItem value="yes">Yes</SelectItem>
-                        <SelectItem value="no">No</SelectItem>
-                        <SelectItem value="limited">Limited distance</SelectItem>
+                        <SelectItem value="yes" className="cursor-pointer">Yes</SelectItem>
+                        <SelectItem value="no" className="cursor-pointer">No</SelectItem>
+                        <SelectItem value="limited" className="cursor-pointer">Limited distance</SelectItem>
                         </SelectContent>
                     </Select>
                     </div>
@@ -414,7 +414,7 @@ return (
                 <div className="pt-4">
                 <Button
                     type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold rounded-xl h-14"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold rounded-xl h-14 cursor-pointer"
                     disabled= {!isServiceValid}
                 >
                     Post Service
@@ -519,12 +519,12 @@ return (
                     Urgency Level <span className="text-red-500">*</span>
                 </Label>
                 <Select value={jobUrgency} onValueChange={setJobUrgency}>
-                    <SelectTrigger className="h-12">
+                    <SelectTrigger className="h-12 cursor-pointer">
                     <SelectValue placeholder="Select urgency level" />
                     </SelectTrigger>
                     <SelectContent>
                     {urgencyLevels.map((level) => (
-                        <SelectItem key={level.value} value={level.value}>
+                        <SelectItem key={level.value} value={level.value} className="cursor-pointer">
                         {level.label}
                         </SelectItem>
                     ))}
@@ -539,12 +539,12 @@ return (
                         Category <span className="text-red-500">*</span>
                     </Label>
                     <Select value={jobCategory} onValueChange={setJobCategory}>
-                        <SelectTrigger className="h-12">
+                        <SelectTrigger className="h-12 cursor-pointer">
                         <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent>
                         {categories.map((cat) => (
-                            <SelectItem key={cat.name}  value={cat.name}>
+                            <SelectItem key={cat.name}  value={cat.name} className="cursor-pointer">
                             {cat.name}
                             </SelectItem>
                         ))}
@@ -562,7 +562,7 @@ return (
                     onValueChange={setJobSubcategory}
                     disabled={!jobCategory}
                     >
-                    <SelectTrigger className="h-12">
+                    <SelectTrigger className="h-12 cursor-pointer">
                         <SelectValue placeholder="Select a subcategory" />
                     </SelectTrigger>
 
@@ -570,7 +570,7 @@ return (
                         {categories
                         .find((c) => c.name === jobCategory)
                         ?.subcategories.map((sub) => (
-                            <SelectItem key={sub} value={sub}>
+                            <SelectItem key={sub} value={sub} className="cursor-pointer">
                             {sub}
                             </SelectItem>
                         ))}
@@ -585,12 +585,12 @@ return (
                         Type of Poster <span className="text-red-500">*</span>
                     </Label>
                     <Select value={jobPosterType} onValueChange={setJobPosterType}>
-                        <SelectTrigger className="h-12">
+                        <SelectTrigger className="h-12 cursor-pointer">
                         <SelectValue placeholder="Individual or Company" />
                         </SelectTrigger>
                         <SelectContent>
-                        <SelectItem value="individual">Individual</SelectItem>
-                        <SelectItem value="company">Company</SelectItem>
+                        <SelectItem value="individual" className="cursor-pointer">Individual</SelectItem>
+                        <SelectItem value="company" className="cursor-pointer">Company</SelectItem>
                         </SelectContent>
                     </Select>
                     </div>
@@ -604,14 +604,14 @@ return (
                         Availability <span className="text-red-500">*</span>
                     </Label>
                     <Select value={jobAvailability} onValueChange={setJobAvailability}>
-                        <SelectTrigger className="h-12">
+                        <SelectTrigger className="h-12 cursor-pointer">
                         <SelectValue placeholder="Select availability" />
                         </SelectTrigger>
                         <SelectContent>
-                        <SelectItem value="anytime">Anytime</SelectItem>
-                        <SelectItem value="weekends">Weekends</SelectItem>
-                        <SelectItem value="weekdays">Weekdays</SelectItem>
-                        <SelectItem value="evenings">Evenings</SelectItem>
+                        <SelectItem value="anytime" className="cursor-pointer">Anytime</SelectItem>
+                        <SelectItem value="weekends" className="cursor-pointer">Weekends</SelectItem>
+                        <SelectItem value="weekdays" className="cursor-pointer">Weekdays</SelectItem>
+                        <SelectItem value="evenings" className="cursor-pointer">Evenings</SelectItem>
                         </SelectContent>
                     </Select>
                     </div>
@@ -621,13 +621,13 @@ return (
                             Spoken Language <span className="text-red-500">*</span>
                         </Label>
                         <Select value={jobLanguage} onValueChange={setJobLanguage}>
-                            <SelectTrigger className="h-12">
+                            <SelectTrigger className="h-12 cursor-pointer">
                             <SelectValue placeholder="Preferred language" />
                             </SelectTrigger>
                             <SelectContent>
-                            <SelectItem value="french">French</SelectItem>
-                            <SelectItem value="english">English</SelectItem>
-                            <SelectItem value="bilingual">Bilingual</SelectItem>
+                            <SelectItem value="french" className="cursor-pointer">French</SelectItem>
+                            <SelectItem value="english" className="cursor-pointer">English</SelectItem>
+                            <SelectItem value="bilingual" className="cursor-pointer">Bilingual</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -637,13 +637,13 @@ return (
                         Mobility <span className="text-red-500">*</span>
                     </Label>
                     <Select value={jobMobility} onValueChange={setJobMobility}>
-                        <SelectTrigger className="h-12">
+                        <SelectTrigger className="h-12 cursor-pointer">
                         <SelectValue placeholder="Can you travel?" />
                         </SelectTrigger>
                         <SelectContent>
-                        <SelectItem value="yes">Yes</SelectItem>
-                        <SelectItem value="no">No</SelectItem>
-                        <SelectItem value="limited">Limited distance</SelectItem>
+                        <SelectItem value="yes" className="cursor-pointer">Yes</SelectItem>
+                        <SelectItem value="no" className="cursor-pointer">No</SelectItem>
+                        <SelectItem value="limited" className="cursor-pointer">Limited distance</SelectItem>
                         </SelectContent>
                     </Select>
                     </div>
@@ -679,7 +679,7 @@ return (
                 <div className="pt-4">
                 <Button
                     type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold rounded-xl h-14"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold rounded-xl h-14 cursor-pointer"
                     disabled= {!isJobValid }
                 >
                     Post Job Request

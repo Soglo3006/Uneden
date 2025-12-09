@@ -23,7 +23,6 @@ import {
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 
-// Mock user data
 const initialUserData = {
   fullName: "Alexandre Booh louha",
   email: "alexandre.booh.louha@example.com",
@@ -402,7 +401,7 @@ const savePortfolioItem = async () => {
                     onKeyPress={(e) => e.key === "Enter" && handleAddSkill()}
                     className="h-10"
                   />
-                  <Button onClick={handleAddSkill} variant="outline" size="sm" className="gap-1 h-auto">
+                  <Button onClick={handleAddSkill} variant="outline" size="sm" className="gap-1 h-auto cursor-pointer">
                     <Plus className="h-4 w-4" />
                     Add
                   </Button>
@@ -417,7 +416,7 @@ const savePortfolioItem = async () => {
                       {skill}
                       <button
                         onClick={() => handleRemoveSkill(skill)}
-                        className="ml-2 hover:text-red-600"
+                        className="ml-2 hover:text-red-600 cursor-pointer"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -436,7 +435,7 @@ const savePortfolioItem = async () => {
                     onKeyPress={(e) => e.key === "Enter" && handleAddLanguage()}
                     className="h-10"
                   />
-                  <Button onClick={handleAddLanguage} variant="outline" size="sm" className="gap-1 h-auto">
+                  <Button onClick={handleAddLanguage} variant="outline" size="sm" className="gap-1 h-auto cursor-pointer">
                     <Plus className="h-4 w-4" />
                     Add
                   </Button>
@@ -451,7 +450,7 @@ const savePortfolioItem = async () => {
                       {lang}
                       <button
                         onClick={() => handleRemoveLanguage(lang)}
-                        className="ml-2 hover:text-red-600"
+                        className="ml-2 hover:text-red-600 cursor-pointer"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -486,7 +485,7 @@ const savePortfolioItem = async () => {
               {formData.portfolio.length === 0 && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 ">
                       <Camera className="h-5 w-5 text-green-600 mt-0.5" />
                     </div>
                     <div>
@@ -518,13 +517,13 @@ const savePortfolioItem = async () => {
                       <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleEditPortfolioItem(item)}
-                          className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700"
+                          className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 cursor-pointer"
                         >
                           <Camera className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleRemovePortfolioItem(item.id)}
-                          className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                          className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 cursor-pointer"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -589,13 +588,13 @@ const savePortfolioItem = async () => {
           <div className="flex flex-col sm:flex-row gap-3 sm:justify-end mt-4">
             <Button
               variant="outline"
-              className="w-full sm:w-auto order-2 sm:order-1"
+              className="w-full sm:w-auto order-2 sm:order-1 cursor-pointer"
               onClick={() => window.history.back()}
             >
               Cancel
             </Button>
             <Button
-              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white order-1 sm:order-2"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white order-1 sm:order-2 cursor-pointer"
               onClick={handleSave}
               disabled={!isFormValid() || isUnchanged}
             >
@@ -638,7 +637,7 @@ const savePortfolioItem = async () => {
                   step={0.1}
                   value={portfolioZoom}
                   onChange={(e) => setPortfolioZoom(Number(e.target.value))}
-                  className="w-full"
+                  className="w-full cursor-pointer"
                 />
               </div>
 
@@ -653,7 +652,7 @@ const savePortfolioItem = async () => {
                 <Button 
                   variant="outline" 
                   onClick={() => document.getElementById("changePortfolioInput")?.click()}
-                  className="w-full gap-2"
+                  className="w-full gap-2 cursor-pointer"
                 >
                   <Upload className="h-4 w-4" />
                   Change Image
@@ -696,13 +695,13 @@ const savePortfolioItem = async () => {
                   setPortfolioZoom(1);
                   setPortfolioCroppedAreaPixels(null);
                 }}
-                className="flex-1"
+                className="flex-1 cursor-pointer"
               >
                 Cancel
               </Button>
               <Button 
                 onClick={savePortfolioItem}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className="flex-1 bg-green-600 hover:bg-green-700 cursor-pointer"
                 disabled={!portfolioTitle.trim()}
               >
                 Add to Portfolio
@@ -744,7 +743,7 @@ const savePortfolioItem = async () => {
                 step={0.1}
                 value={portfolioZoom}
                 onChange={(e) => setPortfolioZoom(Number(e.target.value))}
-                className="w-full"
+                className="w-full cursor-pointer"
               />
             </div>
 
@@ -759,7 +758,7 @@ const savePortfolioItem = async () => {
               <Button 
                 variant="outline" 
                 onClick={() => document.getElementById("modifiedImageInput")?.click()}
-                className="w-full gap-2"
+                className="w-full gap-2 cursor-pointer"
               >
                 <Upload className="h-4 w-4" />
                 Change Image
@@ -812,13 +811,13 @@ const savePortfolioItem = async () => {
                 setPortfolioCrop({ x: 0, y: 0 });
                 setPortfolioZoom(1);
               }}
-              className="flex-1"
+              className="flex-1 cursor-pointer"
             >
               Cancel
             </Button>
             <Button 
               onClick={saveModifiedPortfolioItem}
-              className="flex-1 bg-green-600 hover:bg-green-700"
+              className="flex-1 bg-green-600 hover:bg-green-700 cursor-pointer"
               disabled={!editingPortfolioTitle.trim()}
             >
               Save Changes

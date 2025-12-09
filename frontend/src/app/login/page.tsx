@@ -83,7 +83,7 @@ export default function LoginPage() {
               </div>
               <Button 
                 type="submit" 
-                className="w-full bg-green-800 hover:bg-green-900"
+                className="w-full bg-green-800 hover:bg-green-900 cursor-pointer"
                 disabled={loading}
               >
                 {loading ? "Loading..." : "Login"}
@@ -94,7 +94,7 @@ export default function LoginPage() {
         <CardFooter className="flex-col gap-2">
           <CardDescription>
             Don't have an account?{" "}
-            <Link href="/register" className="text-green-600 hover:underline">
+            <Link href="/register" className="text-green-600 hover:underline cursor-pointer">
               Sign up
             </Link>
           </CardDescription>

@@ -12,7 +12,6 @@ CreditCard,
 BarChart3,
 LogOut,
 Trash2,
-Settings,
 ChevronRight,
 Mail,
 Phone,
@@ -65,7 +64,7 @@ return (
     <div className="bg-white border-b relative">
         <button
         onClick={onClose}
-        className="text-gray-500 hover:text-gray-900 text-xl absolute top-4 right-4"
+        className="text-gray-500 hover:text-gray-900 text-xl absolute top-4 right-4 cursor-pointer"
         >
         ✕
         </button>
@@ -89,7 +88,7 @@ return (
             </div>
             </div>
             <Link href="/profile/edit">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="cursor-pointer">
             Edit Profile
             <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
@@ -140,7 +139,7 @@ return (
         </div>
 
         <div className="space-y-4">
-            <Button variant="outline" className="w-full justify-between">
+            <Button variant="outline" className="w-full justify-between cursor-pointer">
             <span>Change Password</span>
             <ChevronRight className="h-4 w-4" />
             </Button>
@@ -245,7 +244,7 @@ return (
             <Toggle checked={privacy.showLocation} />
             </div>
 
-            <Button variant="outline" className="w-full justify-between">
+            <Button variant="outline" className="w-full justify-between cursor-pointer">
             <span>Blocked Users</span>
             <ChevronRight className="h-4 w-4" />
             </Button>
@@ -265,12 +264,12 @@ return (
 
         <div className="space-y-4">
 
-            <Button variant="outline" className="w-full justify-between">
+            <Button variant="outline" className="w-full justify-between cursor-pointer">
             <span>Payment Methods</span>
             <ChevronRight className="h-4 w-4" />
             </Button>
 
-            <Button variant="outline" className="w-full justify-between">
+            <Button variant="outline" className="w-full justify-between cursor-pointer">
             <span>Billing History</span>
             <ChevronRight className="h-4 w-4" />
             </Button>
@@ -289,7 +288,7 @@ return (
             </div>
         </div>
 
-        <Button className="w-full bg-green-700 hover:bg-green-800 text-white">
+        <Button className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer">
             Go to Dashboard
             <ChevronRight className="h-4 w-4 ml-2" />
         </Button>
@@ -301,7 +300,7 @@ return (
         <div className="space-y-3">
             <Button
             variant="outline"
-            className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50"
+            className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50 cursor-pointer"
             >
             <span className="flex items-center gap-2">
                 <LogOut className="h-4 w-4" />
@@ -312,7 +311,7 @@ return (
 
             <Button
             variant="outline"
-            className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50"
+            className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50 cursor-pointer"
             >
             <span className="flex items-center gap-2">
                 <Trash2 className="h-4 w-4" />
