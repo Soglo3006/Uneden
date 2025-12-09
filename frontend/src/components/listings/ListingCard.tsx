@@ -31,7 +31,7 @@ export default function ListingCard({
             <h3 className="text-lg font-semibold text-gray-900 hover:text-brand-green transition-colors cursor-pointer line-clamp-1">
                 {title}
             </h3>
-            <p className="text-xl font-bold text-brand-green mt-1">
+            <p className="text-xl font-bold text-brand-green text-green-700 mt-1">
                 ${price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
             </p>
             </div>

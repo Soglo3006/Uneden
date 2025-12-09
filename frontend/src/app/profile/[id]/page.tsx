@@ -17,8 +17,12 @@ Grid3x3,
 ExternalLink,
 ChevronRight,
 Settings,
+Ellipsis,
+UserStar,
+HeartPlus,
 } from "lucide-react";
 import { useState } from "react";
+import {useParams} from "next/navigation";
 import SettingsPage from "@/components/profile/Settings"
 
 // Mock user data
@@ -64,10 +68,7 @@ portfolio: [
     title: "Office Space Cleaning",
 },
 ],
-};
-
-//Mock user Listings data
-const userListings = [
+userListings : [
 {
 id: 1,
 title: "Professional Deep House Cleaning",
@@ -248,16 +249,106 @@ rating: 4.9,
 reviews: 22,
 image: "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400&q=80",
 },
-];
+],
+};
+
+const userData2 = {
+  id: 2,
+  name: "Sarah Chen",
+  avatar: "",
+  tagline: "Expert Plumber • 8 years experience",
+  rating: 4.8,
+  reviews: 95,
+  location: "Montreal, QC",
+  bio: "I'm a certified plumber with 8 years of experience specializing in residential and commercial plumbing solutions. From simple repairs to complete installations, I handle every job with professionalism and expertise. I'm known for my reliability, fair pricing, and quality workmanship. Available for emergency calls 24/7. Licensed and insured.",
+  skills: [
+    "Pipe Repair",
+    "Drain Cleaning",
+    "Water Heater Installation",
+    "Bathroom Renovations",
+    "Emergency Services",
+    "Leak Detection",
+  ],
+  languages: ["English", "French", "Mandarin"],
+  yearsExperience: 8,
+  memberSince: "March 2022",
+  portfolio: [
+    {
+      id: 1,
+      image: "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=400&q=80",
+      title: "Modern Bathroom Installation",
+    },
+    {
+      id: 2,
+      image: "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=400&q=80",
+      title: "Kitchen Sink Replacement",
+    },
+    {
+      id: 3,
+      image: "https://images.unsplash.com/photo-1620626011761-996317b8d101?w=400&q=80",
+      title: "Water Heater Setup",
+    },
+    {
+      id: 4,
+      image: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=400&q=80",
+      title: "Pipe System Repair",
+    },
+  ],
+  userListings: [
+    {
+      id: 1,
+      title: "Emergency Plumbing Repair Service",
+      price: 95,
+      location: "Montreal, QC",
+      rating: 4.9,
+      reviews: 38,
+      image: "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=400&q=80",
+    },
+    {
+      id: 2,
+      title: "Water Heater Installation & Replacement",
+      price: 150,
+      location: "Montreal, QC",
+      rating: 5.0,
+      reviews: 24,
+      image: "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=400&q=80",
+    },
+    {
+      id: 3,
+      title: "Drain Cleaning & Unclogging",
+      price: 80,
+      location: "Montreal, QC",
+      rating: 4.7,
+      reviews: 19,
+      image: "https://images.unsplash.com/photo-1620626011761-996317b8d101?w=400&q=80",
+    },
+    {
+      id: 4,
+      title: "Bathroom Renovation Plumbing",
+      price: 200,
+      location: "Montreal, QC",
+      rating: 4.8,
+      reviews: 14,
+      image: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=400&q=80",
+    },
+  ],
+};
 
 
 
 export default function UserProfilePage() {
+    const params = useParams();
+    const profileId = Number(params.id);
     const [showSettings, setShowSettings] = useState(false);
+    const [showEllipsis, setShowEllipsis] = useState(false);
     const [selectedPortfolio, setSelectedPortfolio] = useState(null);
     const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false);
     const MAX_DISPLAY = 8;
-    const visibleListings = userListings.slice(0, MAX_DISPLAY);
+
+    const isOwner = profileId === userData.id;
+
+    const visibleListings = (isOwner ? userData.userListings : userData2.userListings).slice(0, MAX_DISPLAY);
+
 
 
 return (
@@ -272,92 +363,132 @@ return (
             <span className="hover:text-green-700 cursor-pointer">Home</span>
             </Link>
             <ChevronRight className="h-4 w-4 mx-1" />
-            <span className="text-green-700 font-medium">Profile</span>
+            <span className="text-green-700 font-medium">{isOwner ? "Your Profile" : `${userData2.name}'s Profile`}</span>
         </div>
         <Card className="p-8 mb-8">
         <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
             <Avatar className="w-45 h-45 border-4 border-white shadow-lg">
-            <AvatarImage src={userData.avatar} alt={userData.name} />
-            <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
+                {isOwner ? (
+                <>
+                <AvatarImage src={userData.avatar} alt={userData.name} />
+                <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
+                </>
+            ) : (
+                <>
+                <AvatarImage src={userData2.avatar} alt={userData2.name} />
+                <AvatarFallback>{userData2.name.charAt(0)}</AvatarFallback>
+                </>
+                )}
             </Avatar>
 
             <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{userData.name}</h1>
-            <p className="text-lg text-gray-600 mb-3">{userData.tagline}</p>
-
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{isOwner ? userData.name : userData2.name}</h1>
+            <p className="text-lg text-gray-600 mb-3">{isOwner ? userData.tagline : userData2.tagline}</p>
             <div className="flex flex-wrap items-center gap-4 mb-4">
                 <div className="flex items-center gap-1">
                 <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span className="font-semibold text-lg">{userData.rating}</span>
-                <span className="text-gray-500">({userData.reviews} reviews)</span>
+                <span className="font-semibold text-lg">{isOwner ? userData.rating : userData2.rating}</span>
+                <span className="text-gray-500">({isOwner ? userData.reviews : userData2.reviews} reviews)</span>
                 </div>
                 <div className="flex items-center gap-1 text-gray-600">
                 <MapPin className="h-4 w-4" />
-                <span>{userData.location}</span>
+                <span>{isOwner ? userData.location : userData2.location}</span>
                 </div>
             </div>
 
             <div className="flex flex-wrap gap-3">
-                <Button className="bg-green-700 hover:bg-green-700 text-white gap-2">
-                <MessageCircle className="h-4 w-4" />
-                View Messages
-                </Button>
-                <Button variant="outline" className="gap-2">
-                <Grid3x3 className="h-4 w-4" />
-                View all my listings
-                </Button>
-                <Button variant="outline" className="gap-2" onClick={()=> setShowSettings(true)}>
-                <Settings className="h-4 w-4" />
-                Settings
-                </Button>
-            </div>
+                
+                    <Button className="bg-green-700 hover:bg-green-700 text-white gap-2 cursor-pointer">
+                        <MessageCircle className="h-4 w-4" />
+                        {isOwner ? "View Messages" : "Send Message"}
+                    </Button>
+
+                    {!isOwner && (
+                    <Button variant="outline" className="gap-2 cursor-pointer">
+                        <HeartPlus className="h-4 w-4" />
+                        Add To Favorites
+                    </Button>
+                    )}
+                    <Button variant="outline" className="gap-2 cursor-pointer">
+                        <Grid3x3 className="h-4 w-4" />
+                        {isOwner ? "View all my listings" : "View Listings"}
+                    </Button>
+
+                    {isOwner ? (
+                        <Button variant="outline" className="gap-2 cursor-pointer" onClick={() => setShowSettings(true)}>
+                            <Settings className="h-4 w-4" />
+                            Settings
+                        </Button>
+                    ) : (
+                        <>
+                        <Button variant="outline" className="gap-2 cursor-pointer">
+                            <UserStar className="h-4 w-4" />
+                            View Ratings
+                        </Button>
+                        <Button variant="outline" className="gap-2 cursor-pointer" onClick={() => setShowEllipsis(true)}>
+                        <Ellipsis className="h-4 w-4" />
+                    </Button>
+                    </>
+                    )}
+                </div>
+
             </div>
         </div>
         </Card>
 
         <Card className="p-6 mb-8">
         <h2 className="text-2xl font-bold text-gray-900">About Me</h2>
-        <p className="text-gray-700 leading-relaxed">{userData.bio}</p>
+        {isOwner ? (
+            <div className="flex justify-between items-start">
+            <p className="text-gray-700 leading-relaxed">{userData.bio}</p>
+            </div>
+        ) : (
+            <p className="text-gray-700 leading-relaxed">{userData2.bio}</p>
+        )}
 
-        <Separator className="my-6" />
+        <Separator className="my-1" />
 
         <div className="grid md:grid-cols-2 gap-6">
-            {/* Skills */}
             <div>
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <h3 className="font-semibold text-gray-900 flex mb-1 items-center gap-2">
                 Skills
             </h3>
             <div className="flex flex-wrap gap-2">
-                {userData.skills.map((skill) => (
+                {isOwner ? (
+                userData.skills.map((skill) => (
                 <Badge key={skill} variant="secondary" className="bg-green-100 text-green-700">
                     {skill}
                 </Badge>
-                ))}
+                ))
+                ) : (
+                userData2.skills.map((skill) => (
+                <Badge key={skill} variant="secondary" className="bg-green-100 text-green-700">
+                    {skill}
+                </Badge>
+                ))
+                )}
             </div>
             </div>
 
-            {/* Languages */}
             <div>
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 Languages
             </h3>
-            <p className="text-gray-700">{userData.languages.join(", ")}</p>
+            <p className="text-gray-700">{isOwner ? userData.languages.join(", ") : userData2.languages.join(", ")}</p>
             </div>
 
-            {/* Experience */}
             <div>
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 Years of Experience
             </h3>
-            <p className="text-gray-700">{userData.yearsExperience} years</p>
+            <p className="text-gray-700">{isOwner ? userData.yearsExperience : userData2.yearsExperience} years</p>
             </div>
 
-            {/* Member Since */}
             <div>
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 Member Since
             </h3>
-            <p className="text-gray-700">{userData.memberSince}</p>
+            <p className="text-gray-700">{isOwner ? userData.memberSince : userData2.memberSince}</p>
             </div>
         </div>
         </Card>
@@ -365,9 +496,9 @@ return (
 
         <Card className="p-6 mb-8">
         <h2 className="text-2xl font-bold text-gray-900">Portfolio</h2>
-        {userData.portfolio.length > 0 ? (
+        {(isOwner ? userData.portfolio.length : userData2.portfolio.length) > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {userData.portfolio.map((item) => (
+            {(isOwner ? userData.portfolio : userData2.portfolio).map((item) => (
                 <div key={item.id} className="group cursor-pointer" onClick={()=> {
                     setSelectedPortfolio(item);
                     setIsPortfolioModalOpen(true);
@@ -392,13 +523,15 @@ return (
         )}
         </Card>
         <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Listings made by you</h2>
-        {userListings.length > 0 ? (
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        {isOwner ? "Listings made by you" : `${userData2.name}'s Listings`}
+        </h2>
+        {(isOwner ? userData.userListings.length : userData2.userListings.length) > 0 ? (
             <div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {visibleListings.map((listing, index) => (
                 <>
-                <Card key={listing.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <Card key={listing.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
                     <div className="relative h-48 overflow-hidden">
                     <img
                         src={listing.image}
@@ -423,15 +556,11 @@ return (
                         <span className="text-xl font-bold text-green-700">
                         ${listing.price}
                         </span>
-                        <Button size="sm" variant="outline" className="gap-1">
-                        View
-                        <ExternalLink className="h-3 w-3" />
-                        </Button>
                     </div>
                     </div>
                 </Card>
 
-                {(index + 1) % 6 === 0 && index !== userListings.length - 1 && (
+                {(index + 1) % 6 === 0 && index !== (isOwner ? userData.userListings.length : userData2.userListings.length) - 1 && (
                     <Card className="overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300">
                     <div className="h-full flex items-center justify-center p-8">
                         <span className="text-gray-400 font-medium">Advertisement</span>
@@ -441,12 +570,12 @@ return (
                 </>
             ))}
             </div>
-            {userListings.length > MAX_DISPLAY && (
+            {(isOwner ? userData.userListings.length : userData2.userListings.length) > MAX_DISPLAY && (
                 <div className="flex justify-center mt-6">
                     <Button 
                         size="lg" 
                         variant="outline" 
-                        className="gap-1"
+                        className="gap-1 cursor-pointer"
                     >
                         View More
                     </Button>

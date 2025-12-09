@@ -38,7 +38,7 @@ export default function Listings() {
     };
 
     const formatPrice = (value: number) => {
-        if (value >= 10000) return "< $10,000";
+        if (value >= 1000) return "< $1000";
         return `$${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
     };
 
@@ -62,15 +62,28 @@ export default function Listings() {
                     </h1>
 
                     <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="w-full lg:w-1/4 lg:overflow-y-auto lg:h-[800px] border p-4 rounded-lg">
+                        <div className="w-full lg:w-1/4 lg:overflow-y-auto lg:h-[830px] border p-4 rounded-lg no-scrollbar">
                         <div>
-                            <h1 className="text-lg font-semibold text-gray-900 mb-3">Categories</h1>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Type of Listings</h3>
+                            <Select value={listingType} onValueChange={setListingType}>
+                            <SelectTrigger className="w-full cursor-pointer">
+                                <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all" className="cursor-pointer">All</SelectItem>
+                                <SelectItem value="work" className="cursor-pointer">Work</SelectItem>
+                                <SelectItem value="workers" className="cursor-pointer">Workers</SelectItem>
+                            </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="mt-2">
+                            <h1 className="text-lg font-semibold text-gray-900">Categories</h1>
                             <div className="space-y-1 overflow-y-auto pr-2">
                                 {categories.map((category) => (
                                     <div key={category.name}>
                                     <button
                                         onClick={() => toggleCategory(category.name)}
-                                        className="w-full flex items-center justify-between py-2 px-2 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-brand-green transition-colors text-sm font-medium"
+                                        className="w-full cursor-pointer flex items-center justify-between py-2 px-2 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-brand-green transition-colors text-sm font-medium"
                                     >
                                         <span>{category.name}</span>
                                         {expandedCategories.includes(category.name) ? (
@@ -84,7 +97,7 @@ export default function Listings() {
                                         {category.subcategories.map((sub) => (
                                             <button
                                             key={sub}
-                                            className="block w-full text-left py-1.5 px-2 rounded text-gray-600 hover:text-brand-green hover:bg-green-50 transition-colors text-sm"
+                                            className="block w-full cursor-pointer text-left py-1.5 px-2 rounded text-gray-600 hover:text-brand-green hover:bg-green-50 transition-colors text-sm"
                                             >
                                             {sub}
                                             </button>
@@ -95,7 +108,7 @@ export default function Listings() {
                                 ))}
                                 </div>
                         </div>
-                        <div>
+                        <div className="mt-2">
                             <h3 className="text-lg font-semibold text-gray-900 mb-3">Location</h3>
                             <div className="relative">
                             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -109,10 +122,10 @@ export default function Listings() {
                             </div>
                         </div>
 
-                        <div>
+                        <div className="mt-2">
                             <div className="flex items-center justify-between mb-3">
                             <h3 className="text-lg font-semibold text-gray-900">Distance</h3>
-                            <span className="text-sm font-medium text-brand-green">
+                            <span className="text-sm font-medium text-green-700">
                                 {formatDistance(distance[0])}
                             </span>
                             </div>
@@ -121,7 +134,13 @@ export default function Listings() {
                             onValueChange={setDistance}
                             max={299}
                             step={1}
-                            className="w-full"
+                            className="
+                                w-full
+                                [&_[data-slot=slider-track]]:bg-gray-300
+                                [&_[data-slot=slider-range]]:bg-green-700
+                                [&_[data-slot=slider-thumb]]:border-green-800 [&_[data-slot=slider-thumb]]:bg-white
+                                cursor-pointer
+                            "
                             />
                             <div className="flex justify-between text-xs text-gray-500 mt-1">
                             <span>0 km</span>
@@ -129,35 +148,27 @@ export default function Listings() {
                             </div>
                         </div>
 
-                        <div>
+                        <div className="mt-2">
                             <div className="flex items-center justify-between mb-3">
                             <h3 className="text-lg font-semibold text-gray-900">Price Range ($)</h3>
                             </div>
                             <Slider
                             value={priceRange}
                             onValueChange={setPriceRange}
-                            max={10000}
-                            step={100}
-                            className="w-full"
+                            max={1000}
+                            step={5}
+                            className="
+                                w-full
+                                [&_[data-slot=slider-track]]:bg-gray-300
+                                [&_[data-slot=slider-range]]:bg-green-700
+                                [&_[data-slot=slider-thumb]]:border-green-800 [&_[data-slot=slider-thumb]]:bg-white
+                                cursor-pointer
+                            "
                             />
                             <div className="flex justify-between text-sm text-gray-600 mt-2">
-                            <span className="font-medium text-brand-green">{formatPrice(priceRange[0])}</span>
-                            <span className="font-medium text-brand-green">{formatPrice(priceRange[1])}</span>
+                            <span className="font-medium text-green-700">{formatPrice(priceRange[0])}</span>
+                            <span className="font-medium text-green-700">{formatPrice(priceRange[1])}</span>
                             </div>
-                        </div>
-
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Type of Listings</h3>
-                            <Select value={listingType} onValueChange={setListingType}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All</SelectItem>
-                                <SelectItem value="work">Work</SelectItem>
-                                <SelectItem value="workers">Workers</SelectItem>
-                            </SelectContent>
-                            </Select>
                         </div>
 
                         <div className="bg-gray-100 rounded-lg p-8 flex items-center justify-center border border-gray-200 mt-4">
