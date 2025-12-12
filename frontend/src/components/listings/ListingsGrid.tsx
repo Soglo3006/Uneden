@@ -6,17 +6,29 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { sampleListings } from "@/lib/listings";
+import { mockUsers } from "@/lib/mockData";
 
 export default function ListingsGrid({ username }: { username?: string }) {
     const [currentPage, setCurrentPage] = useState(1);
     const listingsPerPage = 12;
-    const totalPages = Math.ceil(sampleListings.length / listingsPerPage);
 
-     const filteredListings = username
-        ? sampleListings.filter(
+    
+
+    const allListings = mockUsers.flatMap(user =>
+        user.userListings.map(listing => ({
+            ...listing,
+            ownerUsername: user.username,
+            ownerName: user.name,
+        }))
+        );
+
+    const filteredListings = username
+        ? allListings.filter(
             (listing) => listing.ownerUsername === username
             )
-        : sampleListings;
+        : allListings;
+    const totalPages = Math.ceil(filteredListings.length / listingsPerPage);
+
 
     const startIndex = (currentPage - 1) * listingsPerPage;
     const currentListings = filteredListings.slice(
