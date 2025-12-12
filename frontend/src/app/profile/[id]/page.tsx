@@ -425,11 +425,14 @@ return (
                         Add To Favorites
                     </Button>
                     )}
+                    <Link href={`/listings/${(isOwner ? userData.name : userData2.name)
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}`}>
                     <Button variant="outline" className="gap-2 cursor-pointer">
                         <Grid3x3 className="h-4 w-4" />
                         {isOwner ? "View all my listings" : "View Listings"}
                     </Button>
-
+                    </Link>
                     {isOwner ? (
                         <Button variant="outline" className="gap-2 cursor-pointer" onClick={() => setShowSettings(true)}>
                             <Settings className="h-4 w-4" />

@@ -17,7 +17,7 @@ import {categories} from "@/lib/categories.ts";
 import ListingsGrid from "@/components/listings/ListingsGrid";
 
 
-export default function Listings() {
+export default function Listings({ username }: { username?: string }) {
     const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
     const [distance, setDistance] = useState([50]);
     const [priceRange, setPriceRange] = useState([0, 5000]);
@@ -42,6 +42,18 @@ export default function Listings() {
         return `$${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
     };
 
+    const currentUsername = "alexandre-booh-louha"; // mock auth
+
+    const isOwner = username && currentUsername === username;
+
+    const displayName = username
+    ? username
+        .split("-")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ")
+    : null;
+
+
     return (
         <div className="bg-white min-h-screen text-black">
             <Header/>
@@ -58,7 +70,11 @@ export default function Listings() {
             <main className="flex-1">
                 <div className="max-w-7xl mx-auto p-5">
                     <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-8">
-                        All Listings
+                        {username
+                        ? isOwner
+                        ? "Your Listings"
+                        : `Listings by ${displayName}`
+                        : "All Listings"}
                     </h1>
 
                     <div className="flex flex-col lg:flex-row gap-6">
@@ -176,7 +192,7 @@ export default function Listings() {
                         </div>
                         </div>
                         <div className="w-full lg:w-3/4 space-y-6">
-                        <ListingsGrid />
+                        <ListingsGrid username={username} />
                         </div>
 
                     </div>

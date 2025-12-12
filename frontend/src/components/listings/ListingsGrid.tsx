@@ -7,13 +7,23 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { sampleListings } from "@/lib/listings";
 
-export default function ListingsGrid() {
+export default function ListingsGrid({ username }: { username?: string }) {
     const [currentPage, setCurrentPage] = useState(1);
     const listingsPerPage = 12;
     const totalPages = Math.ceil(sampleListings.length / listingsPerPage);
 
+     const filteredListings = username
+        ? sampleListings.filter(
+            (listing) => listing.ownerUsername === username
+            )
+        : sampleListings;
+
     const startIndex = (currentPage - 1) * listingsPerPage;
-    const currentListings = sampleListings.slice(startIndex, startIndex + listingsPerPage);
+    const currentListings = filteredListings.slice(
+    startIndex,
+    startIndex + listingsPerPage
+    );
+
 
     const renderListingsWithAds = () => {
         const elements: React.ReactNode[] = [];
