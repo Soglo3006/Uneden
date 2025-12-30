@@ -305,6 +305,15 @@ export const userData2 = {
       reviews: 14,
       image: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=400&q=80",
     },
+    {
+      id: 5,
+      title: "Drain Cleaning & Unclogging",
+      price: 80,
+      location: "Montreal, QC",
+      rating: 4.7,
+      reviews: 19,
+      image: "https://images.unsplash.com/photo-1620626011761-996317b8d101?w=400&q=80",
+    }
   ],
 };
 
