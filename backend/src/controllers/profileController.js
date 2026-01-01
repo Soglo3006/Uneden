@@ -64,7 +64,7 @@ export const completeProfile = async (req,res) => {
                 bio,
                 avatar,
                 profession,
-                skills,
+                JSON.stringify(skills || []),
                 JSON.stringify(languages || []),
                 JSON.stringify(experiences || []),
                 company_name,

@@ -341,84 +341,87 @@ export default function OnboardingPage() {
     };
 
     const handleNext = async () => {
-    if (currentStep < totalSteps) {
-        setCurrentStep(currentStep + 1);
-    } else {
-        //sauvegarder le profil
-        try {
-        setLoading(true); // Ajouter un état de loading si vous voulez
+  if (currentStep < totalSteps) {
+    setCurrentStep(currentStep + 1);
+  } else {
+    try {
+      setLoading(true);
 
-        const token = session?.access_token;
+      const token = session?.access_token;
 
-        if (!token) {
-            alert("Authentication error. Please login again.");
-            router.push("/login");
-            return;
-        }
+      if (!token) {
+        alert("Authentication error. Please login again.");
+        router.push("/login");
+        return;
+      }
 
-        // 1. Sauvegarder dans votre DB backend
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/complete`, {
-            method: "POST",
-            headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-            account_type: data.accountType,
-            phone: data.phone,
-            address: data.adresse,
-            city: data.ville,
-            province: data.province,
-            bio: data.bio || data.companyBio,
-            avatar: data.avatar,
-            
-            // Person data
-            profession: data.profession,
-            skills: data.skills,
-            languages: data.languages,
-            experiences: data.experiences,
-            
-            // Company data
-            company_name: data.companyName,
-            industry: data.industry,
-            team_size: data.teamSize,
-            
-            // Portfolio
-            portfolio: data.portfolio,
-            }),
-        });
+      // Préparer les données proprement
+      const payload = {
+        account_type: data.accountType,
+        phone: data.phone || "",
+        address: data.adresse || "",
+        city: data.ville || "",
+        province: data.province || "",
+        bio: data.bio || data.companyBio || "",
+        avatar: data.avatar || "",
+        
+        // Person data
+        profession: data.profession || "",
+        skills: data.skills || [],
+        languages: data.languages || [],
+        experiences: data.experiences || [],
+        
+        // Company data
+        company_name: data.companyName || "",
+        industry: data.industry || "",
+        team_size: data.teamSize || "",
+        
+        // Portfolio
+        portfolio: data.portfolio || [],
+      };
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Failed to save profile");
-        }
+      console.log("Sending payload:", payload);
 
-        console.log("Profile saved to backend");
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/complete`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-        // 2. Marquer le profil comme complété dans Supabase Auth
-        const { error } = await supabase.auth.updateUser({
-            data: {
-            profile_completed: true,
-            },
-        });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to save profile");
+      }
 
-        if (error) throw error;
+      console.log("Profile saved to backend");
 
-        console.log("Profile marked as completed in Supabase Auth");
+      // 2. Marquer le profil comme complété dans Supabase Auth
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          profile_completed: true,
+        },
+      });
 
-        setShowSuccess(true);
+      if (error) throw error;
 
-        setTimeout(() => {
-            router.push("/");
-        }, 2000);
+      console.log("Profile marked as completed in Supabase Auth");
 
-        } catch (err: any) {
-        console.error("Error completing profile:", err);
-        alert(`Failed to complete profile: ${err.message}`);
-        } finally {
-        setLoading(false);
-        }
+      setShowSuccess(true);
+
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
+
+    } catch (err: any) {
+      console.error("Error completing profile:", err);
+      alert(`Failed to complete profile: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
+  }
 };
 
     const handleBack = () => {
