@@ -1,5 +1,8 @@
 "use client";
 
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -219,23 +222,26 @@ export default function OnboardingPage() {
     const [portfolioZoom, setPortfolioZoom] = useState(1);
     const [portfolioCroppedAreaPixels, setPortfolioCroppedAreaPixels] = useState(null);
     const [errorPortfolio, setErrorPortfolio] = useState(false);
+    const [loading, setLoading] = useState(false);
 
+    const { user,session } = useAuth();
+    const router = useRouter();
 
 
     const [data, setData] = useState<OnboardingData>({
     accountType: "",
     avatar: "",
-    email: "alexandre.boohlouha@gmail.com", 
+    email: "", 
     phone: "",
     adresse: "",
     ville: "",
     province: "",
 
-    fullName: "Alexandre Booh Louha",
+    fullName: "",
     profession: "",
     bio: "",
     skills: [],
-    languages: [{ id: 1, language: "English", proficiency: "Native" }],
+    languages: [],
     experiences: [],
 
     companyName: "",
@@ -245,6 +251,16 @@ export default function OnboardingPage() {
 
     portfolio: []
     });
+
+    useEffect(() => {
+    if (user) {
+      setData((prev) => ({
+        ...prev,
+        email: user.email || "",
+        fullName: user.user_metadata?.full_name || "",
+      }));
+    }
+  }, [user]);
 
 
     const searchParams = useSearchParams();
@@ -324,13 +340,86 @@ export default function OnboardingPage() {
         }
     };
 
-    const handleNext = () => {
-        if (currentStep < totalSteps) {
+    const handleNext = async () => {
+    if (currentStep < totalSteps) {
         setCurrentStep(currentStep + 1);
-        } else {
-        setShowSuccess(true);
+    } else {
+        //sauvegarder le profil
+        try {
+        setLoading(true); // Ajouter un état de loading si vous voulez
+
+        const token = session?.access_token;
+
+        if (!token) {
+            alert("Authentication error. Please login again.");
+            router.push("/login");
+            return;
         }
-    };
+
+        // 1. Sauvegarder dans votre DB backend
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/complete`, {
+            method: "POST",
+            headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+            account_type: data.accountType,
+            phone: data.phone,
+            address: data.adresse,
+            city: data.ville,
+            province: data.province,
+            bio: data.bio || data.companyBio,
+            avatar: data.avatar,
+            
+            // Person data
+            profession: data.profession,
+            skills: data.skills,
+            languages: data.languages,
+            experiences: data.experiences,
+            
+            // Company data
+            company_name: data.companyName,
+            industry: data.industry,
+            team_size: data.teamSize,
+            
+            // Portfolio
+            portfolio: data.portfolio,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to save profile");
+        }
+
+        console.log("Profile saved to backend");
+
+        // 2. Marquer le profil comme complété dans Supabase Auth
+        const { error } = await supabase.auth.updateUser({
+            data: {
+            profile_completed: true,
+            },
+        });
+
+        if (error) throw error;
+
+        console.log("Profile marked as completed in Supabase Auth");
+
+        setShowSuccess(true);
+
+        setTimeout(() => {
+            router.push("/");
+        }, 2000);
+
+        } catch (err: any) {
+        console.error("Error completing profile:", err);
+        alert(`Failed to complete profile: ${err.message}`);
+        } finally {
+        setLoading(false);
+        }
+    }
+};
 
     const handleBack = () => {
         if (currentStep > 1) {
@@ -1415,10 +1504,10 @@ export default function OnboardingPage() {
 
                 <Button
                 onClick={handleNext}
-                disabled={!canProceed()}
+                disabled={!canProceed() || loading}
                 className="bg-green-600 hover:bg-green-700 text-white gap-2 h-12 px-6"
                 >
-                {currentStep === totalSteps ? "Finish Profile" : "Next Step"}
+                {loading ? "Saving..." : currentStep === totalSteps ? "Finish Profile" : "Next Step"}
                 <ChevronRight className="h-4 w-4" />
                 </Button>
             </div>

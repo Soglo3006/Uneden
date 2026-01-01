@@ -1,20 +1,31 @@
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-dotenv.config();
+import { supabaseAdmin } from "../lib/supabase.js";
 
-export const protect = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Not authorized, no token" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
+export const protect = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Not authorized, no token" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+
+    if (error || !user) {
+      console.error("Auth error:", error);
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+
+    req.user = {
+      id: user.id,
+      email: user.email,
+      full_name: user.user_metadata?.full_name || user.email,
+    };
+
     next();
   } catch (err) {
-    res.status(401).json({ message: "Token invalid or expired" });
+    console.error("Auth middleware error:", err);
+    res.status(401).json({ message: "Authentication failed" });
   }
 };

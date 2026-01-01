@@ -63,21 +63,14 @@ export default function EditProfilePage() {
   const [portfolioImage, setPortfolioImage] = useState<string | null>(null);
   const [portfolioTitle, setPortfolioTitle] = useState("");
 
-  const [showCropper, setShowCropper] = useState(false);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-
   const [showModified, setShowModified] = useState(false);
   const [modifiedImage, setModifiedImage] = useState<string | null>(null);
   const [editingPortfolioId, setEditingPortfolioId] = useState<number | null>(null);
   const [editingPortfolioTitle, setEditingPortfolioTitle] = useState("");
 
-  const [portfolioImageToCrop, setPortfolioImageToCrop] = useState<string | null>(null);
   const [portfolioCrop, setPortfolioCrop] = useState({ x: 0, y: 0 });
   const [portfolioZoom, setPortfolioZoom] = useState(1);
   const [portfolioCroppedAreaPixels, setPortfolioCroppedAreaPixels] = useState(null);
-  const [isEditingExisting, setIsEditingExisting] = useState(false);
   const [errorPortfolio, setErrorPortfolio] = useState(false);
   const [errorEditPortfolio, setErrorEditPortfolio] = useState(false);
 
@@ -171,17 +164,6 @@ export default function EditProfilePage() {
 };
 
 
-  const saveCroppedImage = async () => {
-    try {
-      const croppedImage = await getCroppedImg(imageToCrop!, croppedAreaPixels);
-      setFormData({ ...formData, avatar: croppedImage });
-      setShowCropper(false);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-    
-
   const handleAddSkill = () => {
     if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
       setFormData({
@@ -264,7 +246,6 @@ const savePortfolioItem = async () => {
 
   const handleSave = () => {
     console.log("Saving profile data:", formData);
-    // Handle save logic here
   };
 
   const isFormValid = () => {
@@ -293,7 +274,7 @@ const savePortfolioItem = async () => {
               </Link>
               <ChevronRight className="h-4 w-4 mx-1" />
               <Link href="/profile/1">
-              <span className="hover:text-green-700 cursor-pointer">Profile</span>
+              <span className="hover:text-green-700 cursor-pointer">Your Profile</span>
               </Link>
               <ChevronRight className="h-4 w-4 mx-1" />
               <span className="text-green-700 font-medium">Edit</span>
