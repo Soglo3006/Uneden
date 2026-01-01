@@ -1,10 +1,104 @@
 import pool from "../config/db.js";
 
+
+export const completeProfile = async (req,res) => {
+    try {
+        const {
+            account_type,
+            phone,
+            address,
+            city,
+            province,
+            bio,
+            avatar,
+
+            // Person data
+            profession,
+            skills,
+            languages,
+            experiences,
+            
+            // Company data
+            company_name,
+            industry,
+            team_size,
+            
+            // Portfolio (commun)
+            portfolio
+            } = req.body;
+
+            const userId = req.user.id;
+            const fullName = req.user.full_name;
+
+            console.log("Completing profile for user:", userId);
+
+            // Mettre à jour le profil
+            const result = await pool.query(
+            `UPDATE users 
+            SET 
+                account_type = $1,
+                phone = $2,
+                address = $3,
+                city = $4,
+                province = $5,
+                bio = $6,
+                avatar = $7,
+                profession = $8,
+                skills = $9,
+                languages = $10,
+                experiences = $11,
+                company_name = $12,
+                industry = $13,
+                team_size = $14,
+                portfolio = $15,
+                profile_completed = true,
+                updated_at = NOW()
+            WHERE id = $16
+            RETURNING *`,
+            [
+                account_type,
+                phone,
+                address,
+                city,
+                province,
+                bio,
+                avatar,
+                profession,
+                skills,
+                JSON.stringify(languages || []),
+                JSON.stringify(experiences || []),
+                company_name,
+                industry,
+                team_size,
+                JSON.stringify(portfolio || []),
+                userId
+            ]
+            );
+
+            if (result.rows.length === 0) {
+            return res.status(404).json({ message: "User not found" });
+            }
+
+            console.log("Profile completed successfully");
+
+            res.json({ 
+            message: "Profile completed successfully",
+            user: result.rows[0]
+            });
+        } catch (err) {
+            console.error("Error completing profile:", err);
+            res.status(500).json({ 
+            message: "Server error while completing profile",
+            error: err.message 
+            });
+        }
+};
+
 export const GetMyProfile = async (req,res) => {
     try {
 
         const result = await pool.query(
-            `SELECT id, full_name, email, created_at FROM users WHERE id= $1`,
+            `SELECT * FROM users WHERE id= $1`,
             [req.user.id]
         )
 
@@ -34,7 +128,7 @@ export const UpdateMyProfile = async (req,res) => {
         }
 
         const result = await pool.query(
-            `UPDATE users SET full_name = $1, email= $2 WHERE id = $3 RETURNING id, full_name, email, created_at`,
+            `UPDATE users SET full_name = $1, email= $2, updated_at = NOW() WHERE id = $3 RETURNING *`,
             [full_name, email, req.user.id]
         )
 
@@ -55,7 +149,13 @@ export const getUserProfile = async (req,res) => {
         const { id } = req.params;
 
         const userResult = await pool.query(
-            `SELECT id, full_name, email, created_at FROM users WHERE id=$1`,
+            `SELECT 
+            id, full_name, email, account_type, bio, avatar, 
+            profession, skills, languages, portfolio,
+            company_name, industry, team_size,
+            created_at 
+            FROM users 
+            WHERE id = $1`,
             [id]
         );
 
@@ -94,4 +194,4 @@ export const getUserProfile = async (req,res) => {
         console.error(err);
         res.status(500).json({message: "Server error while fetching profile" });
     }
-}
+};
