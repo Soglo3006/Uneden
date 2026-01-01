@@ -33,7 +33,7 @@ export default function UserProfilePage() {
     const [showEllipsis, setShowEllipsis] = useState(false);
     const [selectedPortfolio, setSelectedPortfolio] = useState(null);
     const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false);
-    const MAX_DISPLAY = 8;
+    const [MAX_DISPLAY, setMAX_DISPLAY] = useState(8);
 
     const user = mockUsers.find(u => u.id === profileId);
     const currentUserId = 1; // mock auth
@@ -272,6 +272,7 @@ return (
                         size="lg" 
                         variant="outline" 
                         className="gap-1 cursor-pointer"
+                        onClick={() => setMAX_DISPLAY(prev => prev + 8)}
                     >
                         View More
                     </Button>
