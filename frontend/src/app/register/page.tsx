@@ -1,5 +1,6 @@
 "use client";
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
+import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 import {
   Card,
   CardContent,
@@ -22,9 +23,15 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [chargement, setChargement] = useState(false)
   
   const { signUpWithEmail, signInWithGoogle, signInWithFacebook, signInWithApple } = useAuth();
+
+  const { loading } = useProtectedRoute({
+    redirectTo: "/",
+  });
+
+  if (loading) return <div>Loading...</div>;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,14 +47,14 @@ export default function RegisterPage() {
       return;
     }
 
-    setLoading(true);
+    setChargement(true);
 
     try {
       await signUpWithEmail(email, password, fullName);
     } catch (err: any) {
       setError(err.message || "Registration failed");
     } finally {
-      setLoading(false);
+      setChargement(false);
     }
   };
 
@@ -112,9 +119,9 @@ export default function RegisterPage() {
               <Button 
                 type="submit" 
                 className="w-full bg-green-800 hover:bg-green-900 cursor-pointer"
-                disabled={loading}
+                disabled={chargement}
               >
-                {loading ? "Creating Account..." : "Create Account"}
+                {chargement ? "Creating Account..." : "Create Account"}
               </Button>
             </div>
           </form>

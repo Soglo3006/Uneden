@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 
 const initialUserData = {
   fullName: "Alexandre Booh louha",
@@ -73,6 +74,13 @@ export default function EditProfilePage() {
   const [portfolioCroppedAreaPixels, setPortfolioCroppedAreaPixels] = useState(null);
   const [errorPortfolio, setErrorPortfolio] = useState(false);
   const [errorEditPortfolio, setErrorEditPortfolio] = useState(false);
+
+  const { user, loading } = useProtectedRoute({
+    requireAuth: true,
+    requireProfileCompleted: true,
+  });
+
+  if (loading) return <div>Loading...</div>;
 
 
   const handlePortfolioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
