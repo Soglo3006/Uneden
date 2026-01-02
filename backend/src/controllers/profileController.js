@@ -106,8 +106,9 @@ export const GetMyProfile = async (req,res) => {
             return res.status(404).json({message: "Profile not found"});
         }
 
-        res.json(result.rows[0]);
+        const user = result.rows[0];
 
+        res.json(user);
     } catch(err){
         console.error(err);
         res.status(500).json({message: "Server error while fetching profile" });

@@ -3,343 +3,422 @@
 import Header from "@/components/home/Header";
 import CategoryNav from "@/components/home/Category";
 import Footer from "@/components/home/Footer";
-import Link from "next/link"
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
-Star,
-MapPin,
-MessageCircle,
-Grid3x3,
-ChevronRight,
-Settings,
-Ellipsis,
-UserStar,
-HeartPlus,
+  Star,
+  MapPin,
+  MessageCircle,
+  Grid3x3,
+  ChevronRight,
+  Settings,
+  Ellipsis,
+  UserStar,
+  HeartPlus,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import {useParams} from "next/navigation";
-import SettingsPage from "@/components/profile/Settings"
+import { useParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import SettingsPage from "@/components/profile/Settings";
 import EllipsisPage from "@/components/profile/Ellipsis";
-import { mockUsers } from "@/lib/mockData";
 
 export default function UserProfilePage() {
-    const params = useParams();
-    const profileId = Number(params.id);
-    const [showSettings, setShowSettings] = useState(false);
-    const [showEllipsis, setShowEllipsis] = useState(false);
-    const [selectedPortfolio, setSelectedPortfolio] = useState(null);
-    const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false);
-    const [MAX_DISPLAY, setMAX_DISPLAY] = useState(8);
+  const params = useParams();
+  const profileId = params.id as string;
+  const { user, session } = useAuth();
+  
+  const [showSettings, setShowSettings] = useState(false);
+  const [showEllipsis, setShowEllipsis] = useState(false);
+  const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
+  const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false);
+  const [MAX_DISPLAY, setMAX_DISPLAY] = useState(8);
 
-    const user = mockUsers.find(u => u.id === profileId);
-    const currentUserId = 1; // mock auth
-    const profileUser = user;
-    const isOwner = profileUser.id === currentUserId;
+  const [profileUser, setProfileUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  const isOwner = user?.id === profileId;
+  const settingsScrollRef = useRef(null);
 
-    const visibleListings = profileUser.userListings.slice(0, MAX_DISPLAY);
+  // Fetch profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
 
+        let url = `${process.env.NEXT_PUBLIC_API_URL}/profiles/${profileId}`;
+        const headers: HeadersInit = {};
 
-    const settingsScrollRef = useRef(null);
-
-
-    useEffect(() => {
-        if (showSettings || showEllipsis || isPortfolioModalOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'auto';
+        // Si c'est notre propre profil, utiliser /me
+        if (isOwner && session?.access_token) {
+          url = `${process.env.NEXT_PUBLIC_API_URL}/profiles/me`;
+          headers.Authorization = `Bearer ${session.access_token}`;
         }
 
-        return () => {
-            document.body.style.overflow = 'auto';
+        const response = await fetch(url, { headers });
+
+        if (!response.ok) {
+          throw new Error("Profile not found");
         }
-    }, [showSettings, showEllipsis, isPortfolioModalOpen]);
 
+        const data = await response.json();
+        setProfileUser(data);
+      } catch (err: any) {
+        console.error("Error fetching profile:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    if (profileId) {
+      fetchProfile();
+    }
+  }, [profileId, isOwner, session]);
 
-return (
-<div className="min-h-screen bg-gray-50 flex flex-col">
-    <Header />
-    <CategoryNav />
+  // Prevent scrolling when modals are open
+  useEffect(() => {
+    if (showSettings || showEllipsis || isPortfolioModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
 
-    <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
-    <div className="max-w-6xl mx-auto">
-        <div className="flex items-center text-sm text-gray-500 mb-4">
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [showSettings, showEllipsis, isPortfolioModalOpen]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <CategoryNav />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !profileUser) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <CategoryNav />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Profile not found</h1>
+            <p className="text-gray-600">{error || "This profile doesn't exist."}</p>
             <Link href="/">
-            <span className="hover:text-green-700 cursor-pointer">Home</span>
+              <Button className="mt-4 bg-green-700 hover:bg-green-800 text-white">
+                Go Home
+              </Button>
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Parse JSON fields if they're strings
+  const skills = typeof profileUser.skills === "string" 
+    ? JSON.parse(profileUser.skills) 
+    : profileUser.skills || [];
+  
+  const languages = typeof profileUser.languages === "string"
+    ? JSON.parse(profileUser.languages)
+    : profileUser.languages || [];
+  
+  const portfolio = typeof profileUser.portfolio === "string"
+    ? JSON.parse(profileUser.portfolio)
+    : profileUser.portfolio || [];
+
+  // ✅ Calculer la date d'inscription
+  const memberSince = profileUser.created_at 
+    ? new Date(profileUser.created_at).toLocaleDateString("en-US", { 
+        month: "long", 
+        year: "numeric" 
+      })
+    : "Recently";
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header />
+      <CategoryNav />
+
+      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Breadcrumb */}
+          <div className="flex items-center text-sm text-gray-500 mb-4">
+            <Link href="/">
+              <span className="hover:text-green-700 cursor-pointer">Home</span>
             </Link>
             <ChevronRight className="h-4 w-4 mx-1" />
-            <span className="text-green-700 font-medium">{isOwner ? "Your Profile" : `${profileUser.name}'s Profile`}</span>
-        </div>
-        <Card className="p-8 mb-8">
-        <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            <Avatar className="w-45 h-45 border-4 border-white shadow-lg">
-                <AvatarImage src={profileUser.avatar} alt={profileUser.name} />
-                <AvatarFallback>{profileUser.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{profileUser.name}</h1>
-            <p className="text-lg text-gray-600 mb-3">{profileUser.tagline}</p>
-            <div className="flex flex-wrap items-center gap-4 mb-4">
-                <div className="flex items-center gap-1">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span className="font-semibold text-lg">{profileUser.rating}</span>
-                <span className="text-gray-500">({profileUser.reviews} reviews)</span>
-                </div>
-                <div className="flex items-center gap-1 text-gray-600">
-                <MapPin className="h-4 w-4" />
-                <span>{profileUser.location}</span>
-                </div>
-            </div>
+            <span className="text-green-700 font-medium">
+              {isOwner 
+                ? "Your Profile" 
+                : `${profileUser.full_name || profileUser.company_name}'s Profile`}
+            </span>
+          </div>
 
-            <div className="flex flex-wrap gap-3">
-                
-                    <Button className="bg-green-700 hover:bg-green-700 text-white gap-2 cursor-pointer">
+          {/* Profile Header Card */}
+          <Card className="p-8 mb-8">
+            <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+              <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
+                <AvatarImage 
+                  src={profileUser.avatar} 
+                  alt={profileUser.full_name || profileUser.company_name} 
+                />
+                <AvatarFallback className="text-2xl">
+                  {(profileUser.full_name || profileUser.company_name || "U").charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  {profileUser.full_name || profileUser.company_name}
+                </h1>
+                <p className="text-lg text-gray-600 mb-3">
+                  {profileUser.profession || profileUser.industry || "Service Provider"}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-4 mb-4">
+                  {profileUser.stats && (
+                    <div className="flex items-center gap-1">
+                      <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                      <span className="font-semibold text-lg">
+                        {profileUser.stats.average_rating?.toFixed(1) || "N/A"}
+                      </span>
+                      <span className="text-gray-500">
+                        ({profileUser.stats.total_reviews || 0} reviews)
+                      </span>
+                    </div>
+                  )}
+                  {profileUser.city && profileUser.province && (
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <MapPin className="h-4 w-4" />
+                      <span>{profileUser.city}, {profileUser.province}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-3">
+                  {isOwner ? (
+                    <>
+                      <Button className="bg-green-700 hover:bg-green-800 text-white gap-2">
                         <MessageCircle className="h-4 w-4" />
-                        {isOwner ? "View Messages" : "Send Message"}
-                    </Button>
-
-                    {!isOwner && (
-                    <Button variant="outline" className="gap-2 cursor-pointer">
+                        View Messages
+                      </Button>
+                      <Link href="/profile/edit">
+                        <Button variant="outline" className="gap-2">
+                          <Settings className="h-4 w-4" />
+                          Edit Profile
+                        </Button>
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Button className="bg-green-700 hover:bg-green-800 text-white gap-2">
+                        <MessageCircle className="h-4 w-4" />
+                        Send Message
+                      </Button>
+                      <Button variant="outline" className="gap-2">
                         <HeartPlus className="h-4 w-4" />
                         Add To Favorites
-                    </Button>
-                    )}
-                    <Link href={`/listings/${profileUser.name
-                    .toLowerCase()
-                    .replace(/\s+/g, "-")}`}>
-                    <Button variant="outline" className="gap-2 cursor-pointer">
-                        <Grid3x3 className="h-4 w-4" />
-                        {isOwner ? "View all my listings" : "View Listings"}
-                    </Button>
-                    </Link>
-                    {isOwner ? (
-                        <Button variant="outline" className="gap-2 cursor-pointer" onClick={() => setShowSettings(true)}>
-                            <Settings className="h-4 w-4" />
-                            Settings
-                        </Button>
-                    ) : (
-                        <>
-                        <Button variant="outline" className="gap-2 cursor-pointer">
-                            <UserStar className="h-4 w-4" />
-                            View Ratings
-                        </Button>
-                        <Button variant="outline" className="gap-2 cursor-pointer" onClick={() => setShowEllipsis(true)}>
-                        <Ellipsis className="h-4 w-4" />
-                    </Button>
-                    </>
-                    )}
-                </div>
-
-            </div>
-        </div>
-        </Card>
-
-        <Card className="p-6 mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">About Me</h2>
-        <div className="flex justify-between items-start">
-        <p className="text-gray-700 leading-relaxed">
-            {profileUser.bio}
-        </p>
-        </div>
-        <Separator className="my-1" />
-
-        <div className="grid md:grid-cols-2 gap-6">
-            <div>
-            <h3 className="font-semibold text-gray-900 flex mb-1 items-center gap-2">
-                Skills
-            </h3>
-            <div className="flex flex-wrap gap-2">
-            {profileUser.skills.map((skill) => (
-                <Badge
-                key={skill}
-                variant="secondary"
-                className="bg-green-100 text-green-700"
-                >
-                {skill}
-                </Badge>
-            ))}
-            </div>
-            </div>
-
-            <div>
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                Languages
-            </h3>
-            <p className="text-gray-700">{profileUser.languages.join(", ")}</p>
-            </div>
-
-            <div>
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                Years of Experience
-            </h3>
-            <p className="text-gray-700">{profileUser.yearsExperience} years</p>
-            </div>
-
-            <div>
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                Member Since
-            </h3>
-            <p className="text-gray-700">{profileUser.memberSince}</p>
-            </div>
-        </div>
-        </Card>
-
-
-        <Card className="p-6 mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Portfolio</h2>
-        {profileUser.portfolio.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {profileUser.portfolio.map((item) => (
-                <div key={item.id} className="group cursor-pointer" onClick={()=> {
-                    setSelectedPortfolio(item);
-                    setIsPortfolioModalOpen(true);
-                }}>
-                <div className="relative overflow-hidden rounded-lg mb-2 aspect-square max-w-[300px] mx-auto">
-                    <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300" />
-                </div>
-                <p className="text-sm font-medium text-gray-700 text-center">{item.title}</p>
-                </div>
-            ))}
-            </div>
-        ) : (
-            <div className="text-center py-12">
-            <Grid3x3 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No portfolio uploaded yet.</p>
-            </div>
-        )}
-        </Card>
-        <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
-        {isOwner ? "Listings made by you" : `${profileUser.name}'s Listings`}
-        </h2>
-        {(profileUser.userListings.length) > 0 ? (
-            <div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visibleListings.map((listing, index) => (
-                <>
-                <Card key={listing.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-                    <div className="relative h-48 overflow-hidden">
-                    <img
-                        src={listing.image}
-                        alt={listing.title}
-                        className="w-full h-full object-cover"
-                    />
-                    </div>
-                    <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                        {listing.title}
-                    </h3>
-                    <div className="flex items-center gap-1 mb-2">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold text-sm">{listing.rating}</span>
-                        <span className="text-gray-500 text-sm">({listing.reviews})</span>
-                    </div>
-                    <div className="flex items-center text-gray-500 text-sm mb-3">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {listing.location}
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold text-green-700">
-                        ${listing.price}
-                        </span>
-                    </div>
-                    </div>
-                </Card>
-
-                {(index + 1) % 6 === 0 && index !== profileUser.userListings.length - 1 && (
-                    <Card className="overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300">
-                    <div className="h-full flex items-center justify-center p-8">
-                        <span className="text-gray-400 font-medium">Advertisement</span>
-                    </div>
-                    </Card>
-                )}
-                </>
-            ))}
-            </div>
-            {profileUser.userListings.length > MAX_DISPLAY && (
-                <div className="flex justify-center mt-6">
-                    <Button 
-                        size="lg" 
+                      </Button>
+                      <Button variant="outline" className="gap-2">
+                        <UserStar className="h-4 w-4" />
+                        View Ratings
+                      </Button>
+                      <Button 
                         variant="outline" 
-                        className="gap-1 cursor-pointer"
-                        onClick={() => setMAX_DISPLAY(prev => prev + 8)}
-                    >
-                        View More
+                        className="gap-2" 
+                        onClick={() => setShowEllipsis(true)}
+                      >
+                        <Ellipsis className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                  
+                  <Link 
+                    href={`/listings/${(profileUser.full_name || profileUser.company_name || "user")
+                      .toLowerCase()
+                      .replace(/\s+/g, "-")}`}
+                  >
+                    <Button variant="outline" className="gap-2">
+                      <Grid3x3 className="h-4 w-4" />
+                      {isOwner ? "View all my listings" : "View Listings"}
                     </Button>
+                  </Link>
                 </div>
-            )}
+              </div>
             </div>
-            
-        ) : (
-            <Card className="p-12">
-            <div className="text-center">
-                <Grid3x3 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No listings yet
-                </h3>
-                <p className="text-gray-500">
-                This user hasn't posted any listings yet.
-                </p>
-            </div>
+          </Card>
+
+          {/* About Section */}
+          {profileUser.bio && (
+            <Card className="p-6 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">About</h2>
+              <p className="text-gray-700 leading-relaxed mb-6">
+                {profileUser.bio}
+              </p>
+              <Separator className="my-4" />
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Skills */}
+                {skills.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      {profileUser.account_type === "company" ? "Services" : "Skills"}
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {skills.map((skill: string, index: number) => (
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="bg-green-100 text-green-700"
+                        >
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Languages */}
+                {languages.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Languages</h3>
+                    <p className="text-gray-700">
+                      {languages
+                        .map((lang: any) => 
+                          typeof lang === "string" 
+                            ? lang 
+                            : `${lang.language} (${lang.proficiency})`
+                        )
+                        .join(", ")}
+                    </p>
+                  </div>
+                )}
+
+                {/* Team Size (for companies) */}
+                {profileUser.team_size && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Team Size</h3>
+                    <p className="text-gray-700">{profileUser.team_size}</p>
+                  </div>
+                )}
+
+                {/* Member Since */}
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Member Since</h3>
+                  <p className="text-gray-700">{memberSince}</p>
+                </div>
+              </div>
             </Card>
-        )}
-        </div>
-    </div>
-    </main>
-    <Footer />
-    {showSettings && (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
-        <div className="w-full max-w-3xl max-h-[90vh] bg-white rounded-xl shadow-xl p-6 overflow-y-auto animate-in fade-in duration-200"
-        ref={settingsScrollRef}>
-        <SettingsPage onClose={() => setShowSettings(false)} scrollRef={settingsScrollRef}/>
-        </div>
-    </div>
-    )}
+          )}
 
-    {showEllipsis && (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
-        <div className="w-full max-w-3xl bg-white rounded-xl shadow-xl p-6">
-        <EllipsisPage onClose={() => setShowEllipsis(false)} />
+          {/* Portfolio */}
+          {portfolio.length > 0 && (
+            <Card className="p-6 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Portfolio</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {portfolio.map((item: any, index: number) => (
+                  <div
+                    key={item.id || index}
+                    className="group cursor-pointer"
+                    onClick={() => {
+                      setSelectedPortfolio(item);
+                      setIsPortfolioModalOpen(true);
+                    }}
+                  >
+                    <div className="relative overflow-hidden rounded-lg aspect-square">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                    </div>
+                    <p className="text-sm font-medium text-gray-700 text-center mt-2">
+                      {item.title}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Listings - À implémenter plus tard */}
+          <Card className="p-12">
+            <div className="text-center">
+              <Grid3x3 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Listings coming soon
+              </h3>
+              <p className="text-gray-500">
+                User listings will be displayed here once implemented.
+              </p>
+            </div>
+          </Card>
         </div>
+      </main>
 
-    </div>
-    )}
+      <Footer />
 
-    {isPortfolioModalOpen && selectedPortfolio && (
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+          <div
+            className="w-full max-w-3xl max-h-[90vh] bg-white rounded-xl shadow-xl p-6 overflow-y-auto animate-in fade-in duration-200"
+            ref={settingsScrollRef}
+          >
+            <SettingsPage onClose={() => setShowSettings(false)} scrollRef={settingsScrollRef} />
+          </div>
+        </div>
+      )}
+
+      {/* Ellipsis Modal */}
+      {showEllipsis && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+          <div className="w-full max-w-3xl bg-white rounded-xl shadow-xl p-6">
+            <EllipsisPage onClose={() => setShowEllipsis(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Portfolio Modal */}
+      {isPortfolioModalOpen && selectedPortfolio && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-xl max-w-3xl p-4 relative animate-in fade-in duration-200">
-            <Button 
-                className="absolute top-6 right-6 p-2 bg-black/50 hover:bg-black/70 text-white rounded"
-                onClick={() => setIsPortfolioModalOpen(false)}
+          <div className="bg-white rounded-xl shadow-xl max-w-3xl p-4 relative animate-in fade-in duration-200">
+            <Button
+              className="absolute top-6 right-6 p-2 bg-black/50 hover:bg-black/70 text-white rounded"
+              onClick={() => setIsPortfolioModalOpen(false)}
             >
-                ✕
+              ✕
             </Button>
             <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-200 max-w-[500px] mx-auto">
-                <img 
-                    src={selectedPortfolio.image} 
-                    alt={selectedPortfolio.title}
-                    className="w-full h-full object-cover"
-                />
+              <img
+                src={selectedPortfolio.image}
+                alt={selectedPortfolio.title}
+                className="w-full h-full object-cover"
+              />
             </div>
             <h3 className="text-xl font-semibold text-center mt-4">
-                {selectedPortfolio.title}
+              {selectedPortfolio.title}
             </h3>
+          </div>
         </div>
+      )}
     </div>
-    )}
-
-
-
-</div>
-);
+  );
 }

@@ -26,7 +26,6 @@ export default function LoginPage() {
   const { signInWithEmail, signInWithGoogle, signInWithFacebook, signInWithApple } = useAuth();
 
   const { loading } = useProtectedRoute({
-    redirectTo: "/",
   });
 
   if (loading) return <div>Loading...</div>;

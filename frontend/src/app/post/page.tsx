@@ -141,9 +141,9 @@ export default function PostServicePage() {
     };
 
     const { user, loading } = useProtectedRoute({
-    requireAuth: true,
-    requireProfileCompleted: true,
-  });
+        requireAuth: true,
+        requireProfileCompleted: true,
+    });
 
   if (loading) {
     return (

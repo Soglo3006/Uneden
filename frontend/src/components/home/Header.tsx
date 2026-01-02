@@ -10,17 +10,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { categories } from "@/lib/categories";
-import { sampleListings } from "@/lib/listings";
+import { useRouter } from "next/navigation";
+import { User, Settings, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link"
 
 
 export default function Header(){
+    const { user, signOut } = useAuth();
+    const router = useRouter();
+
+    const handleSignOut = async () => {
+      await signOut();
+      router.push("/");
+    };
     return (
         <div className="w-full border-b border-gray-200 shadow-sm bg-white">
         <div className="flex justify-center items-center space-x-5 p-5 max-w-7xl mx-auto">
@@ -69,17 +85,63 @@ export default function Header(){
           </ToggleGroup>
         </div>
         <div>
-          <ButtonGroup>
-            <div className="flex gap-4">
-              <Link href="/login">
-                <Button variant="outline" size="lg" className="cursor-pointer">Sign In</Button>
-              </Link>
-
-              <Link href="/register">
-                <Button variant="outline" size="lg" className="cursor-pointer">Register</Button>
-              </Link>
-            </div>
-          </ButtonGroup>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Avatar className="cursor-pointer h-10 w-10 border-2 border-green-700">
+                  <AvatarImage 
+                    src={user.user_metadata?.avatar || ""} 
+                    alt={user.user_metadata?.full_name || "User"} 
+                  />
+                  <AvatarFallback className="bg-green-100 text-green-700 font-semibold">
+                    {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium">{user.user_metadata?.full_name || "User"}</p>
+                  <p className="text-xs text-gray-500">{user.email}</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href={`/profile/${user.id}`} className="cursor-pointer flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile/edit" className="cursor-pointer flex items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={handleSignOut} 
+                  className="cursor-pointer text-red-600 focus:text-red-600"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <ButtonGroup>
+              <div className="flex gap-4">
+                <Link href="/login">
+                  <Button variant="outline" size="lg" className="cursor-pointer">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button variant="outline" size="lg" className="cursor-pointer">
+                    Register
+                  </Button>
+                </Link>
+              </div>
+            </ButtonGroup>
+          )}
         </div>
         <div>
           <Link href="/post">
