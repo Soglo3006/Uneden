@@ -13,7 +13,18 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import ProfilePictureUploader from "@/components/profile/ProfilePicture";
-import { ChevronRight, Upload, X, Trash2, Plus, Camera } from "lucide-react";
+import { 
+  ChevronRight, 
+  Upload, 
+  X, 
+  Trash2, 
+  Plus, 
+  Camera,
+  Building2,
+  User,
+  Users,
+  Briefcase
+} from "lucide-react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
@@ -23,19 +34,28 @@ export default function EditProfilePage() {
   const router = useRouter();
   const { user, session } = useAuth();
   
+  const [accountType, setAccountType] = useState<"person" | "company">("person");
+  
   const [formData, setFormData] = useState({
-    fullName: "",
+    // Commun
     email: "",
     phone: "",
     avatar: "",
     bio: "",
+    city: "",
+    province: "",
     skills: [],
     languages: [],
-    yearsExperience: 0,
-    location: "",
     portfolio: [],
-    showPublicly: true,
-    allowMessages: true,
+    
+    // Person
+    fullName: "",
+    profession: "",
+    
+    // Company
+    companyName: "",
+    industry: "",
+    teamSize: "",
   });
 
   const [initialData, setInitialData] = useState(null);
@@ -61,6 +81,9 @@ export default function EditProfilePage() {
   const [errorPortfolio, setErrorPortfolio] = useState(false);
   const [errorEditPortfolio, setErrorEditPortfolio] = useState(false);
 
+  const isPerson = accountType === "person";
+  const isCompany = accountType === "company";
+
   // Charger les données du profil
   useEffect(() => {
     const fetchProfile = async () => {
@@ -82,27 +105,45 @@ export default function EditProfilePage() {
         }
 
         const data = await response.json();
+        setAccountType(data.account_type || "person");
+
+        const skills = typeof data.skills === "string" 
+          ? JSON.parse(data.skills) 
+          : data.skills || [];
+
+        const languages = typeof data.languages === "string"
+          ? JSON.parse(data.languages)
+          : data.languages || [];
+
+        const portfolio = typeof data.portfolio === "string"
+          ? JSON.parse(data.portfolio)
+          : data.portfolio || [];
 
         // Formater les données pour le formulaire
         const profileData = {
-          fullName: data.full_name || "",
+          // Commun
           email: data.email || "",
           phone: data.phone || "",
           avatar: data.avatar || "",
           bio: data.bio || "",
-          skills: data.skills || [],
-          languages: data.languages || [],
-          yearsExperience: data.years_experience || 0,
-          location: data.city && data.province 
-            ? `${data.city}, ${data.province}` 
-            : "",
-          portfolio: data.portfolio || [],
-          showPublicly: true,
-          allowMessages: true,
+          city: data.city || "",
+          province: data.province || "",
+          skills: skills,
+          languages: languages,
+          portfolio: portfolio,
+
+          // Person
+          fullName: data.full_name || "",
+          profession: data.profession || "",
+          
+          // Company
+          companyName: data.company_name || "",
+          industry: data.industry || "",
+          teamSize: data.team_size || "",
         };
 
         setFormData(profileData);
-        setInitialData(profileData);
+        setInitialData(JSON.parse(JSON.stringify(profileData)));
       } catch (err: any) {
         console.error("Error loading profile:", err);
         setError(err.message);
@@ -286,22 +327,28 @@ export default function EditProfilePage() {
     try {
       setSaving(true);
 
-      // Séparer city et province
-      const locationParts = formData.location.split(",").map(s => s.trim());
-      const city = locationParts[0] || "";
-      const province = locationParts[1] || "";
-
       const payload = {
-        full_name: formData.fullName,
         email: formData.email,
         phone: formData.phone,
         avatar: formData.avatar,
         bio: formData.bio,
-        city: city,
-        province: province,
+        city: formData.city,
+        province: formData.province,
         skills: formData.skills,
         languages: formData.languages,
         portfolio: formData.portfolio,
+        
+        // Champs spécifiques selon le type
+        ...(isPerson && {
+          full_name: formData.fullName,
+          profession: formData.profession,
+        }),
+        
+        ...(isCompany && {
+          company_name: formData.companyName,
+          industry: formData.industry,
+          team_size: formData.teamSize,
+        }),
       };
 
       const response = await fetch(
@@ -317,12 +364,13 @@ export default function EditProfilePage() {
       );
 
       if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Failed to update profile");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update profile");
       }
 
       // Rediriger vers la page de profil
       router.push(`/profile/${user?.id}`);
+      console.log(payload);
     } catch (err: any) {
       console.error("Error saving profile:", err);
       alert("Failed to save profile. Please try again.");
@@ -332,11 +380,16 @@ export default function EditProfilePage() {
   };
 
   const isFormValid = () => {
-    return (
-      formData.fullName.trim() !== "" &&
-      formData.location.trim() !== "" &&
-      formData.phone.trim() !== ""
-    );
+    const commonValid = 
+      formData.phone.trim() !== "" &&
+      formData.city.trim() !== "" &&
+      formData.province.trim() !== "";
+    
+    if (isPerson) {
+      return commonValid && formData.fullName.trim() !== "";
+    } else {
+      return commonValid && formData.companyName.trim() !== "";
+    }
   };
 
   const isUnchanged = JSON.stringify(formData) === JSON.stringify(initialData);
@@ -354,6 +407,8 @@ export default function EditProfilePage() {
     );
   }
 
+  const displayName = isPerson ? formData.fullName : formData.companyName;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
@@ -368,30 +423,53 @@ export default function EditProfilePage() {
               </Link>
               <ChevronRight className="h-4 w-4 mx-1" />
               <Link href={`/profile/${user?.id}`}>
-                <span className="hover:text-green-700 cursor-pointer">Your Profile</span>
+                <span className="hover:text-green-700 cursor-pointer">
+                  {isPerson ? "Your Profile" : "Your Company Profile"}
+                </span>
               </Link>
               <ChevronRight className="h-4 w-4 mx-1" />
               <span className="text-green-700 font-medium">Edit</span>
             </div>
 
-            <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-              Edit Profile
-            </h1>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">
+                Edit {isPerson ? "Profile" : "Company Profile"}
+              </h1>
+              {isCompany && (
+                <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                  <Building2 className="h-3 w-3 mr-1" />
+                  Company
+                </Badge>
+              )}
+            </div>
             <p className="text-gray-600 text-lg">
-              Update your personal information
+              Update your {isPerson ? "personal" : "company"} information
             </p>
           </div>
 
+          {/* Basic Information */}
           <Card className="p-6 sm:p-8 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Personal Information</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              {isPerson ? (
+                <>
+                  <User className="h-5 w-5 text-green-700" />
+                  Personal Information
+                </>
+              ) : (
+                <>
+                  <Building2 className="h-5 w-5 text-green-700" />
+                  Company Information
+                </>
+              )}
+            </h2>
             <div className="space-y-6">
               <div className="flex flex-col items-center">
                 <Label className="text-base font-medium text-gray-900 mb-3 block">
-                  Profile Picture
+                  {isPerson ? "Profile Picture" : "Company Logo"}
                 </Label>
                 <ProfilePictureUploader
                   currentProfilePicture={formData.avatar}
-                  userName={formData.fullName}
+                  userName={displayName}
                   onProfileChange={(newProfilePicture) => 
                     setFormData({ ...formData, avatar: newProfilePicture })
                   }
@@ -400,18 +478,36 @@ export default function EditProfilePage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-base font-medium text-gray-900">
-                  Full Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="h-12"
-                />
-              </div>
+              {/* Name Field - Different for Person vs Company */}
+              {isPerson ? (
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className="text-base font-medium text-gray-900">
+                    Full Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    className="h-12"
+                    placeholder="John Doe"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="companyName" className="text-base font-medium text-gray-900">
+                    Company Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="companyName"
+                    type="text"
+                    value={formData.companyName}
+                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                    className="h-12"
+                    placeholder="Acme Corporation"
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-base font-medium text-gray-900">
@@ -439,30 +535,102 @@ export default function EditProfilePage() {
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="h-12"
+                  placeholder="+1 (555) 123-4567"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="location" className="text-base font-medium text-gray-900">
-                  Location <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="location"
-                  type="text"
-                  placeholder="City, Province"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="h-12"
-                />
+              {/* Location Fields */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city" className="text-base font-medium text-gray-900">
+                    City <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="city"
+                    type="text"
+                    placeholder="Toronto"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="h-12"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="province" className="text-base font-medium text-gray-900">
+                    Province <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="province"
+                    type="text"
+                    placeholder="Ontario"
+                    value={formData.province}
+                    onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                    className="h-12"
+                  />
+                </div>
               </div>
+
+              {/* Profession (Person) or Industry (Company) */}
+              {isPerson ? (
+                <div className="space-y-2">
+                  <Label htmlFor="profession" className="text-base font-medium text-gray-900 flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-gray-500" />
+                    Profession
+                  </Label>
+                  <Input
+                    id="profession"
+                    type="text"
+                    value={formData.profession}
+                    onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
+                    className="h-12"
+                    placeholder="Software Developer, Plumber, Electrician..."
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="industry" className="text-base font-medium text-gray-900 flex items-center gap-2">
+                      <Briefcase className="h-4 w-4 text-gray-500" />
+                      Industry
+                    </Label>
+                    <Input
+                      id="industry"
+                      type="text"
+                      value={formData.industry}
+                      onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                      className="h-12"
+                      placeholder="Construction, IT Services, Manufacturing..."
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="teamSize" className="text-base font-medium text-gray-900 flex items-center gap-2">
+                      <Users className="h-4 w-4 text-gray-500" />
+                      Team Size
+                    </Label>
+                    <Input
+                      id="teamSize"
+                      type="text"
+                      value={formData.teamSize}
+                      onChange={(e) => setFormData({ ...formData, teamSize: e.target.value })}
+                      className="h-12"
+                      placeholder="1-10, 11-50, 51-200..."
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="bio" className="text-base font-medium text-gray-900">
-                  Short Bio / Description
+                  {isPerson ? "Short Bio / Description" : "Company Description"}
                 </Label>
                 <Textarea
                   id="bio"
-                  placeholder="Tell people about yourself and your services..."
+                  placeholder={
+                    isPerson 
+                      ? "Tell people about yourself and your services..."
+                      : "Describe your company, services, and what makes you unique..."
+                  }
                   value={formData.bio}
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   className="min-h-32 resize-none"
@@ -472,12 +640,16 @@ export default function EditProfilePage() {
                   {formData.bio.length} / 500 characters
                 </p>
               </div>
+
+              {/* Skills / Services */}
               <div className="space-y-2">
-                <Label className="text-base font-medium text-gray-900">Skills</Label>
+                <Label className="text-base font-medium text-gray-900">
+                  {isPerson ? "Skills" : "Services Offered"}
+                </Label>
                 <div className="flex gap-2">
                   <Input
                     type="text"
-                    placeholder="Add a skill..."
+                    placeholder={isPerson ? "Add a skill..." : "Add a service..."}
                     value={newSkill}
                     onChange={(e) => setNewSkill(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleAddSkill()}
@@ -512,8 +684,11 @@ export default function EditProfilePage() {
                 </div>
               </div>
 
+              {/* Languages */}
               <div className="space-y-2">
-                <Label className="text-base font-medium text-gray-900">Languages Spoken</Label>
+                <Label className="text-base font-medium text-gray-900">
+                  {isPerson ? "Languages Spoken" : "Languages Supported"}
+                </Label>
                 <div className="flex gap-2">
                   <Input
                     type="text"
@@ -535,7 +710,6 @@ export default function EditProfilePage() {
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {formData.languages.map((lang, index) => {
-                    // ✅ Gérer les deux formats: string ou object
                     const displayText = typeof lang === "string" 
                       ? lang 
                       : `${lang.language} (${lang.proficiency})`;
@@ -561,39 +735,75 @@ export default function EditProfilePage() {
             </div>
           </Card>
 
-          {formData.portfolio.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-              {formData.portfolio.map((item, index) => (
-                <div key={`portfolio-${index}`} className="relative group"> 
-                  <div className="relative overflow-hidden rounded-lg aspect-square max-w-[300px] mx-auto">
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200" />
-                    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => handleEditPortfolioItem(item)}
-                        className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 cursor-pointer"
-                      >
-                        <Camera className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleRemovePortfolioItem(item.id)}
-                        className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 cursor-pointer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-700 mt-2 text-center font-medium">{item.title}</p>
-                </div>
-              ))}
+          {/* Portfolio Section */}
+          <Card className="p-6 sm:p-8 mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">
+                {isPerson ? "Portfolio" : "Our Work"}
+              </h2>
+              <Button
+                onClick={() => document.getElementById("portfolio-upload")?.click()}
+                variant="outline"
+                size="sm"
+                className="gap-2 cursor-pointer"
+              >
+                <Upload className="h-4 w-4" />
+                Add Image
+              </Button>
+              <input
+                id="portfolio-upload"
+                type="file"
+                accept="image/*"
+                onChange={handlePortfolioUpload}
+                className="hidden"
+              />
             </div>
-          )}
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:justify-end mt-4">
+            {formData.portfolio.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {formData.portfolio.map((item, index) => (
+                  <div key={`portfolio-${index}`} className="relative group">
+                    <div className="relative overflow-hidden rounded-lg aspect-square">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200" />
+                      <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleEditPortfolioItem(item)}
+                          className="p-2 bg-green-600 text-white rounded-full hover:bg-green-700 cursor-pointer"
+                        >
+                          <Camera className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleRemovePortfolioItem(item.id)}
+                          className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-700 mt-2 text-center font-medium">
+                      {item.title}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+                <Camera className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-2">No portfolio items yet</p>
+                <p className="text-sm text-gray-500">
+                  Upload images to showcase your {isPerson ? "work" : "company's projects"}
+                </p>
+              </div>
+            )}
+          </Card>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
             <Button
               variant="outline"
               className="w-full sm:w-auto order-2 sm:order-1 cursor-pointer"

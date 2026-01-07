@@ -28,7 +28,7 @@ export default function RegisterPage() {
   const { signUpWithEmail, signInWithGoogle, signInWithFacebook, signInWithApple } = useAuth();
 
   const { loading } = useProtectedRoute({
-    redirectTo: "/",
+    requireAuth: false,
   });
 
   if (loading) return <div>Loading...</div>;

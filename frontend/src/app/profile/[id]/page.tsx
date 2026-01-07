@@ -19,6 +19,8 @@ import {
   Ellipsis,
   UserStar,
   HeartPlus,
+  Briefcase,
+  Users,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
@@ -35,7 +37,6 @@ export default function UserProfilePage() {
   const [showEllipsis, setShowEllipsis] = useState(false);
   const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
   const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false);
-  const [MAX_DISPLAY, setMAX_DISPLAY] = useState(8);
 
   const [profileUser, setProfileUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +44,7 @@ export default function UserProfilePage() {
 
   const isOwner = user?.id === profileId;
   const settingsScrollRef = useRef(null);
+  
 
   // Fetch profile data
   useEffect(() => {
@@ -53,7 +55,6 @@ export default function UserProfilePage() {
         let url = `${process.env.NEXT_PUBLIC_API_URL}/profiles/${profileId}`;
         const headers: HeadersInit = {};
 
-        // Si c'est notre propre profil, utiliser /me
         if (isOwner && session?.access_token) {
           url = `${process.env.NEXT_PUBLIC_API_URL}/profiles/me`;
           headers.Authorization = `Bearer ${session.access_token}`;
@@ -129,7 +130,11 @@ export default function UserProfilePage() {
     );
   }
 
-  // Parse JSON fields if they're strings
+  // Déterminer le type de compte
+  const isPerson = profileUser.account_type === "person";
+  const isCompany = profileUser.account_type === "company";
+
+  // Parse JSON fields
   const skills = typeof profileUser.skills === "string" 
     ? JSON.parse(profileUser.skills) 
     : profileUser.skills || [];
@@ -142,13 +147,17 @@ export default function UserProfilePage() {
     ? JSON.parse(profileUser.portfolio)
     : profileUser.portfolio || [];
 
-  // ✅ Calculer la date d'inscription
+  // Calculer la date d'inscription
   const memberSince = profileUser.created_at 
     ? new Date(profileUser.created_at).toLocaleDateString("en-US", { 
         month: "long", 
         year: "numeric" 
       })
     : "Recently";
+
+  // Nom d'affichage selon le type
+  const displayName = isPerson ? profileUser.full_name : profileUser.company_name;
+  const displayTitle = isPerson ? profileUser.profession : profileUser.industry;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -164,9 +173,7 @@ export default function UserProfilePage() {
             </Link>
             <ChevronRight className="h-4 w-4 mx-1" />
             <span className="text-green-700 font-medium">
-              {isOwner 
-                ? "Your Profile" 
-                : `${profileUser.full_name || profileUser.company_name}'s Profile`}
+              {isOwner ? (isPerson ? "Your Profile" : "Your Company Profile") : `${displayName}'s Profile`}
             </span>
           </div>
 
@@ -174,21 +181,27 @@ export default function UserProfilePage() {
           <Card className="p-8 mb-8">
             <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
               <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
-                <AvatarImage 
-                  src={profileUser.avatar} 
-                  alt={profileUser.full_name || profileUser.company_name} 
-                />
+                <AvatarImage src={profileUser.avatar} alt={displayName} />
                 <AvatarFallback className="text-2xl">
-                  {(profileUser.full_name || profileUser.company_name || "U").charAt(0)}
+                  {(displayName || "U").charAt(0)}
                 </AvatarFallback>
               </Avatar>
 
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  {profileUser.full_name || profileUser.company_name}
-                </h1>
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {displayName}
+                  </h1>
+                  {isCompany && (
+                    <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                      <Briefcase className="h-3 w-3 mr-1" />
+                      Company
+                    </Badge>
+                  )}
+                </div>
+
                 <p className="text-lg text-gray-600 mb-3">
-                  {profileUser.profession || profileUser.industry || "Service Provider"}
+                  {displayTitle || "Service Provider"}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -209,6 +222,12 @@ export default function UserProfilePage() {
                       <span>{profileUser.city}, {profileUser.province}</span>
                     </div>
                   )}
+                  {isCompany && profileUser.team_size && (
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <Users className="h-4 w-4" />
+                      <span>{profileUser.team_size} employees</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
@@ -219,12 +238,14 @@ export default function UserProfilePage() {
                         <MessageCircle className="h-4 w-4" />
                         View Messages
                       </Button>
-                      <Link href="/profile/edit">
-                        <Button variant="outline" className="gap-2">
-                          <Settings className="h-4 w-4" />
-                          Edit Profile
-                        </Button>
-                      </Link>
+                      <Button 
+                        variant="outline" 
+                        className="gap-2 cursor-pointer" 
+                        onClick={() => setShowSettings(true)}
+                      >
+                        <Settings className="h-4 w-4" />
+                        Settings
+                      </Button>
                     </>
                   ) : (
                     <>
@@ -251,7 +272,7 @@ export default function UserProfilePage() {
                   )}
                   
                   <Link 
-                    href={`/listings/${(profileUser.full_name || profileUser.company_name || "user")
+                    href={`/listings/${(displayName || "user")
                       .toLowerCase()
                       .replace(/\s+/g, "-")}`}
                   >
@@ -265,21 +286,23 @@ export default function UserProfilePage() {
             </div>
           </Card>
 
-          {/* About Section */}
+          {/* About Section - Adapté selon le type */}
           {profileUser.bio && (
             <Card className="p-6 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">About</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                {isPerson ? "About Me" : "About Our Company"}
+              </h2>
               <p className="text-gray-700 leading-relaxed mb-6">
                 {profileUser.bio}
               </p>
               <Separator className="my-4" />
 
               <div className="grid md:grid-cols-2 gap-6">
-                {/* Skills */}
+                {/* Skills / Services */}
                 {skills.length > 0 && (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">
-                      {profileUser.account_type === "company" ? "Services" : "Skills"}
+                      {isPerson ? "Skills" : "Services Offered"}
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {skills.map((skill: string, index: number) => (
@@ -298,7 +321,9 @@ export default function UserProfilePage() {
                 {/* Languages */}
                 {languages.length > 0 && (
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Languages</h3>
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      {isPerson ? "Languages I Speak" : "Languages Supported"}
+                    </h3>
                     <p className="text-gray-700">
                       {languages
                         .map((lang: any) => 
@@ -311,17 +336,41 @@ export default function UserProfilePage() {
                   </div>
                 )}
 
-                {/* Team Size (for companies) */}
-                {profileUser.team_size && (
+                {/* Team Size - Seulement pour les entreprises */}
+                {isCompany && profileUser.team_size && (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Team Size</h3>
-                    <p className="text-gray-700">{profileUser.team_size}</p>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-gray-500" />
+                      <p className="text-gray-700">{profileUser.team_size}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Profession - Seulement pour les personnes */}
+                {isPerson && profileUser.profession && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Profession</h3>
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="h-5 w-5 text-gray-500" />
+                      <p className="text-gray-700">{profileUser.profession}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Industry - Seulement pour les entreprises */}
+                {isCompany && profileUser.industry && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Industry</h3>
+                    <p className="text-gray-700">{profileUser.industry}</p>
                   </div>
                 )}
 
                 {/* Member Since */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Member Since</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    {isPerson ? "Member Since" : "Established On"}
+                  </h3>
                   <p className="text-gray-700">{memberSince}</p>
                 </div>
               </div>
@@ -331,7 +380,9 @@ export default function UserProfilePage() {
           {/* Portfolio */}
           {portfolio.length > 0 && (
             <Card className="p-6 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Portfolio</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                {isPerson ? "My Portfolio" : "Our Projects"}
+              </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {portfolio.map((item: any, index: number) => (
                   <div
@@ -358,15 +409,17 @@ export default function UserProfilePage() {
             </Card>
           )}
 
-          {/* Listings - À implémenter plus tard */}
+          {/* Listings */}
           <Card className="p-12">
             <div className="text-center">
               <Grid3x3 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Listings coming soon
+                {isPerson ? "My Listings" : "Our Services"}
               </h3>
               <p className="text-gray-500">
-                User listings will be displayed here once implemented.
+                {isOwner 
+                  ? "Your listings will appear here once you create them."
+                  : "Listings will be displayed here once available."}
               </p>
             </div>
           </Card>
