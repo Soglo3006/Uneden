@@ -127,7 +127,11 @@ export const UpdateMyProfile = async (req, res) => {
             province,
             skills,
             languages,
-            portfolio
+            portfolio,
+            profession,      
+            company_name,     
+            industry,          
+            team_size 
         } = req.body;
 
         // Validation des champs requis
@@ -139,7 +143,7 @@ export const UpdateMyProfile = async (req, res) => {
             return res.status(400).json({ message: "Fields cannot be empty" });
         }
 
-        // ✅ Convertir les tableaux en JSON seulement s'ils sont des tableaux
+        // Convertir les tableaux en JSON seulement s'ils sont des tableaux
         const skillsJson = Array.isArray(skills) ? JSON.stringify(skills) : skills;
         const languagesJson = Array.isArray(languages) ? JSON.stringify(languages) : languages;
         const portfolioJson = Array.isArray(portfolio) ? JSON.stringify(portfolio) : portfolio;
@@ -158,8 +162,12 @@ export const UpdateMyProfile = async (req, res) => {
                 skills = $8,
                 languages = $9,
                 portfolio = $10,
+                profession = $11,
+                company_name = $12,
+                industry = $13,
+                team_size = $14,
                 updated_at = NOW()
-            WHERE id = $11
+            WHERE id = $15
             RETURNING *`,
             [
                 full_name,
@@ -172,6 +180,10 @@ export const UpdateMyProfile = async (req, res) => {
                 skillsJson || '[]',
                 languagesJson || '[]',
                 portfolioJson || '[]',
+                profession || null,      
+                company_name || null,    
+                industry || null,        
+                team_size || null,
                 req.user.id
             ]
         );

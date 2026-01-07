@@ -351,6 +351,8 @@ export default function EditProfilePage() {
         }),
       };
 
+      console.log(payload);
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/profiles/me`,
         {
@@ -363,14 +365,20 @@ export default function EditProfilePage() {
         }
       );
 
+      console.log("📊 RESPONSE STATUS:", response.status);
+      console.log("📊 RESPONSE OK?:", response.ok);
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to update profile");
       }
 
+      const responseData = await response.json();
+    console.log("✅ RÉPONSE DE L'API:", responseData);
+    console.log("✅ PROFESSION DANS LA RÉPONSE:", responseData.profession);
+
       // Rediriger vers la page de profil
       router.push(`/profile/${user?.id}`);
-      console.log(payload);
     } catch (err: any) {
       console.error("Error saving profile:", err);
       alert("Failed to save profile. Please try again.");
