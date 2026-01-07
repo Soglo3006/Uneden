@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button"
+import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 import {
   Card,
   CardContent,
@@ -20,14 +21,19 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [charging, setCharging] = useState(false);
   
   const { signInWithEmail, signInWithGoogle, signInWithFacebook, signInWithApple } = useAuth();
+
+  const { loading } = useProtectedRoute({
+  });
+
+  if (loading) return <div>Loading...</div>;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setCharging(true);
 
     try {
     await signInWithEmail(email, password);
@@ -38,7 +44,7 @@ export default function LoginPage() {
         setError(err.message || "Login failed");
       }
     } finally {
-      setLoading(false);
+      setCharging(false);
     }
   };
 
@@ -90,9 +96,9 @@ export default function LoginPage() {
               <Button 
                 type="submit" 
                 className="w-full bg-green-800 hover:bg-green-900 cursor-pointer"
-                disabled={loading}
+                disabled={charging}
               >
-                {loading ? "Loading..." : "Login"}
+                {charging ? "Loading..." : "Login"}
               </Button>
             </div>
           </form>

@@ -64,7 +64,7 @@ export const completeProfile = async (req,res) => {
                 bio,
                 avatar,
                 profession,
-                skills,
+                JSON.stringify(skills || []),
                 JSON.stringify(languages || []),
                 JSON.stringify(experiences || []),
                 company_name,
@@ -106,41 +106,103 @@ export const GetMyProfile = async (req,res) => {
             return res.status(404).json({message: "Profile not found"});
         }
 
-        res.json(result.rows[0]);
+        const user = result.rows[0];
 
+        res.json(user);
     } catch(err){
         console.error(err);
         res.status(500).json({message: "Server error while fetching profile" });
     }
 }
 
-export const UpdateMyProfile = async (req,res) => {
+export const UpdateMyProfile = async (req, res) => {
     try {
+        const {
+            full_name,
+            email,
+            phone,
+            avatar,
+            bio,
+            city,
+            province,
+            skills,
+            languages,
+            portfolio,
+            profession,      
+            company_name,     
+            industry,          
+            team_size 
+        } = req.body;
 
-        const { full_name, email} = req.body;
-
-        if (!full_name || !email){
-            return res.status(400).json({message: "Please fill all fields"});
+        // Validation des champs requis
+        if (!full_name || !email) {
+            return res.status(400).json({ message: "Please fill all required fields" });
         }
 
-        if (full_name.trim() === "" || email.trim() === ""){
-            return res.status(400).json({message: "Fields cannot be empty"});
+        if (full_name.trim() === "" || email.trim() === "") {
+            return res.status(400).json({ message: "Fields cannot be empty" });
         }
 
+        // Convertir les tableaux en JSON seulement s'ils sont des tableaux
+        const skillsJson = Array.isArray(skills) ? JSON.stringify(skills) : skills;
+        const languagesJson = Array.isArray(languages) ? JSON.stringify(languages) : languages;
+        const portfolioJson = Array.isArray(portfolio) ? JSON.stringify(portfolio) : portfolio;
+
+        // Mise à jour avec tous les champs
         const result = await pool.query(
-            `UPDATE users SET full_name = $1, email= $2, updated_at = NOW() WHERE id = $3 RETURNING *`,
-            [full_name, email, req.user.id]
-        )
+            `UPDATE users 
+            SET 
+                full_name = $1,
+                email = $2,
+                phone = $3,
+                avatar = $4,
+                bio = $5,
+                city = $6,
+                province = $7,
+                skills = $8,
+                languages = $9,
+                portfolio = $10,
+                profession = $11,
+                company_name = $12,
+                industry = $13,
+                team_size = $14,
+                updated_at = NOW()
+            WHERE id = $15
+            RETURNING *`,
+            [
+                full_name,
+                email,
+                phone || null,
+                avatar || null,
+                bio || null,
+                city || null,
+                province || null,
+                skillsJson || '[]',
+                languagesJson || '[]',
+                portfolioJson || '[]',
+                profession || null,      
+                company_name || null,    
+                industry || null,        
+                team_size || null,
+                req.user.id
+            ]
+        );
 
-        if (result.rows.length === 0){
-            return res.status(404).json({message: "Profile not found"});
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Profile not found" });
         }
-        
-        res.json(result.rows[0]);
 
-    } catch (err){
-        console.error(err);
-        res.status(500).json({message: "Server error while updating profile" });
+        res.json({
+            message: "Profile updated successfully",
+            user: result.rows[0]
+        });
+
+    } catch (err) {
+        console.error("Error updating profile:", err);
+        res.status(500).json({ 
+            message: "Server error while updating profile",
+            error: err.message 
+        });
     }
 }
 

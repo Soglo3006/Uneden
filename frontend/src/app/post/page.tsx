@@ -1,4 +1,5 @@
 "use client";
+import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 import Header from "@/components/home/Header";
 import CategoryNav from "@/components/home/Category";
 import Footer from "@/components/home/Footer";
@@ -28,115 +29,129 @@ const urgencyLevels = [
 type PostMode = "offer" | "looking";
 
 export default function PostServicePage() {
-const [mode, setMode] = useState<PostMode>("offer");
+    
+    const [mode, setMode] = useState<PostMode>("offer");
 
-const [serviceTitle, setServiceTitle] = useState("");
-const [serviceDescription, setServiceDescription] = useState("");
-const [serviceCategory, setServiceCategory] = useState("");
-const [servicePriceMin, setServicePriceMin] = useState("");
-const [servicePriceMax, setServicePriceMax] = useState("");
-const [serviceLocation, setServiceLocation] = useState("");
+    const [serviceTitle, setServiceTitle] = useState("");
+    const [serviceDescription, setServiceDescription] = useState("");
+    const [serviceCategory, setServiceCategory] = useState("");
+    const [servicePriceMin, setServicePriceMin] = useState("");
+    const [servicePriceMax, setServicePriceMax] = useState("");
+    const [serviceLocation, setServiceLocation] = useState("");
 
-const [jobTitle, setJobTitle] = useState("");
-const [jobDescription, setJobDescription] = useState("");
-const [jobCategory, setJobCategory] = useState("");
-const [jobBudgetMin, setJobBudgetMin] = useState("");
-const [jobBudgetMax, setJobBudgetMax] = useState("");
-const [jobLocation, setJobLocation] = useState("");
-const [jobUrgency, setJobUrgency] = useState("");
+    const [jobTitle, setJobTitle] = useState("");
+    const [jobDescription, setJobDescription] = useState("");
+    const [jobCategory, setJobCategory] = useState("");
+    const [jobBudgetMin, setJobBudgetMin] = useState("");
+    const [jobBudgetMax, setJobBudgetMax] = useState("");
+    const [jobLocation, setJobLocation] = useState("");
+    const [jobUrgency, setJobUrgency] = useState("");
 
-const [servicePosterType, setServicePosterType] = useState("");
-const [serviceAvailability, setServiceAvailability] = useState("");
-const [serviceLanguage, setServiceLanguage] = useState("");
-const [serviceMobility, setServiceMobility] = useState("");
-const [serviceDuration, setServiceDuration] = useState("");
-const [serviceImage, setServiceImage] = useState<string | null>(null);
-const [serviceSubcategory, setServiceSubcategory] = useState("");
-
-
-const [jobPosterType, setJobPosterType] = useState("");
-const [jobAvailability, setJobAvailability] = useState("");
-const [jobLanguage, setJobLanguage] = useState("");
-const [jobMobility, setJobMobility] = useState("");
-const [jobDuration, setJobDuration] = useState("");
-const [jobImage, setJobImage] = useState<string | null>(null);
-const [jobSubcategory, setJobSubcategory] = useState("");
-
-const isServiceValid =
-  serviceTitle.trim() !== "" &&
-  serviceDescription.trim() !== "" &&
-  serviceCategory.trim() !== "" &&
-  serviceSubcategory.trim() !== "" &&
-  servicePosterType.trim() !== "" &&
-  serviceAvailability.trim() !== "" &&
-  serviceLanguage.trim() !== "" &&
-  serviceMobility.trim() !== "" &&
-  serviceDuration.trim() !== "" &&
-  servicePriceMin.trim() !== "" &&
-  servicePriceMax.trim() !== "" &&
-  serviceLocation.trim() !== ""
-  Number(servicePriceMax) > Number(servicePriceMin);
-
-const isJobValid =
-  jobTitle.trim() !== "" &&
-  jobDescription.trim() !== "" &&
-  jobCategory.trim() !== "" &&
-  jobSubcategory.trim() !== "" &&
-  jobPosterType.trim() !== "" &&
-  jobAvailability.trim() !== "" &&
-  jobLanguage.trim() !== "" &&
-  jobMobility.trim() !== "" &&
-  jobDuration.trim() !== "" &&
-  jobBudgetMin.trim() !== "" &&
-  jobBudgetMax.trim() !== "" &&
-  jobLocation.trim() !== "" &&
-  jobUrgency.trim() !== ""
-  Number(jobBudgetMax) > Number(jobBudgetMin);
+    const [servicePosterType, setServicePosterType] = useState("");
+    const [serviceAvailability, setServiceAvailability] = useState("");
+    const [serviceLanguage, setServiceLanguage] = useState("");
+    const [serviceMobility, setServiceMobility] = useState("");
+    const [serviceDuration, setServiceDuration] = useState("");
+    const [serviceImage, setServiceImage] = useState<string | null>(null);
+    const [serviceSubcategory, setServiceSubcategory] = useState("");
 
 
-const handleServiceSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
+    const [jobPosterType, setJobPosterType] = useState("");
+    const [jobAvailability, setJobAvailability] = useState("");
+    const [jobLanguage, setJobLanguage] = useState("");
+    const [jobMobility, setJobMobility] = useState("");
+    const [jobDuration, setJobDuration] = useState("");
+    const [jobImage, setJobImage] = useState<string | null>(null);
+    const [jobSubcategory, setJobSubcategory] = useState("");
 
-  console.log({
-    type: "service",
-    serviceTitle,
-    serviceDescription,
-    serviceCategory,
-    priceRange: { min: servicePriceMin, max: servicePriceMax },
-    serviceLocation,
+    const isServiceValid =
+    serviceTitle.trim() !== "" &&
+    serviceDescription.trim() !== "" &&
+    serviceCategory.trim() !== "" &&
+    serviceSubcategory.trim() !== "" &&
+    servicePosterType.trim() !== "" &&
+    serviceAvailability.trim() !== "" &&
+    serviceLanguage.trim() !== "" &&
+    serviceMobility.trim() !== "" &&
+    serviceDuration.trim() !== "" &&
+    servicePriceMin.trim() !== "" &&
+    servicePriceMax.trim() !== "" &&
+    serviceLocation.trim() !== ""
+    Number(servicePriceMax) > Number(servicePriceMin);
 
-    posterType: servicePosterType,
-    subcategory: serviceSubcategory,
-    availability: serviceAvailability,
-    language: serviceLanguage,
-    mobility: serviceMobility,
-    duration: serviceDuration,
-    image: serviceImage ? serviceImage.name : null,
-  });
-};
+    const isJobValid =
+    jobTitle.trim() !== "" &&
+    jobDescription.trim() !== "" &&
+    jobCategory.trim() !== "" &&
+    jobSubcategory.trim() !== "" &&
+    jobPosterType.trim() !== "" &&
+    jobAvailability.trim() !== "" &&
+    jobLanguage.trim() !== "" &&
+    jobMobility.trim() !== "" &&
+    jobDuration.trim() !== "" &&
+    jobBudgetMin.trim() !== "" &&
+    jobBudgetMax.trim() !== "" &&
+    jobLocation.trim() !== "" &&
+    jobUrgency.trim() !== ""
+    Number(jobBudgetMax) > Number(jobBudgetMin);
 
 
-const handleJobSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
+    const handleServiceSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-  console.log({
-    type: "job",
-    jobTitle,
-    jobDescription,
-    jobCategory,
-    budgetRange: { min: jobBudgetMin, max: jobBudgetMax },
-    jobLocation,
-    jobUrgency,
+    console.log({
+        type: "service",
+        serviceTitle,
+        serviceDescription,
+        serviceCategory,
+        priceRange: { min: servicePriceMin, max: servicePriceMax },
+        serviceLocation,
 
-    posterType: jobPosterType,
-    subcategory: jobSubcategory,
-    availability: jobAvailability,
-    language: jobLanguage,
-    mobility: jobMobility,
-    duration: jobDuration,
-    image: jobImage ? jobImage.name : null,
-  });
-};
+        posterType: servicePosterType,
+        subcategory: serviceSubcategory,
+        availability: serviceAvailability,
+        language: serviceLanguage,
+        mobility: serviceMobility,
+        duration: serviceDuration,
+        image: serviceImage ? serviceImage.name : null,
+    });
+    };
+
+
+    const handleJobSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    console.log({
+        type: "job",
+        jobTitle,
+        jobDescription,
+        jobCategory,
+        budgetRange: { min: jobBudgetMin, max: jobBudgetMax },
+        jobLocation,
+        jobUrgency,
+
+        posterType: jobPosterType,
+        subcategory: jobSubcategory,
+        availability: jobAvailability,
+        language: jobLanguage,
+        mobility: jobMobility,
+        duration: jobDuration,
+        image: jobImage ? jobImage.name : null,
+    });
+    };
+
+    const { user, loading } = useProtectedRoute({
+        requireAuth: true,
+        requireProfileCompleted: true,
+    });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+      </div>
+    );
+  }
 
 
 return (
