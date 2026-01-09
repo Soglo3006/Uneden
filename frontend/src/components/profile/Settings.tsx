@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Label} from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import ProfilePictureUploader from "@/components/profile/ProfilePicture";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,43 +68,22 @@ export default function SettingsPage({ onClose, scrollRef }) {
     }
   }, [screen]);
 
-  const [notifications, setNotifications] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("fh_notifications");
-      return saved
-        ? JSON.parse(saved)
-        : {
-            email: true,
-            sms: false,
-            push: true,
-            marketing: false,
-          };
-    }
+  const [notifications, setNotifications] = useState({
+    email: true,
+    sms: false,
+    push: true,
+    marketing: false,
   });
 
-  const [privacy, setPrivacy] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("fh_privacy");
-      return saved
-        ? JSON.parse(saved)
-        : {
-            showProfile: true,
-            showReviews: true,
-            showLocation: false,
-          };
-    }
+  const [privacy, setPrivacy] = useState({
+    showProfile: true,
+    showReviews: true,
+    showLocation: false,
   });
 
-  const [security, setSecurity] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("fh_security");
-      return saved
-        ? JSON.parse(saved)
-        : {
-            twoFactor: false,
-            loginAlerts: true,
-          };
-    }
+  const [security, setSecurity] = useState({
+    twoFactor: false,
+    loginAlerts: true,
   });
 
   const toggleNotification = (key) => {
@@ -244,7 +225,8 @@ export default function SettingsPage({ onClose, scrollRef }) {
                     setUserProfilePicture(newProfilePicture)
                   }
                   size="xl"
-                  showLabel={true}
+                  showLabel={false}
+                  readOnly={true}
                 />
               </div>
 
@@ -611,6 +593,115 @@ export default function SettingsPage({ onClose, scrollRef }) {
 
 // Sub-pages remain the same
 function ChangePasswordPage({ onBack, onClose }) {
+  const { session } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [errors, setErrors] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const validateForm = () => {
+    const newErrors = {
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    };
+
+    if (!formData.oldPassword) {
+      newErrors.oldPassword = "Current password is required";
+    }
+
+    if (!formData.newPassword) {
+      newErrors.newPassword = "New password is required";
+    } else if (formData.newPassword.length < 8) {
+      newErrors.newPassword = "Password must be at least 8 characters";
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.newPassword !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    if (formData.oldPassword === formData.newPassword) {
+      newErrors.newPassword = "New password must be different from current password";
+    }
+
+    setErrors(newErrors);
+    return !Object.values(newErrors).some(error => error !== "");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess(false);
+
+    console.log("🔍 Starting password change...");
+    console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
+    console.log("Session token:", session?.access_token ? "EXISTS" : "MISSING");
+    console.log("Form data:", { 
+      oldPassword: "***", 
+      newPassword: "***" 
+    });
+
+    if (!validateForm()) return;
+
+    try {
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/change-password`;
+      console.log("FETCH URL:", url);
+      setLoading(true);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/change-password`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            oldPassword: formData.oldPassword,
+            newPassword: formData.newPassword,
+          }),
+        }
+      );
+
+      console.log("STATUS:", response.status);
+      console.log("Ok:", response.ok);
+
+      const data = await response.json();
+      console.log("📥 Response data:", data);
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to change password");
+      }
+
+      setSuccess(true);
+      setFormData({ oldPassword: "", newPassword: "", confirmPassword: "" });
+      
+      // Fermer après 2 secondes
+      setTimeout(() => {
+        onBack();
+      }, 2000);
+
+    } catch (err: any) {
+      console.error("❌ Error:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-gray-50">
       <div className="bg-white border-b relative">
@@ -629,29 +720,92 @@ function ChangePasswordPage({ onBack, onClose }) {
 
         <div className="max-w-5xl mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold text-gray-900">Change Password</h1>
+          <p className="text-gray-600 mt-1">Update your account password</p>
         </div>
       </div>
 
-      <div className="mx-auto px-4 py-8 space-y-4">
-        <Card className="p-6 space-y-4">
-          <input
-            type="password"
-            placeholder="Old Password"
-            className="w-full border rounded-lg p-3"
-          />
-          <input
-            type="password"
-            placeholder="New Password"
-            className="w-full border rounded-lg p-3"
-          />
-          <input
-            type="password"
-            placeholder="Confirm New Password"
-            className="w-full border rounded-lg p-3"
-          />
-          <Button className="w-full bg-green-700 text-white hover:bg-green-800 cursor-pointer">
-            Update Password
-          </Button>
+      <div className="mx-auto px-4 py-8">
+        <Card className="p-6 max-w-md mx-auto">
+          {success && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-800 text-sm">
+                ✓ Password changed successfully!
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-sm">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="oldPassword">Current Password</Label>
+              <Input
+                id="oldPassword"
+                type="password"
+                value={formData.oldPassword}
+                onChange={(e) => {
+                  setFormData({ ...formData, oldPassword: e.target.value });
+                  setErrors({ ...errors, oldPassword: "" });
+                }}
+                className={errors.oldPassword ? "border-red-500" : ""}
+                disabled={loading}
+              />
+              {errors.oldPassword && (
+                <p className="text-xs text-red-500 mt-1">{errors.oldPassword}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={formData.newPassword}
+                onChange={(e) => {
+                  setFormData({ ...formData, newPassword: e.target.value });
+                  setErrors({ ...errors, newPassword: "" });
+                }}
+                className={errors.newPassword ? "border-red-500" : ""}
+                disabled={loading}
+              />
+              {errors.newPassword && (
+                <p className="text-xs text-red-500 mt-1">{errors.newPassword}</p>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Must be at least 8 characters
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={(e) => {
+                  setFormData({ ...formData, confirmPassword: e.target.value });
+                  setErrors({ ...errors, confirmPassword: "" });
+                }}
+                className={errors.confirmPassword ? "border-red-500" : ""}
+                disabled={loading}
+              />
+              {errors.confirmPassword && (
+                <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full bg-green-700 text-white hover:bg-green-800 cursor-pointer"
+              disabled={loading}
+            >
+              {loading ? "Updating..." : "Update Password"}
+            </Button>
+          </form>
         </Card>
       </div>
     </div>

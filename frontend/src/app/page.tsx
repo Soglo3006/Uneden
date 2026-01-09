@@ -87,11 +87,13 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="col-span-full mt-10 bg-green-800 rounded-2xl p-10 text-center text-white">
-              <h1 className="text-3xl font-bold mb-2">Together, we all bring something valuable</h1>
-              <h1>Join now to discover nearby help and new earning opportunities</h1>
-              <Button className="mt-4 cursor-pointer">Sign In</Button>
+            {!user && (
+              <div className="col-span-full mt-10 bg-green-800 rounded-2xl p-10 text-center text-white">
+                <h1 className="text-3xl font-bold mb-2">Together, we all bring something valuable</h1>
+                <h1>Join now to discover nearby help and new earning opportunities</h1>
+                <Button className="mt-4 cursor-pointer">Sign In</Button>
             </div>
+          )}
 
             <div className="border-2 border-dashed border-gray-300 rounded-xl h-[200px] col-span-full flex items-center justify-center text-gray-500">
               Advertisement<br/>728×90

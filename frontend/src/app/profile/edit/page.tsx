@@ -337,6 +337,7 @@ export default function EditProfilePage() {
         skills: formData.skills,
         languages: formData.languages,
         portfolio: formData.portfolio,
+        account_type: accountType,
         
         // Champs spécifiques selon le type
         ...(isPerson && {
@@ -365,8 +366,8 @@ export default function EditProfilePage() {
         }
       );
 
-      console.log("📊 RESPONSE STATUS:", response.status);
-      console.log("📊 RESPONSE OK?:", response.ok);
+      console.log(" RESPONSE STATUS:", response.status);
+      console.log(" RESPONSE OK?:", response.ok);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -374,8 +375,8 @@ export default function EditProfilePage() {
       }
 
       const responseData = await response.json();
-    console.log("✅ RÉPONSE DE L'API:", responseData);
-    console.log("✅ PROFESSION DANS LA RÉPONSE:", responseData.profession);
+    console.log(" RÉPONSE DE L'API:", responseData);
+    console.log(" PROFESSION DANS LA RÉPONSE:", responseData.profession);
 
       // Rediriger vers la page de profil
       router.push(`/profile/${user?.id}`);
@@ -401,19 +402,6 @@ export default function EditProfilePage() {
   };
 
   const isUnchanged = JSON.stringify(formData) === JSON.stringify(initialData);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <CategoryNav />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
 
   const displayName = isPerson ? formData.fullName : formData.companyName;
 
@@ -745,30 +733,35 @@ export default function EditProfilePage() {
 
           {/* Portfolio Section */}
           <Card className="p-6 sm:p-8 mb-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
                 {isPerson ? "Portfolio" : "Our Work"}
               </h2>
-              <Button
-                onClick={() => document.getElementById("portfolio-upload")?.click()}
-                variant="outline"
-                size="sm"
-                className="gap-2 cursor-pointer"
-              >
-                <Upload className="h-4 w-4" />
-                Add Image
-              </Button>
-              <input
-                id="portfolio-upload"
-                type="file"
-                accept="image/*"
-                onChange={handlePortfolioUpload}
-                className="hidden"
-              />
+              <p className="text-gray-600">Upload images that represent your work</p>
+              
+              {formData.portfolio.length === 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      <Camera className="h-5 w-5 text-green-600 mt-0.5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-green-900 mb-2">
+                        Tips for great portfolio images:
+                      </h3>
+                      <ul className="text-sm text-green-800 space-y-1.5">
+                        <li>• Use clear, high-quality images that represent your services.</li>
+                        <li>• Include different project examples so clients can see your full range of services.</li>
+                        <li>• Use bright images with a simple, descriptive title.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {formData.portfolio.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {formData.portfolio.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 {formData.portfolio.map((item, index) => (
                   <div key={`portfolio-${index}`} className="relative group">
                     <div className="relative overflow-hidden rounded-lg aspect-square">
@@ -777,7 +770,7 @@ export default function EditProfilePage() {
                         alt={item.title}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200" />
+                      <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200" />
                       <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleEditPortfolioItem(item)}
@@ -799,15 +792,39 @@ export default function EditProfilePage() {
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                <Camera className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-2">No portfolio items yet</p>
-                <p className="text-sm text-gray-500">
-                  Upload images to showcase your {isPerson ? "work" : "company's projects"}
+            )}
+
+            <div 
+              className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-green-700 transition-colors cursor-pointer group"
+              onClick={() => document.getElementById("portfolio-upload")?.click()}
+            >
+              <input
+                type="file"
+                accept="image/*"
+                id="portfolio-upload"
+                onChange={handlePortfolioUpload}
+                className="hidden"
+              />
+              
+              <div className="mb-4">
+                <Upload className="h-12 w-12 text-gray-400 mx-auto mb-3 group-hover:text-green-600 transition-colors" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  Upload Portfolio Images
+                </h3>
+                <p className="text-gray-500 text-sm mb-4">
+                  Click to browse and select images
                 </p>
               </div>
-            )}
+
+              <Button variant="outline" className="gap-2 cursor-pointer mb-3" type="button">
+                <Plus className="h-4 w-4" />
+                Choose Files
+              </Button>
+              
+              <p className="text-xs text-gray-400">
+                PNG, JPG or GIF. Max 5MB per file.
+              </p>
+            </div>
           </Card>
 
           {/* Action Buttons */}
@@ -831,6 +848,105 @@ export default function EditProfilePage() {
       </main>
 
       <Footer />
+
+      {showPortfolioModal && portfolioImage && (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900">Add Portfolio Item</h3>
+            <button
+              onClick={() => {
+                setShowPortfolioModal(false);
+                setPortfolioImage(null);
+                setPortfolioTitle("");
+                setErrorPortfolio(false);
+                setPortfolioCrop({ x: 0, y: 0 });
+                setPortfolioZoom(1);
+                setPortfolioCroppedAreaPixels(null);
+              }}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="relative h-64 bg-gray-100 rounded-lg overflow-hidden">
+              <Cropper
+                image={portfolioImage}
+                crop={portfolioCrop}
+                zoom={portfolioZoom}
+                aspect={1}
+                onCropChange={setPortfolioCrop}
+                onZoomChange={setPortfolioZoom}
+                onCropComplete={(_, croppedAreaPixels) => {
+                  setPortfolioCroppedAreaPixels(croppedAreaPixels);
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="zoom-add">Zoom</Label>
+              <input
+                id="zoom-add"
+                type="range"
+                min="1"
+                max="3"
+                step="0.1"
+                value={portfolioZoom}
+                onChange={(e) => setPortfolioZoom(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="portfolioTitle">
+                Title <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="portfolioTitle"
+                type="text"
+                placeholder="Enter a title for this work..."
+                value={portfolioTitle}
+                onChange={(e) => {
+                  setPortfolioTitle(e.target.value);
+                  setErrorPortfolio(false);
+                }}
+                className={errorPortfolio ? "border-red-500" : ""}
+              />
+              {errorPortfolio && (
+                <p className="text-xs text-red-500">Title is required</p>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPortfolioModal(false);
+                  setPortfolioImage(null);
+                  setPortfolioTitle("");
+                  setErrorPortfolio(false);
+                  setPortfolioCrop({ x: 0, y: 0 });
+                  setPortfolioZoom(1);
+                  setPortfolioCroppedAreaPixels(null);
+                }}
+                className="flex-1 cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={savePortfolioItem}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+              >
+                Add to Portfolio
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
     </div>
   );
 }

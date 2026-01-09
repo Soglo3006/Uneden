@@ -131,16 +131,24 @@ export const UpdateMyProfile = async (req, res) => {
             profession,      
             company_name,     
             industry,          
-            team_size 
+            team_size,
+            account_type
         } = req.body;
 
         // Validation des champs requis
-        if (!full_name || !email) {
-            return res.status(400).json({ message: "Please fill all required fields" });
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
         }
 
-        if (full_name.trim() === "" || email.trim() === "") {
-            return res.status(400).json({ message: "Fields cannot be empty" });
+        // Vérifier que le nom approprié est fourni selon le type
+        if (account_type === "company") {
+            if (!company_name || company_name.trim() === "") {
+                return res.status(400).json({ message: "Company name is required" });
+            }
+        } else {
+            if (!full_name || full_name.trim() === "") {
+                return res.status(400).json({ message: "Full name is required" });
+            }
         }
 
         // Convertir les tableaux en JSON seulement s'ils sont des tableaux
@@ -170,7 +178,7 @@ export const UpdateMyProfile = async (req, res) => {
             WHERE id = $15
             RETURNING *`,
             [
-                full_name,
+                full_name || null,
                 email,
                 phone || null,
                 avatar || null,

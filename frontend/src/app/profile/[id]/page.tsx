@@ -55,10 +55,13 @@ export default function UserProfilePage() {
         let url = `${process.env.NEXT_PUBLIC_API_URL}/profiles/${profileId}`;
         const headers: HeadersInit = {};
 
-        if (isOwner && session?.access_token) {
+        if (user && user.id === profileId && session?.access_token) {
           url = `${process.env.NEXT_PUBLIC_API_URL}/profiles/me`;
           headers.Authorization = `Bearer ${session.access_token}`;
         }
+
+        console.log("Fetching profile from:", url);
+        console.log("Is owner?", user?.id === profileId);
 
         const response = await fetch(url, { headers });
 
@@ -67,6 +70,7 @@ export default function UserProfilePage() {
         }
 
         const data = await response.json();
+        console.log("Profile loaded:", data)
         setProfileUser(data);
       } catch (err: any) {
         console.error("Error fetching profile:", err);
@@ -79,7 +83,7 @@ export default function UserProfilePage() {
     if (profileId) {
       fetchProfile();
     }
-  }, [profileId, isOwner, session]);
+  }, [profileId, user, session]);
 
   // Prevent scrolling when modals are open
   useEffect(() => {
@@ -95,18 +99,7 @@ export default function UserProfilePage() {
   }, [showSettings, showEllipsis, isPortfolioModalOpen]);
 
   // Loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <CategoryNav />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+
 
   // Error state
   if (error || !profileUser) {
