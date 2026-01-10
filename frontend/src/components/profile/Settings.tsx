@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label} from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { X, TriangleAlert  } from 'lucide-react';
 import ProfilePictureUploader from "@/components/profile/ProfilePicture";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -909,6 +910,20 @@ function BillingHistoryPage({ onBack, onClose }) {
 }
 
 function LogoutPage({ onBack, onClose }) {
+  const { signOut } = useAuth();
+  const [loading, setLoading] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      setLoading(true);
+      await signOut();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-gray-50">
       <div className="bg-white border-b relative">
@@ -932,12 +947,23 @@ function LogoutPage({ onBack, onClose }) {
 
       <div className="mx-auto px-4 py-8 space-y-4">
         <Card className="p-6 space-y-4">
-          <p className="text-gray-700 flex justify-center font-medium text-2xl">
-            Are you sure you want to logout?
-          </p>
-          <Button className="w-full bg-red-600 text-white hover:bg-red-700 cursor-pointer">
-            Logout
-          </Button>
+          <div className="flex gap-3">
+            <Button 
+              variant="outline"
+              className="w-full cursor-pointer"
+              onClick={onBack}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              className="w-full bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+              onClick={handleLogout}
+              disabled={loading}
+            >
+              {loading ? "Logging out..." : "Logout"}
+            </Button>
+          </div>
         </Card>
       </div>
     </div>
@@ -945,37 +971,209 @@ function LogoutPage({ onBack, onClose }) {
 }
 
 function DeleteAccountPage({ onBack, onClose }) {
+  const { session, signOut } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [confirmText, setConfirmText] = useState("");
+
+  const handleDelete = async () => {
+    // Sécurité: l'utilisateur doit taper "DELETE" pour confirmer
+    if (confirmText !== "DELETE") {
+      setError("Please type DELETE to confirm");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/delete-account`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete account");
+      }
+
+      // Déconnecter l'utilisateur après suppression
+      await signOut();
+
+    } catch (err) {
+      console.error("Delete account error:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gray-50 min-h-screen">
+      {/* Header */}
       <div className="bg-white border-b relative">
         <button
           onClick={onClose}
-          className="absolute top-1 cursor-pointer right-4 text-xl"
+          className="absolute top-4 right-4 text-xl text-gray-500 hover:text-gray-900 cursor-pointer transition-colors"
         >
           ✕
         </button>
         <button
           onClick={onBack}
-          className="absolute top-1 cursor-pointer left-4 text-gray-600"
+          className="absolute top-4 left-4 text-gray-600 hover:text-gray-900 cursor-pointer transition-colors flex items-center gap-2"
         >
-          ← Back
+          ← <span>Back</span>
         </button>
 
-        <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="max-w-3xl mx-auto px-4 py-6 text-center">
           <h1 className="text-3xl font-bold text-red-600">Delete Account</h1>
+          <p className="text-gray-600 mt-2">This action cannot be undone</p>
         </div>
       </div>
 
-      <div className="mx-auto px-4 py-8 space-y-4">
-        <Card className="p-6 border-red-300 space-y-4">
-          <p className="text-gray-700 flex justify-center font-medium text-lg text-center">
-            Deleting your account is permanent. All your data, history, messages,
-            and listings will be permanently removed.
-          </p>
+      {/* Content */}
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <Card className="p-8 border-2 border-red-200 shadow-lg">
+          {/* Warning Icon */}
+          <div className="flex justify-center">
+            <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center">
+              <TriangleAlert className="w-10 h-10 text-red-600"/>
+            </div>
+          </div>
 
-          <Button className="w-full bg-red-600 text-white hover:bg-red-700 cursor-pointer">
-            Confirm Delete
-          </Button>
+          {/* Warning Title */}
+          <h2 className="text-2xl font-bold text-center text-gray-900 mb-4">
+              Permanent Account Deletion
+          </h2>
+
+          {/* Warning Message */}
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-gray-800 text-center leading-relaxed">
+              Deleting your account is <span className="font-bold text-red-600">permanent and irreversible</span>. 
+              All your data will be permanently removed, including:
+            </p>
+          </div>
+
+          {/* List of what will be deleted */}
+          <div className="space-y-3 mb-6">
+            <div className="flex items-start gap-3 text-gray-700">
+              <span className="text-red-500 font-bold"><X/></span>
+              <span>Your profile and account information</span>
+            </div>
+            <div className="flex items-start gap-3 text-gray-700">
+              <span className="text-red-500 font-bold"><X/></span>
+              <span>All messages and conversations</span>
+            </div>
+            <div className="flex items-start gap-3 text-gray-700">
+              <span className="text-red-500 font-bold"><X/></span>
+              <span>Services and listings</span>
+            </div>
+            <div className="flex items-start gap-3 text-gray-700">
+              <span className="text-red-500 font-bold"><X/></span>
+              <span>Bookings and transaction history</span>
+            </div>
+            <div className="flex items-start gap-3 text-gray-700">
+              <span className="text-red-500 font-bold"><X/></span>
+              <span>Reviews and ratings</span>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg">
+              <p className="text-red-800 text-sm text-center font-medium">
+                {error}
+              </p>
+            </div>
+          )}
+
+          {/* Confirmation Input */}
+          <div className="mb-6">
+            <Label 
+              htmlFor="confirmText" 
+              className="block text-center mb-3 text-gray-700 font-medium"
+            >
+              To confirm, please type{" "}
+              <span className="font-bold text-red-600 bg-red-50 px-2 py-1 rounded">
+                DELETE
+              </span>
+            </Label>
+            <Input
+              id="confirmText"
+              type="text"
+              value={confirmText}
+              onChange={(e) => {
+                setConfirmText(e.target.value);
+                setError("");
+              }}
+              disabled={loading}
+              className={`text-center font-mono text-lg uppercase tracking-wider ${
+                confirmText && confirmText !== "DELETE" 
+                  ? "border-red-300 focus:border-red-500" 
+                  : ""
+              }`}
+            />
+            {confirmText && confirmText !== "DELETE" && (
+              <p className="text-xs text-red-500 text-center mt-2">
+                Please type exactly: DELETE
+              </p>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              className="w-auto cursor-pointer border-gray-300 hover:bg-gray-50"
+              onClick={onBack}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              className={`w-auto cursor-pointer transition-all ${
+                confirmText === "DELETE" && !loading
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+              onClick={handleDelete}
+              disabled={loading || confirmText !== "DELETE"}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle 
+                      className="opacity-25" 
+                      cx="12" 
+                      cy="12" 
+                      r="10" 
+                      stroke="currentColor" 
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path 
+                      className="opacity-75" 
+                      fill="currentColor" 
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Deleting...
+                </span>
+              ) : (
+                "Delete My Account Permanently"
+              )}
+            </Button>
+          </div>
+
+          {/* Final warning */}
+          <p className="text-xs text-gray-500 text-center mt-6">
+            This action cannot be undone. Your account will be deleted immediately.
+          </p>
         </Card>
       </div>
     </div>
