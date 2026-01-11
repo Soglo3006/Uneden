@@ -32,6 +32,24 @@ export default function SettingsPage({ onClose, scrollRef }) {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [screen, setScreen] = useState("default");
+  const [scrollPosition, setScrollPosition] = useState(0);
+
+const goToScreen = (screenName: string) => {
+  // Sauvegarder la position actuelle avant de changer d'écran
+  if (scrollRef?.current) {
+    setScrollPosition(scrollRef.current.scrollTop);
+  }
+  setScreen(screenName);
+};
+
+const goBack = () => {
+  setScreen("default");
+  setTimeout(() => {
+    if (scrollRef?.current) {
+      scrollRef.current.scrollTop = scrollPosition;
+    }
+  }, 0);
+};
 
   // Fetch user profile data
   useEffect(() => {
@@ -127,25 +145,25 @@ export default function SettingsPage({ onClose, scrollRef }) {
 
   if (screen === "changePassword")
     return (
-      <ChangePasswordPage onBack={() => setScreen("default")} onClose={onClose} />
+      <ChangePasswordPage onBack={goBack} onClose={onClose} />
     );
   if (screen === "blockedUsers")
     return (
-      <BlockedUsersPage onBack={() => setScreen("default")} onClose={onClose} />
+      <BlockedUsersPage onBack={goBack} onClose={onClose} />
     );
   if (screen === "paymentMethods")
     return (
-      <PaymentMethodsPage onBack={() => setScreen("default")} onClose={onClose} />
+      <PaymentMethodsPage onBack={goBack} onClose={onClose} />
     );
   if (screen === "billingHistory")
     return (
-      <BillingHistoryPage onBack={() => setScreen("default")} onClose={onClose} />
+      <BillingHistoryPage onBack={goBack} onClose={onClose} />
     );
   if (screen === "logout")
-    return <LogoutPage onBack={() => setScreen("default")} onClose={onClose} />;
+    return <LogoutPage onBack={goBack} onClose={onClose} />;
   if (screen === "deleteAccount")
     return (
-      <DeleteAccountPage onBack={() => setScreen("default")} onClose={onClose} />
+      <DeleteAccountPage onBack={goBack} onClose={onClose} />
     );
 
   // Déterminer le type de compte
@@ -320,7 +338,7 @@ export default function SettingsPage({ onClose, scrollRef }) {
               <Button
                 variant="outline"
                 className="w-full justify-between cursor-pointer"
-                onClick={() => setScreen("changePassword")}
+                onClick={() => goToScreen("changePassword")}
               >
                 <span>Change Password</span>
                 <ChevronRight className="h-4 w-4" />
@@ -484,7 +502,7 @@ export default function SettingsPage({ onClose, scrollRef }) {
               <Button
                 variant="outline"
                 className="w-full justify-between cursor-pointer"
-                onClick={() => setScreen("blockedUsers")}
+                onClick={() => goToScreen("blockedUsers")}
               >
                 <span>Blocked Users</span>
                 <ChevronRight className="h-4 w-4" />
@@ -512,7 +530,7 @@ export default function SettingsPage({ onClose, scrollRef }) {
               <Button
                 variant="outline"
                 className="w-full justify-between cursor-pointer"
-                onClick={() => setScreen("paymentMethods")}
+                onClick={() => goToScreen("paymentMethods")}
               >
                 <span>Payment Methods</span>
                 <ChevronRight className="h-4 w-4" />
@@ -521,7 +539,7 @@ export default function SettingsPage({ onClose, scrollRef }) {
               <Button
                 variant="outline"
                 className="w-full justify-between cursor-pointer"
-                onClick={() => setScreen("billingHistory")}
+                onClick={() => goToScreen("billingHistory")}
               >
                 <span>Billing History</span>
                 <ChevronRight className="h-4 w-4" />
@@ -560,7 +578,7 @@ export default function SettingsPage({ onClose, scrollRef }) {
               <Button
                 variant="outline"
                 className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50 cursor-pointer"
-                onClick={() => setScreen("logout")}
+                onClick={() => goToScreen("logout")}
               >
                 <span className="flex items-center gap-2">
                   <LogOut className="h-4 w-4" />
@@ -572,7 +590,7 @@ export default function SettingsPage({ onClose, scrollRef }) {
               <Button
                 variant="outline"
                 className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50 cursor-pointer"
-                onClick={() => setScreen("deleteAccount")}
+                onClick={() => goToScreen("deleteAccount")}
               >
                 <span className="flex items-center gap-2">
                   <Trash2 className="h-4 w-4" />
@@ -581,7 +599,7 @@ export default function SettingsPage({ onClose, scrollRef }) {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-sm text-gray-500 mt-3">
+            <p className="text-sm text-gray-500">
               Deleting your {isPerson ? "account" : "company account"} is permanent
               and cannot be undone. All your data will be removed.
             </p>
@@ -726,11 +744,11 @@ function ChangePasswordPage({ onBack, onClose }) {
       </div>
 
       <div className="mx-auto px-4 py-8">
-        <Card className="p-6 max-w-md mx-auto">
+        <Card className="p-6 mx-auto">
           {success && (
             <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-green-800 text-sm">
-                ✓ Password changed successfully!
+               Password changed successfully!
               </p>
             </div>
           )}
@@ -743,7 +761,7 @@ function ChangePasswordPage({ onBack, onClose }) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="oldPassword">Current Password</Label>
+              <Label htmlFor="oldPassword" className="pb-2">Current Password</Label>
               <Input
                 id="oldPassword"
                 type="password"
@@ -761,7 +779,7 @@ function ChangePasswordPage({ onBack, onClose }) {
             </div>
 
             <div>
-              <Label htmlFor="newPassword">New Password</Label>
+              <Label htmlFor="newPassword" className="pb-2">New Password</Label>
               <Input
                 id="newPassword"
                 type="password"
@@ -782,7 +800,7 @@ function ChangePasswordPage({ onBack, onClose }) {
             </div>
 
             <div>
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword" className="pb-2">Confirm New Password</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -947,17 +965,17 @@ function LogoutPage({ onBack, onClose }) {
 
       <div className="mx-auto px-4 py-8 space-y-4">
         <Card className="p-6 space-y-4">
-          <div className="flex gap-3">
+          <div className="flex gap-3 w-full">
             <Button 
               variant="outline"
-              className="w-full cursor-pointer"
+              className=" cursor-pointer flex-1"
               onClick={onBack}
               disabled={loading}
             >
               Cancel
             </Button>
             <Button 
-              className="w-full bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+              className=" bg-red-600 text-white hover:bg-red-700 cursor-pointer flex-1"
               onClick={handleLogout}
               disabled={loading}
             >
@@ -1032,7 +1050,6 @@ function DeleteAccountPage({ onBack, onClose }) {
 
         <div className="max-w-3xl mx-auto px-4 py-6 text-center">
           <h1 className="text-3xl font-bold text-red-600">Delete Account</h1>
-          <p className="text-gray-600 mt-2">This action cannot be undone</p>
         </div>
       </div>
 
@@ -1047,12 +1064,12 @@ function DeleteAccountPage({ onBack, onClose }) {
           </div>
 
           {/* Warning Title */}
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">
               Permanent Account Deletion
           </h2>
 
           {/* Warning Message */}
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-2">
             <p className="text-gray-800 text-center leading-relaxed">
               Deleting your account is <span className="font-bold text-red-600">permanent and irreversible</span>. 
               All your data will be permanently removed, including:
@@ -1093,7 +1110,7 @@ function DeleteAccountPage({ onBack, onClose }) {
           )}
 
           {/* Confirmation Input */}
-          <div className="mb-6">
+          <div className="mb-2">
             <Label 
               htmlFor="confirmText" 
               className="block text-center mb-3 text-gray-700 font-medium"
@@ -1112,6 +1129,10 @@ function DeleteAccountPage({ onBack, onClose }) {
                 setError("");
               }}
               disabled={loading}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off" 
+              spellCheck="false"
               className={`text-center font-mono text-lg uppercase tracking-wider ${
                 confirmText && confirmText !== "DELETE" 
                   ? "border-red-300 focus:border-red-500" 
@@ -1126,17 +1147,17 @@ function DeleteAccountPage({ onBack, onClose }) {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4">
+          <div className="flex gap-4 w-full">
             <Button
               variant="outline"
-              className="w-auto cursor-pointer border-gray-300 hover:bg-gray-50"
+              className="w-auto flex-1 cursor-pointer border-gray-300 hover:bg-gray-50"
               onClick={onBack}
               disabled={loading}
             >
               Cancel
             </Button>
             <Button 
-              className={`w-auto cursor-pointer transition-all ${
+              className={`w-auto cursor-pointer flex-1 transition-all ${
                 confirmText === "DELETE" && !loading
                   ? "bg-red-600 hover:bg-red-700 text-white"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
@@ -1171,7 +1192,7 @@ function DeleteAccountPage({ onBack, onClose }) {
           </div>
 
           {/* Final warning */}
-          <p className="text-xs text-gray-500 text-center mt-6">
+          <p className="text-xs text-gray-500 text-center mt-2">
             This action cannot be undone. Your account will be deleted immediately.
           </p>
         </Card>

@@ -65,7 +65,6 @@ export default function Header() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.push("/");
   };
 
   // Déterminer le type de compte et les informations à afficher
@@ -83,6 +82,8 @@ export default function Header() {
     : user?.email?.charAt(0).toUpperCase() || "U";
 
   return (
+
+    <>
     <div className="w-full border-b border-gray-200 shadow-sm bg-white">
       <div className="flex justify-center items-center space-x-5 p-5 max-w-7xl mx-auto">
         <Link href="/">
@@ -298,5 +299,6 @@ export default function Header() {
         </div>
       )}
     </div>
+    </>
   );
 }

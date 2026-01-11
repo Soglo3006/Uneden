@@ -9,6 +9,9 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isLoggingOut: boolean;
+  profilesById: Record<string, any>;
+  setProfileInCache: (id: string, profile: any) => void;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, fullName: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -23,6 +26,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [profilesById, setProfilesById] = useState<Record<string, any>>({});
+
+  const setProfileInCache = (id: string, profile: any) => {
+    setProfilesById((prev) => ({ ...prev, [id]: profile }));
+  };
+
   const router = useRouter();
 
   useEffect(() => {
@@ -30,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      setIsLoggingOut(false);
     });
 
     const {
@@ -38,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      setIsLoggingOut(false);
     });
 
     return () => subscription.unsubscribe();
@@ -106,8 +118,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    setIsLoggingOut(true);
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push("/");
   };
 
   return (
@@ -116,6 +129,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         session,
         loading,
+        isLoggingOut,
+        profilesById,
+        setProfileInCache,
         signInWithEmail,
         signUpWithEmail,
         signInWithGoogle,

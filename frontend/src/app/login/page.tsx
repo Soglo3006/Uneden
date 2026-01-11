@@ -26,6 +26,7 @@ export default function LoginPage() {
   const { signInWithEmail, signInWithGoogle, signInWithFacebook, signInWithApple } = useAuth();
 
   const { loading } = useProtectedRoute({
+    requireAuth: false,
   });
 
   if (loading) return <div>Loading...</div>;
@@ -38,13 +39,12 @@ export default function LoginPage() {
     try {
     await signInWithEmail(email, password);
     } catch (err: any) {
+      setCharging(false);
       if (err.message.includes("Email not confirmed")) {
         setError("Please verify your email before logging in. Check your inbox!");
       } else {
         setError("Login failed");
       }
-    } finally {
-      setCharging(false);
     }
   };
 

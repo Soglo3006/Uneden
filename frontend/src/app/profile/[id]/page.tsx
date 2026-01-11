@@ -31,7 +31,7 @@ import EllipsisPage from "@/components/profile/Ellipsis";
 export default function UserProfilePage() {
   const params = useParams();
   const profileId = params.id as string;
-  const { user, session } = useAuth();
+  const { user, session, profilesById, setProfileInCache, isLoggingOut } = useAuth();
   
   const [showSettings, setShowSettings] = useState(false);
   const [showEllipsis, setShowEllipsis] = useState(false);
@@ -41,6 +41,7 @@ export default function UserProfilePage() {
   const [profileUser, setProfileUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const hasFetchedRef = useRef(false);
 
   const isOwner = user?.id === profileId;
   const settingsScrollRef = useRef(null);
@@ -51,6 +52,8 @@ export default function UserProfilePage() {
     const fetchProfile = async () => {
       try {
         setLoading(true);
+        setError("");
+        setProfileUser(null);
 
         let url = `${process.env.NEXT_PUBLIC_API_URL}/profiles/${profileId}`;
         const headers: HeadersInit = {};
@@ -72,6 +75,7 @@ export default function UserProfilePage() {
         const data = await response.json();
         console.log("Profile loaded:", data)
         setProfileUser(data);
+        hasFetchedRef.current = true;
       } catch (err: any) {
         console.error("Error fetching profile:", err);
         setError(err.message);
@@ -80,10 +84,14 @@ export default function UserProfilePage() {
       }
     };
 
-    if (profileId) {
-      fetchProfile();
+    if (profileId && !hasFetchedRef.current) { 
+    fetchProfile();
     }
-  }, [profileId, user, session]);
+  }, [profileId]);
+
+  useEffect(() => {
+  hasFetchedRef.current = false;
+}, [profileId]);
 
   // Prevent scrolling when modals are open
   useEffect(() => {
@@ -98,7 +106,8 @@ export default function UserProfilePage() {
     };
   }, [showSettings, showEllipsis, isPortfolioModalOpen]);
 
-  if (loading) {
+
+  if (loading || isLoggingOut) {
   return (
     <div className="min-h-screen bg-white">
       <Header />
