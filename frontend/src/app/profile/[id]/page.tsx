@@ -98,7 +98,18 @@ export default function UserProfilePage() {
     };
   }, [showSettings, showEllipsis, isPortfolioModalOpen]);
 
-  // Loading state
+  if (loading) {
+  return (
+    <div className="min-h-screen bg-white">
+      <Header />
+      <CategoryNav />
+      <div className="bg-gray-50 flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+      </div>
+      <Footer />
+    </div>
+  );
+}
 
 
   // Error state

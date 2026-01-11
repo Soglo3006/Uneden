@@ -1,4 +1,4 @@
-import { Search, User, Settings, LogOut, Building2 } from "lucide-react";
+import { Search, User, Settings, LogOut, Building2, List, Wallet  } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -26,6 +26,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import SettingsPage from "@/components/profile/Settings";
 import { useRef, useState, useEffect } from "react";
+import { MessageCircle, Heart } from 'lucide-react';
 
 export default function Header() {
   const { user, signOut, session } = useAuth();
@@ -149,6 +150,21 @@ export default function Header() {
           </ToggleGroup>
         </div>
 
+        {user && (
+          <div className="flex items-center gap-3">
+            <Link href="/favorites">
+              <Button variant="ghost" size="icon" className="relative cursor-pointer hover:bg-gray-100">
+                <Heart className="h-10 w-10 text-gray-700" />
+              </Button>
+            </Link>
+            <Link href="/messages">
+              <Button variant="ghost" size="icon" className="relative cursor-pointer hover:bg-gray-100">
+                <MessageCircle className="h-10 w-10 text-gray-700" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
         <div>
           {user ? (
             <DropdownMenu>
@@ -194,6 +210,22 @@ export default function Header() {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <div
+                    className="cursor-pointer flex items-center"
+                  >
+                    <Wallet className="mr-2 h-4 w-4" />
+                    <span>{isPerson ? "My Wallet" : "Company's Wallet"}</span>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <div
+                    className="cursor-pointer flex items-center"
+                  >
+                    <List className="mr-2 h-4 w-4" />
+                    <span>{isPerson ? "My Listings" : "Company's Listings"}</span>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link
                     href={`/profile/${user.id}`}
                     className="cursor-pointer flex items-center"
@@ -221,7 +253,7 @@ export default function Header() {
                   className="cursor-pointer text-red-600 focus:text-red-600"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
+                  <span>Log Out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

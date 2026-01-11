@@ -41,7 +41,7 @@ export default function LoginPage() {
       if (err.message.includes("Email not confirmed")) {
         setError("Please verify your email before logging in. Check your inbox!");
       } else {
-        setError(err.message || "Login failed");
+        setError("Login failed");
       }
     } finally {
       setCharging(false);
