@@ -8,6 +8,8 @@ import { X, TriangleAlert  } from 'lucide-react';
 import ProfilePictureUploader from "@/components/profile/ProfilePicture";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/lib/supabaseClient";
 import {
   User,
   Lock,
@@ -832,10 +834,126 @@ function ChangePasswordPage({ onBack, onClose }) {
 }
 
 function BlockedUsersPage({ onBack, onClose }) {
-  const blocked = ["John Smith", "Emily Carter", "Mario Lopez"];
+  const { user } = useAuth();
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [unblocking, setUnblocking] = useState<string | null>(null);
+
+  // Charger les utilisateurs bloqués
+  useEffect(() => {
+    const fetchBlockedUsers = async () => {
+      if (!user) return;
+
+      try {
+        const { data: blocks, error: blocksError } = await supabase
+          .from('blocked_users')
+          .select('blocked_user_id, created_at')
+          .eq('blocker_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (blocksError) throw blocksError;
+
+        if (blocks && blocks.length > 0) {
+          const userIds = blocks.map(b => b.blocked_user_id);
+          
+          const userPromises = userIds.map(async (userId) => {
+            try {
+              const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/profiles/${userId}`
+              );
+              
+              if (response.ok) {
+                const userData = await response.json();
+                return {
+                  id: userId,
+                  name: userData.account_type === 'person' 
+                    ? userData.full_name 
+                    : userData.company_name,
+                  avatar: userData.avatar,
+                  account_type: userData.account_type,
+                  blocked_at: blocks.find(b => b.blocked_user_id === userId)?.created_at
+                };
+              }
+              return null;
+            } catch (err) {
+              console.error('Error fetching user:', err);
+              return null;
+            }
+          });
+
+          const users = await Promise.all(userPromises);
+          setBlockedUsers(users.filter(u => u !== null));
+        }
+      } catch (err) {
+        console.error('Error fetching blocked users:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBlockedUsers();
+  }, [user]);
+
+  // Débloquer un utilisateur
+  const handleUnblock = async (userId: string) => {
+    if (!user) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to unblock this user?"
+    );
+
+    if (!confirmed) return;
+
+    setUnblocking(userId);
+
+    try {
+      const { error } = await supabase
+        .from('blocked_users')
+        .delete()
+        .eq('blocker_id', user.id)
+        .eq('blocked_user_id', userId);
+
+      if (error) throw error;
+      setBlockedUsers(blockedUsers.filter(u => u.id !== userId));
+    } catch (err) {
+      console.error('Error unblocking user:', err);
+      alert('Failed to unblock user. Please try again.');
+    } finally {
+      setUnblocking(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="bg-white border-b relative">
+          <button
+            onClick={onClose}
+            className="absolute top-1 cursor-pointer right-4 text-xl"
+          >
+            ✕
+          </button>
+          <button
+            onClick={onBack}
+            className="absolute top-1 cursor-pointer left-4 text-gray-600"
+          >
+            ← Back
+          </button>
+
+          <div className="max-w-5xl mx-auto px-4 py-6">
+            <h1 className="text-3xl font-bold text-gray-900">Blocked Users</h1>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gray-50 min-h-screen">
       <div className="bg-white border-b relative">
         <button
           onClick={onClose}
@@ -852,18 +970,103 @@ function BlockedUsersPage({ onBack, onClose }) {
 
         <div className="max-w-5xl mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold text-gray-900">Blocked Users</h1>
+          <p className="text-gray-600 mt-1">
+            {blockedUsers.length === 0 
+              ? "You haven't blocked anyone yet"
+              : `You have blocked ${blockedUsers.length} user${blockedUsers.length > 1 ? 's' : ''}`
+            }
+          </p>
         </div>
       </div>
 
-      <div className="mx-auto px-4 py-8 space-y-4">
-        {blocked.map((u, i) => (
-          <Card key={i} className="p-4 flex justify-between items-center">
-            <span>{u}</span>
-            <Button variant="outline" className="cursor-pointer">
-              Unblock
-            </Button>
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        {blockedUsers.length === 0 ? (
+          <Card className="p-12 text-center">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                <Shield className="h-8 w-8 text-gray-400" />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              No Blocked Users
+            </h3>
+            <p className="text-gray-600">
+              Users you block will appear here. You can unblock them at any time.
+            </p>
           </Card>
-        ))}
+        ) : (
+          <div className="space-y-4">
+            {blockedUsers.map((blockedUser) => (
+              <Card key={blockedUser.id} className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12 border-2 border-gray-200">
+                      <AvatarImage 
+                        src={blockedUser.avatar} 
+                        alt={blockedUser.name} 
+                      />
+                      <AvatarFallback className="bg-gray-100 text-gray-600">
+                        {blockedUser.name?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-gray-900">
+                          {blockedUser.name}
+                        </p>
+                        {blockedUser.account_type === 'company' && (
+                          <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-xs">
+                            <Building2 className="h-2.5 w-2.5 mr-1" />
+                            Company
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        Blocked {new Date(blockedUser.blocked_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button 
+                    variant="outline" 
+                    className="cursor-pointer hover:bg-green-50 hover:border-green-600 hover:text-green-600"
+                    onClick={() => handleUnblock(blockedUser.id)}
+                    disabled={unblocking === blockedUser.id}
+                  >
+                    {unblocking === blockedUser.id ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle 
+                            className="opacity-25" 
+                            cx="12" 
+                            cy="12" 
+                            r="10" 
+                            stroke="currentColor" 
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path 
+                            className="opacity-75" 
+                            fill="currentColor" 
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        Unblocking...
+                      </span>
+                    ) : (
+                      'Unblock'
+                    )}
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

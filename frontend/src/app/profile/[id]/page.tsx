@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/lib/supabaseClient"; 
 import {
   Star,
   MapPin,
@@ -19,8 +20,10 @@ import {
   Ellipsis,
   UserStar,
   HeartPlus,
+  Heart,
   Briefcase,
   Users,
+  Ban,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
@@ -42,6 +45,11 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const hasFetchedRef = useRef(false);
+
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
 
   const isOwner = user?.id === profileId;
   const settingsScrollRef = useRef(null);
@@ -88,6 +96,54 @@ export default function UserProfilePage() {
     fetchProfile();
     }
   }, [profileId]);
+
+  // Charger le statut favori
+  useEffect(() => {
+    const checkFavorite = async () => {
+      if (!user || isOwner || !profileId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('favorites')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('favorited_user_id', profileId)
+          .maybeSingle(); // Utiliser maybeSingle au lieu de single pour éviter les erreurs
+
+        if (!error && data) {
+          setIsFavorited(true);
+        }
+      } catch (err) {
+        console.error('Error checking favorite:', err);
+      }
+    };
+    
+    checkFavorite();
+  }, [user, profileId, isOwner]);
+
+  // Vérifier si l'utilisateur est bloqué
+  useEffect(() => {
+    const checkBlocked = async () => {
+      if (!user || isOwner || !profileId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('blocked_users')
+          .select('id')
+          .eq('blocker_id', user.id)
+          .eq('blocked_user_id', profileId)
+          .maybeSingle();
+
+        if (!error && data) {
+          setIsBlocked(true);
+        }
+      } catch (err) {
+        console.error('Error checking blocked status:', err);
+      }
+    };
+    
+    checkBlocked();
+  }, [user, profileId, isOwner]);
 
   useEffect(() => {
   hasFetchedRef.current = false;
@@ -172,6 +228,76 @@ export default function UserProfilePage() {
   const displayName = isPerson ? profileUser.full_name : profileUser.company_name;
   const displayTitle = isPerson ? profileUser.profession : profileUser.industry;
 
+  const toggleFavorite = async () => {
+    if (!user) {
+      // Optionnel: Rediriger vers login ou afficher un message
+      alert('Please login to add favorites');
+      return;
+    }
+
+    setFavoritesLoading(true);
+
+    try {
+      if (isFavorited) {
+        // Retirer des favoris
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('favorited_user_id', profileId);
+
+        if (error) throw error;
+        setIsFavorited(false);
+      } else {
+        // Ajouter aux favoris
+        const { error } = await supabase
+          .from('favorites')
+          .insert({
+            user_id: user.id,
+            favorited_user_id: profileId
+          });
+
+        if (error) throw error;
+        setIsFavorited(true);
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+      alert('Failed to update favorites. Please try again.');
+    } finally {
+      setFavoritesLoading(false);
+    }
+  };
+
+  const handleUnblock = async () => {
+  if (!user) return;
+
+  const confirmed = window.confirm(
+    `Are you sure you want to unblock ${displayName}?`
+  );
+
+  if (!confirmed) return;
+
+  setBlockLoading(true);
+
+  try {
+    const { error } = await supabase
+      .from('blocked_users')
+      .delete()
+      .eq('blocker_id', user.id)
+      .eq('blocked_user_id', profileId);
+
+    if (error) throw error;
+
+    setIsBlocked(false);
+    alert(`${displayName} has been unblocked.`);
+  } catch (err) {
+    console.error('Error unblocking user:', err);
+    alert('Failed to unblock user. Please try again.');
+  } finally {
+    setBlockLoading(false);
+  }
+};
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
@@ -251,6 +377,16 @@ export default function UserProfilePage() {
                         <MessageCircle className="h-4 w-4" />
                         View Messages
                       </Button>
+                      <Link 
+                        href={`/listings/${(displayName || "user")
+                          .toLowerCase()
+                          .replace(/\s+/g, "-")}`}
+                      >
+                        <Button variant="outline" className="gap-2">
+                          <Grid3x3 className="h-4 w-4" />
+                          View all my listings
+                        </Button>
+                      </Link>
                       <Button 
                         variant="outline" 
                         className="gap-2 cursor-pointer" 
@@ -262,45 +398,96 @@ export default function UserProfilePage() {
                     </>
                   ) : (
                     <>
-                      <Button className="bg-green-700 hover:bg-green-800 text-white gap-2">
-                        <MessageCircle className="h-4 w-4" />
-                        Send Message
-                      </Button>
-                      <Button variant="outline" className="gap-2">
-                        <HeartPlus className="h-4 w-4" />
-                        Add To Favorites
-                      </Button>
-                      <Button variant="outline" className="gap-2">
-                        <UserStar className="h-4 w-4" />
-                        View Ratings
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="gap-2" 
-                        onClick={() => setShowEllipsis(true)}
-                      >
-                        <Ellipsis className="h-4 w-4" />
-                      </Button>
+                      {isBlocked ? (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            className="gap-2 cursor-pointer border-green-600 text-green-600 hover:bg-green-50"
+                            onClick={handleUnblock}
+                            disabled={blockLoading}
+                          >
+                            {blockLoading ? (
+                              <>
+                                <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                                </svg>
+                                Unblocking...
+                              </>
+                            ) : (
+                              <>
+                                <Ban className="h-4 w-4" />
+                                Unblock User
+                              </>
+                            )}
+                          </Button>
+                          <Link 
+                            href={`/listings/${(displayName || "user")
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")}`}
+                          >
+                            <Button variant="outline" className="gap-2">
+                              <Grid3x3 className="h-4 w-4" />
+                              View Listings
+                            </Button>
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          <Button className="bg-green-700 hover:bg-green-800 text-white gap-2">
+                            <MessageCircle className="h-4 w-4" />
+                            Send Message
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            className="gap-2 cursor-pointer"
+                            onClick={toggleFavorite}
+                            disabled={favoritesLoading}
+                          >
+                            {isFavorited ? (
+                              <>
+                                <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                                Remove from Favorites
+                              </>
+                            ) : (
+                              <>
+                                <HeartPlus className="h-4 w-4" />
+                                Add To Favorites
+                              </>
+                            )}
+                          </Button>
+                          <Button variant="outline" className="gap-2">
+                            <UserStar className="h-4 w-4" />
+                            View Ratings
+                          </Button>
+                          <Link 
+                            href={`/listings/${(displayName || "user")
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")}`}
+                          >
+                            <Button variant="outline" className="gap-2">
+                              <Grid3x3 className="h-4 w-4" />
+                              View Listings
+                            </Button>
+                          </Link>
+                          <Button 
+                            variant="outline" 
+                            className="gap-2" 
+                            onClick={() => setShowEllipsis(true)}
+                          >
+                            <Ellipsis className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </>
                   )}
-                  
-                  <Link 
-                    href={`/listings/${(displayName || "user")
-                      .toLowerCase()
-                      .replace(/\s+/g, "-")}`}
-                  >
-                    <Button variant="outline" className="gap-2">
-                      <Grid3x3 className="h-4 w-4" />
-                      {isOwner ? "View all my listings" : "View Listings"}
-                    </Button>
-                  </Link>
                 </div>
               </div>
             </div>
           </Card>
 
           {/* About Section - Adapté selon le type */}
-          {profileUser.bio && (
+          {!isBlocked && profileUser.bio && (
             <Card className="p-6 mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 {isPerson ? "About Me" : "About Our Company"}
@@ -391,7 +578,7 @@ export default function UserProfilePage() {
           )}
 
           {/* Portfolio */}
-          {portfolio.length > 0 && (
+          {!isBlocked && portfolio.length > 0 && (
             <Card className="p-6 mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 {isPerson ? "My Portfolio" : "Our Projects"}
@@ -423,7 +610,8 @@ export default function UserProfilePage() {
           )}
 
           {/* Listings */}
-          <Card className="p-12">
+          {!isBlocked && (
+            <Card className="p-12">
             <div className="text-center">
               <Grid3x3 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -436,6 +624,30 @@ export default function UserProfilePage() {
               </p>
             </div>
           </Card>
+          )}
+
+          {isBlocked && (
+            <Card className="p-12">
+              <div className="text-center">
+                <Ban className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  User Blocked
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  You have blocked this user. Unblock them to see their content.
+                </p>
+                <Button
+                  variant="outline"
+                  className="border-green-600 text-green-600 hover:bg-green-50 cursor-pointer"
+                  onClick={handleUnblock}
+                  disabled={blockLoading}
+                >
+                  {blockLoading ? "Unblocking..." : "Unblock User"}
+                </Button>
+              </div>
+            </Card>
+          )}
+
         </div>
       </main>
 
@@ -456,8 +668,12 @@ export default function UserProfilePage() {
       {/* Ellipsis Modal */}
       {showEllipsis && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
-          <div className="w-full max-w-3xl bg-white rounded-xl shadow-xl p-6">
-            <EllipsisPage onClose={() => setShowEllipsis(false)} />
+          <div className="w-full max-w-3xl p-6 bg-white rounded-xl shadow-xl overflow-hidden">
+            <EllipsisPage 
+              onClose={() => setShowEllipsis(false)}
+              profileId={profileId}
+              displayName={displayName}
+            />
           </div>
         </div>
       )}
