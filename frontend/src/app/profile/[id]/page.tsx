@@ -35,6 +35,9 @@ export default function UserProfilePage() {
   const params = useParams();
   const profileId = params.id as string;
   const { user, session, profilesById, setProfileInCache, isLoggingOut } = useAuth();
+
+  const [userListings, setUserListings] = useState<any[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
   
   const [showSettings, setShowSettings] = useState(false);
   const [showEllipsis, setShowEllipsis] = useState(false);
@@ -161,6 +164,35 @@ export default function UserProfilePage() {
       document.body.style.overflow = "auto";
     };
   }, [showSettings, showEllipsis, isPortfolioModalOpen]);
+
+  // Fetch user listings
+  useEffect(() => {
+    const fetchUserListings = async () => {
+      if (!profileId) return;
+
+      try {
+        setListingsLoading(true);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/services/user/${profileId}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch listings");
+        }
+
+        const data = await response.json();
+        console.log("User listings loaded:", data);
+        setUserListings(data);
+      } catch (err) {
+        console.error("Error fetching listings:", err);
+        setUserListings([]);
+      } finally {
+        setListingsLoading(false);
+      }
+    };
+
+    fetchUserListings();
+  }, [profileId]);
 
 
   if (loading || isLoggingOut) {
@@ -611,19 +643,84 @@ export default function UserProfilePage() {
 
           {/* Listings */}
           {!isBlocked && (
-            <Card className="p-12">
-            <div className="text-center">
-              <Grid3x3 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {isPerson ? "My Listings" : "Our Services"}
-              </h3>
-              <p className="text-gray-500">
-                {isOwner 
-                  ? "Your listings will appear here once you create them."
-                  : "Listings will be displayed here once available."}
-              </p>
-            </div>
-          </Card>
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {isPerson ? "My Listings" : "Our Services"}
+                </h2>
+                {isOwner && (
+                  <Link href="/post">
+                    <Button className="bg-green-700 hover:bg-green-800 text-white">
+                      Create New Listing
+                    </Button>
+                  </Link>
+                )}
+              </div>
+
+              {listingsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+                </div>
+              ) : userListings.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {userListings.map((listing) => (
+                    <Link key={listing.id} href={`/serviceDetail/${listing.id}`}>
+                      <div className="border rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer">
+                        {listing.image_url && (
+                          <img
+                            src={listing.image_url}
+                            alt={listing.title}
+                            className="w-full h-40 object-cover rounded-lg mb-3"
+                          />
+                        )}
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-900 line-clamp-1">
+                            {listing.title}
+                          </h3>
+                          {listing.type === "looking" && (
+                            <Badge className="bg-blue-100 text-blue-700 text-xs">
+                              Looking
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-green-700 font-semibold mb-2">
+                          ${listing.price}
+                        </p>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          <span>{listing.location}</span>
+                        </div>
+                        {listing.category && (
+                          <p className="text-xs text-gray-500 mt-2">
+                            {listing.category}
+                            {listing.subcategory && ` • ${listing.subcategory}`}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Grid3x3 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    No listings yet
+                  </h3>
+                  <p className="text-gray-500">
+                    {isOwner
+                      ? "Your listings will appear here once you create them."
+                      : "This user hasn't posted any listings yet."}
+                  </p>
+                  {isOwner && (
+                    <Link href="/post">
+                      <Button className="mt-4 bg-green-700 hover:bg-green-800 text-white">
+                        Create Your First Listing
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              )}
+            </Card>
           )}
 
           {isBlocked && (

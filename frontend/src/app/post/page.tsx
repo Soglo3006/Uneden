@@ -17,6 +17,8 @@ SelectTrigger,
 SelectValue,
 } from "@/components/ui/select";
 import {categories} from "@/lib/categories.ts";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 
 const urgencyLevels = [
@@ -29,21 +31,21 @@ const urgencyLevels = [
 type PostMode = "offer" | "looking";
 
 export default function PostServicePage() {
+    const { session } = useAuth();
+    const router = useRouter();
     
     const [mode, setMode] = useState<PostMode>("offer");
 
     const [serviceTitle, setServiceTitle] = useState("");
     const [serviceDescription, setServiceDescription] = useState("");
     const [serviceCategory, setServiceCategory] = useState("");
-    const [servicePriceMin, setServicePriceMin] = useState("");
-    const [servicePriceMax, setServicePriceMax] = useState("");
+    const [servicePrice, setServicePrice] = useState("");
     const [serviceLocation, setServiceLocation] = useState("");
 
     const [jobTitle, setJobTitle] = useState("");
     const [jobDescription, setJobDescription] = useState("");
     const [jobCategory, setJobCategory] = useState("");
-    const [jobBudgetMin, setJobBudgetMin] = useState("");
-    const [jobBudgetMax, setJobBudgetMax] = useState("");
+    const [jobBudget, setJobBudget] = useState("");
     const [jobLocation, setJobLocation] = useState("");
     const [jobUrgency, setJobUrgency] = useState("");
 
@@ -74,10 +76,8 @@ export default function PostServicePage() {
     serviceLanguage.trim() !== "" &&
     serviceMobility.trim() !== "" &&
     serviceDuration.trim() !== "" &&
-    servicePriceMin.trim() !== "" &&
-    servicePriceMax.trim() !== "" &&
+    servicePrice.trim() !== "" &&
     serviceLocation.trim() !== ""
-    Number(servicePriceMax) > Number(servicePriceMin);
 
     const isJobValid =
     jobTitle.trim() !== "" &&
@@ -89,55 +89,114 @@ export default function PostServicePage() {
     jobLanguage.trim() !== "" &&
     jobMobility.trim() !== "" &&
     jobDuration.trim() !== "" &&
-    jobBudgetMin.trim() !== "" &&
-    jobBudgetMax.trim() !== "" &&
+    jobBudget.trim() !== "" &&
     jobLocation.trim() !== "" &&
     jobUrgency.trim() !== ""
-    Number(jobBudgetMax) > Number(jobBudgetMin);
+    Number(jobBudget) > 0;
 
+    const handleServiceSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
 
-    const handleServiceSubmit = (e: React.FormEvent) => {
+        if (!session?.access_token) {
+            alert("You must be logged in to post a service");
+            router.push("/login");
+            return;
+        }
+
+        try {
+            const payload = {
+            type: "offer",
+            title: serviceTitle,
+            description: serviceDescription,
+            category_id: null, 
+            subcategory: serviceSubcategory,
+            price: parseFloat(servicePrice),
+            location: serviceLocation,
+            poster_type: servicePosterType,
+            availability: serviceAvailability,
+            language: serviceLanguage,
+            mobility: serviceMobility,
+            duration: serviceDuration,
+            image_url: serviceImage,
+            };
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to create service");
+            }
+
+            const data = await response.json();
+            console.log("Service created:", data);
+
+            alert("Service posted successfully!");
+            router.push(`/serviceDetail/${data.id}`);
+        } catch (error: any) {
+            console.error("Error creating service:", error);
+            alert(`Failed to post service: ${error.message}`);
+        }
+        };
+
+    const handleJobSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log({
-        type: "service",
-        serviceTitle,
-        serviceDescription,
-        serviceCategory,
-        priceRange: { min: servicePriceMin, max: servicePriceMax },
-        serviceLocation,
+    if (!session?.access_token) {
+        alert("You must be logged in to post a job request");
+        router.push("/login");
+        return;
+    }
 
-        posterType: servicePosterType,
-        subcategory: serviceSubcategory,
-        availability: serviceAvailability,
-        language: serviceLanguage,
-        mobility: serviceMobility,
-        duration: serviceDuration,
-        image: serviceImage ? serviceImage.name : null,
-    });
-    };
-
-
-    const handleJobSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    console.log({
-        type: "job",
-        jobTitle,
-        jobDescription,
-        jobCategory,
-        budgetRange: { min: jobBudgetMin, max: jobBudgetMax },
-        jobLocation,
-        jobUrgency,
-
-        posterType: jobPosterType,
+    try {
+        const payload = {
+        type: "looking",
+        title: jobTitle,
+        description: jobDescription,
+        category_id: null,
         subcategory: jobSubcategory,
+        price: parseFloat(jobBudget),
+        location: jobLocation,
+        poster_type: jobPosterType,
         availability: jobAvailability,
         language: jobLanguage,
         mobility: jobMobility,
         duration: jobDuration,
-        image: jobImage ? jobImage.name : null,
-    });
+        urgency: jobUrgency,
+        image_url: jobImage,
+        };
+
+        console.log("Sending payload:", payload);
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create job request");
+        }
+
+        const data = await response.json();
+        console.log("Job request created:", data);
+
+        alert("Job request posted successfully!");
+        router.push(`/serviceDetail/${data.id}`);
+    } catch (error: any) {
+        console.error("Error creating job request:", error);
+        alert(`Failed to post job request: ${error.message}`);
+    }
     };
 
     const { user, loading } = useProtectedRoute({
@@ -237,33 +296,18 @@ return (
                     </span>
                     <Input
                         type="number"
-                        placeholder="Min"
-                        value={servicePriceMin}
-                        onChange={(e) => setServicePriceMin(e.target.value)}
-                        required
-                        min="0"
-                        className="h-12 pl-8"
-                    />
-                    </div>
-                    <span className="flex items-center text-gray-400 font-medium">to</span>
-                    <div className="flex-1 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                        $
-                    </span>
-                    <Input
-                        type="number"
-                        placeholder="Max"
-                        value={servicePriceMax}
-                        onChange={(e) => setServicePriceMax(e.target.value)}
+                        placeholder="Amount"
+                        value={servicePrice}
+                        onChange={(e) => setServicePrice(e.target.value)}
                         required
                         min="0"
                         className="h-12 pl-8"
                     />
                     </div>
                 </div>
-                {servicePriceMin && servicePriceMax && Number(servicePriceMax) <= Number(servicePriceMin) && (
+                {servicePrice && Number(servicePrice) <= 0 && (
                 <p className="text-red-600 text-sm">
-                    Max price must be greater than min price.
+                    Price must be greater than zero.
                 </p>
                 )}
                 </div>
@@ -474,7 +518,7 @@ return (
 
                 <div className="space-y-2">
                 <Label className="text-base font-medium text-gray-900">
-                    Budget Range <span className="text-red-500">*</span>
+                    Budget <span className="text-red-500">*</span>
                 </Label>
                 <div className="flex gap-4">
                     <div className="flex-1 relative">
@@ -483,33 +527,18 @@ return (
                     </span>
                     <Input
                         type="number"
-                        placeholder="Min"
-                        value={jobBudgetMin}
-                        onChange={(e) => setJobBudgetMin(e.target.value)}
-                        required
-                        min="0"
-                        className="h-12 pl-8"
-                    />
-                    </div>
-                    <span className="flex items-center text-gray-400 font-medium">to</span>
-                    <div className="flex-1 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                        $
-                    </span>
-                    <Input
-                        type="number"
-                        placeholder="Max"
-                        value={jobBudgetMax}
-                        onChange={(e) => setJobBudgetMax(e.target.value)}
+                        placeholder="Amount"
+                        value={jobBudget}
+                        onChange={(e) => setJobBudget(e.target.value)}
                         required
                         min="0"
                         className="h-12 pl-8"
                     />
                     </div>
                 </div>
-                {jobBudgetMin && jobBudgetMax && Number(jobBudgetMax) <= Number(jobBudgetMin) && (
+                {jobBudget && Number(jobBudget) <= 0 && (
                     <p className="text-red-600 text-sm">
-                        Max budget must be greater than min budget.
+                        Budget must be greater than zero.
                     </p>
                     )}
                 </div>
