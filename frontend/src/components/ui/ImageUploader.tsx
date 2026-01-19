@@ -137,6 +137,7 @@ export default function ImageUploader({
 
             <div className="flex gap-3">
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => {
                   setShowCropper(false);
@@ -147,7 +148,7 @@ export default function ImageUploader({
               >
                 Cancel
               </Button>
-              <Button onClick={saveCroppedImage} className="flex-1 cursor-pointer">
+              <Button type="button" onClick={saveCroppedImage} className="flex-1 cursor-pointer">
                 Save
               </Button>
             </div>

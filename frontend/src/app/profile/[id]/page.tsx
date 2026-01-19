@@ -21,10 +21,16 @@ import {
   UserStar,
   HeartPlus,
   Heart,
-  Briefcase,
   Users,
   Ban,
 } from "lucide-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -365,7 +371,6 @@ export default function UserProfilePage() {
                   </h1>
                   {isCompany && (
                     <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                      <Briefcase className="h-3 w-3 mr-1" />
                       Company
                     </Badge>
                   )}
@@ -584,7 +589,6 @@ export default function UserProfilePage() {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Profession</h3>
                     <div className="flex items-center gap-2">
-                      <Briefcase className="h-5 w-5 text-gray-500" />
                       <p className="text-gray-700">{profileUser.profession}</p>
                     </div>
                   </div>
@@ -644,13 +648,13 @@ export default function UserProfilePage() {
           {/* Listings */}
           {!isBlocked && (
             <Card className="p-6">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">
                   {isPerson ? "My Listings" : "Our Services"}
                 </h2>
                 {isOwner && (
                   <Link href="/post">
-                    <Button className="bg-green-700 hover:bg-green-800 text-white">
+                    <Button className="bg-green-700 hover:bg-green-800 text-white cursor-pointer">
                       Create New Listing
                     </Button>
                   </Link>
@@ -662,44 +666,84 @@ export default function UserProfilePage() {
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
                 </div>
               ) : userListings.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {userListings.map((listing) => (
-                    <Link key={listing.id} href={`/serviceDetail/${listing.id}`}>
-                      <div className="border rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer">
-                        {listing.image_url && (
-                          <img
-                            src={listing.image_url}
-                            alt={listing.title}
-                            className="w-full h-40 object-cover rounded-lg mb-3"
-                          />
-                        )}
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-gray-900 line-clamp-1">
-                            {listing.title}
-                          </h3>
-                          {listing.type === "looking" && (
-                            <Badge className="bg-blue-100 text-blue-700 text-xs">
-                              Looking
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-green-700 font-semibold mb-2">
-                          ${listing.price}
-                        </p>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          <span>{listing.location}</span>
-                        </div>
-                        {listing.category && (
-                          <p className="text-xs text-gray-500 mt-2">
-                            {listing.category}
-                            {listing.subcategory && ` • ${listing.subcategory}`}
-                          </p>
-                        )}
-                      </div>
+                <>
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      loop: false,
+                    }}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-4">
+                      {userListings.map((listing) => (
+                        <CarouselItem key={listing.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                          <Link href={`/serviceDetail/${listing.id}`}>
+                            <div className="border rounded-xl shadow-sm p-4 hover:shadow-lg transition-all cursor-pointer h-full bg-white">
+                              {listing.image_url ? (
+                                <img
+                                  src={listing.image_url}
+                                  alt={listing.title}
+                                  className="w-full h-48 object-cover rounded-lg mb-3"
+                                />
+                              ) : (
+                                <div className="w-full h-48 bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
+                                  <Grid3x3 className="h-12 w-12 text-gray-300" />
+                                </div>
+                              )}
+                              
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-gray-900 line-clamp-1 flex-1">
+                                  {listing.title}
+                                </h3>
+                                {listing.type === "looking" && (
+                                  <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0">
+                                    Looking
+                                  </Badge>
+                                )}
+                              </div>
+
+                              <p className="text-green-700 font-bold text-lg mb-2">
+                                ${listing.price}
+                              </p>
+
+                              <div className="flex items-center text-sm text-gray-500 mb-2">
+                                <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
+                                <span className="line-clamp-1">{listing.location}</span>
+                              </div>
+
+                              {listing.category && (
+                                <p className="text-xs text-gray-500 line-clamp-1">
+                                  {listing.category}
+                                  {listing.subcategory && ` • ${listing.subcategory}`}
+                                </p>
+                              )}
+                            </div>
+                          </Link>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    
+                    {userListings.length > 3 && (
+                      <>
+                        <CarouselPrevious className="hidden md:flex -left-4" />
+                        <CarouselNext className="hidden md:flex -right-4" />
+                      </>
+                    )}
+                  </Carousel>
+
+                  {/* View All Button */}
+                  <div className="mt-2">
+                    <Link
+                      href={`/listings/${(displayName || "user")
+                        .toLowerCase()
+                        .replace(/\s+/g, "-")}`}
+                    >
+                      <Button variant="outline" className="w-full cursor-pointer">
+                        View All Listings
+                      </Button>
                     </Link>
-                  ))}
-                </div>
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-12">
                   <Grid3x3 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -713,7 +757,7 @@ export default function UserProfilePage() {
                   </p>
                   {isOwner && (
                     <Link href="/post">
-                      <Button className="mt-4 bg-green-700 hover:bg-green-800 text-white">
+                      <Button className="mt-4 bg-green-700 hover:bg-green-800 text-white cursor-pointer">
                         Create Your First Listing
                       </Button>
                     </Link>
