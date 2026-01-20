@@ -410,10 +410,12 @@ export default function UserProfilePage() {
                 <div className="flex flex-wrap gap-3">
                   {isOwner ? (
                     <>
-                      <Button className="bg-green-700 hover:bg-green-800 text-white gap-2">
-                        <MessageCircle className="h-4 w-4" />
-                        View Messages
-                      </Button>
+                      <Link href="/messages">
+                        <Button className="bg-green-700 hover:bg-green-800 text-white gap-2 cursor-pointer">
+                          <MessageCircle className="h-4 w-4" />
+                          View Messages
+                        </Button>
+                      </Link>
                       <Link 
                         href={`/listings/${(displayName || "user")
                           .toLowerCase()
@@ -471,10 +473,12 @@ export default function UserProfilePage() {
                         </>
                       ) : (
                         <>
-                          <Button className="bg-green-700 hover:bg-green-800 text-white gap-2">
-                            <MessageCircle className="h-4 w-4" />
-                            Send Message
-                          </Button>
+                          <Link href={`/messages?userId=${profileId}`}>
+                            <Button className="bg-green-700 hover:bg-green-800 text-white gap-2 cursor-pointer">
+                              <MessageCircle className="h-4 w-4" />
+                              Send Message
+                            </Button>
+                          </Link>
                           <Button 
                             variant="outline" 
                             className="gap-2 cursor-pointer"
