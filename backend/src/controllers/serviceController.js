@@ -2,21 +2,64 @@ import pool from "../config/db.js";
 
 export const createService = async (req, res) => {
   try {
-    const { title, description, category_id, price, location } = req.body;
+    const {
+      type, 
+      title,
+      description,
+      category_id,
+      subcategory,
+      price,
+      location,
+      poster_type,
+      availability,
+      language,
+      mobility,
+      duration,
+      urgency, 
+      image_url,
+    } = req.body;
 
-    if (!title || !price) {
-      return res.status(400).json({ message: "Title and price are required" });
+    if (!title || !description) {
+      return res.status(400).json({ message: "Title and description are required" });
     }
 
-    if (price <= 0) {
-      return res.status(400).json({ message: "Price must be a positive number" });
+    if (!type || !['offer', 'looking'].includes(type)) {
+      return res.status(400).json({ message: "Invalid type. Must be 'offer' or 'looking'" });
     }
 
+    if (!price || price <= 0) {
+      return res.status(400).json({ message: "Price/Budget must be greater than 0" });
+    }
+
+    if (type === 'looking' && !urgency) {
+      return res.status(400).json({ message: "Urgency is required for job requests" });
+    }
+
+    // Créer le service
     const result = await pool.query(
-      `INSERT INTO services (user_id, title, description, category_id, price, location)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [req.user.id, title, description, category_id, price, location]
+      `INSERT INTO services (
+        user_id, type, title, description, category_id, subcategory,
+        price, location, poster_type, availability, 
+        language, mobility, duration, urgency, image_url
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      RETURNING *`,
+      [
+        req.user.id,
+        type,
+        title,
+        description,
+        category_id,
+        subcategory,
+        price,
+        location,
+        poster_type,
+        availability,
+        language,
+        mobility,
+        duration,
+        urgency || null,
+        image_url || null,
+      ]
     );
 
     res.status(201).json(result.rows[0]);
@@ -185,5 +228,29 @@ export const updateService = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error while updating service" });
+  }
+};
+
+export const getUserServices = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const result = await pool.query(
+      `SELECT 
+        s.*,
+        u.full_name AS owner_name,
+        u.company_name,
+        u.account_type
+      FROM services s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.user_id = $1 
+      ORDER BY s.created_at DESC`,
+      [userId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while fetching user services" });
   }
 };

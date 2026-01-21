@@ -13,6 +13,7 @@ userName: string;
 onProfileChange: (newProfilePicture: string) => void;
 size?: "sm" | "md" | "lg" | "xl" | "2xl";
 showLabel?: boolean;
+readOnly?: boolean;
 }
 
 export default function ProfilePictureUploader({
@@ -20,7 +21,9 @@ export default function ProfilePictureUploader({
     userName,
     onProfileChange,
     size = "md",
-    showLabel = true, }: ProfilePictureUploaderProps) {
+    showLabel = true,
+    readOnly = false,
+    }: ProfilePictureUploaderProps) {
         const [showCropper, setShowCropper] = useState(false);
         const [imageToCrop, setImageToCrop] = useState<string | null>(null);
         const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -67,7 +70,8 @@ export default function ProfilePictureUploader({
             <AvatarImage src={currentProfilePicture} alt={userName} />
             <AvatarFallback className="text-2xl">{userName.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col items-center gap-2">
+            {!readOnly && (
+                <div className="flex flex-col items-center gap-2">
             <input
                 type="file"
                 accept="image/*"
@@ -89,6 +93,7 @@ export default function ProfilePictureUploader({
                 <p className="text-xs text-gray-500">JPG, PNG or GIF. Max 2MB.</p>
             )}
             </div>
+            )}
         </div>
 
         {/* Cropper Modal */}

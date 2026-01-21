@@ -39,7 +39,7 @@ export default function VerifyEmailPage() {
           </div>
 
           <Link href="/login" className="block">
-            <Button className="w-full bg-green-700 hover:bg-green-800">
+            <Button className="w-full bg-green-700 hover:bg-green-800 cursor-pointer">
               Go to Login
             </Button>
           </Link>
