@@ -41,9 +41,13 @@ const CustomChannelPreview = ({ channel, latestMessage, unread, setActiveChannel
     return messageDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
   
+  const handleClick = () => {
+    setActiveChannel(channel);
+  };
+  
   return (
     <div
-      onClick={() => setActiveChannel(channel)}
+      onClick={handleClick}
       className={`flex items-start gap-3 p-4 cursor-pointer transition-colors border-l-4 ${
         isActive 
           ? "bg-green-50 border-l-green-700" 
@@ -110,60 +114,126 @@ const CustomChannelHeader = ({ channel }) => {
   );
 };
 
-// Panneau latéral "About"
+// Panneau latéral "About" avec données réelles
 const AboutPanel = ({ channel }) => {
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  
   const otherMembers = Object.values(channel?.state?.members || {}).filter(
     (member) => member.user.id !== channel?._client?.userID
   );
   
   const otherUser = otherMembers[0]?.user;
+  const otherUserId = otherUser?.id;
+  
+  // Fetch profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!otherUserId) return;
+      
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/profiles/${otherUserId}`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          setProfileData(data);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProfile();
+  }, [otherUserId]);
   
   if (!channel) return null;
   
+  const memberSince = profileData?.created_at 
+    ? new Date(profileData.created_at).toLocaleDateString("en-US", { 
+        month: "long", 
+        year: "numeric" 
+      })
+    : "Recently";
+  
+  const displayName = profileData?.account_type === "person"
+    ? profileData?.full_name
+    : profileData?.company_name;
+  
+  const avgRating = profileData?.stats?.average_rating;
+  const totalReviews = profileData?.stats?.total_reviews || 0;
+  const completedJobs = profileData?.stats?.completed_bookings || 0;
+  
   return (
-    <div className="w-80 border-l bg-white p-6">
+    <div className="w-80 border-l bg-white p-6 flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto p-6">
       <h2 className="text-xl font-bold text-gray-900 mb-6">About</h2>
       
-      <div className="flex flex-col items-center mb-6">
-        <Avatar className="h-24 w-24 mb-4">
-          <AvatarImage src={otherUser?.image} alt={otherUser?.name} />
-          <AvatarFallback className="bg-gray-200 text-gray-700 text-3xl font-semibold">
-            {otherUser?.name?.charAt(0) || "A"}
-          </AvatarFallback>
-        </Avatar>
-        
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
-          {otherUser?.name || "User"}
-        </h3>
-        
-        <div className="flex items-center gap-1 mb-4">
-          <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-          <span className="font-semibold">N/A</span>
-          <span className="text-sm text-gray-500">(0 reviews)</span>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
         </div>
-      </div>
-      
-      <div className="space-y-4 mb-6">
-        <div className="flex justify-between items-center">
-          <span className="text-gray-600">Member since</span>
-          <span className="font-semibold text-gray-900">January 2026</span>
-        </div>
-        
-        <div className="flex justify-between items-center">
-          <span className="text-gray-600">Completed jobs</span>
-          <span className="font-semibold text-gray-900">0</span>
-        </div>
-      </div>
-      
-      <div className="mb-6">
-        <p className="text-sm text-gray-600 leading-relaxed">
-          {otherUser?.bio || "No bio available"}
-        </p>
-      </div>
-      
-      <button className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
-        View Full Profile
-      </button>
+      ) : (
+        <>
+          <div className="flex flex-col items-center mb-6">
+            <Avatar className="h-24 w-24 mb-4">
+              <AvatarImage src={otherUser?.image} alt={displayName || otherUser?.name} />
+              <AvatarFallback className="bg-gray-200 text-gray-700 text-3xl font-semibold">
+                {(displayName || otherUser?.name)?.charAt(0) || "A"}
+              </AvatarFallback>
+            </Avatar>
+            
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              {displayName || otherUser?.name || "User"}
+            </h3>
+            
+            <div className="flex items-center gap-1 mb-4">
+              <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+              <span className="font-semibold">
+                {avgRating ? avgRating.toFixed(1) : "N/A"}
+              </span>
+              <span className="text-sm text-gray-500">
+                ({totalReviews} {totalReviews === 1 ? "review" : "reviews"})
+              </span>
+            </div>
+          </div>
+          
+          <div className="space-y-4 mb-6">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Member since</span>
+              <span className="font-semibold text-gray-900">{memberSince}</span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Completed jobs</span>
+              <span className="font-semibold text-gray-900">{completedJobs}</span>
+            </div>
+          </div>
+          
+          {profileData?.bio && (
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 leading-relaxed line-clamp-4">
+                {profileData.bio}
+              </p>
+            </div>
+          )}
+          
+            <div className="p-6 pt-0">
+              <button 
+                onClick={() => router.push(`/profile/${otherUserId}`)}
+                className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-3 px-4 rounded-lg transition-colors cursor-pointer"
+              >
+                View Full Profile
+              </button>
+            </div>
+        </>
+      )}
+    </div>
     </div>
   );
 };
@@ -180,7 +250,7 @@ const EmptyState = () => (
 );
 
 export default function MessagesPage() {
-  const { user, session, loading: authLoading } = useAuth();
+  const { user, session, loading: authLoading, isLoggingOut } = useAuth();
   const { loading: routeLoading } = useProtectedRoute({
     requireAuth: true,
     requireProfileCompleted: true,
@@ -191,6 +261,13 @@ export default function MessagesPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const targetUserId = searchParams.get("userId");
+
+  // Nettoyer le canal actif quand on se déconnecte
+  useEffect(() => {
+    if (isLoggingOut) {
+      setActiveChannel(null);
+    }
+  }, [isLoggingOut]);
 
   const filters = { 
     type: 'messaging', 
@@ -205,9 +282,7 @@ export default function MessagesPage() {
       if (!client || !isReady || !user || !targetUserId || !session?.access_token) return;
       
       try {
-        console.log('🔄 Creating channel with user:', targetUserId);
         
-        // Créer le canal via le backend
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/stream/channel/direct`,
           {
@@ -226,24 +301,17 @@ export default function MessagesPage() {
         }
         
         const { channelId } = await response.json();
-        console.log('Channel created:', channelId);
         
-        // Ouvrir le canal créé
         const channel = client.channel('messaging', channelId);
         await channel.watch();
         setActiveChannel(channel);
         
-        console.log('Channel opened');
         
-        // Nettoyer l'URL
         router.replace('/messages');
       } catch (error) {
-        console.error('Error:', error);
-        // Ne pas afficher d'alerte si le canal existe déjà
         if (!error.message.includes('already exists')) {
           alert('Failed to start conversation. Please try again.');
         }
-        // Nettoyer l'URL même en cas d'erreur
         router.replace('/messages');
       }
     };
@@ -251,13 +319,18 @@ export default function MessagesPage() {
     createAndOpenChannel();
   }, [client, isReady, user, targetUserId, session, router]);
 
-  if (authLoading || routeLoading || !isReady || !client) {
+  if (authLoading || routeLoading || !isReady || !client || isLoggingOut) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <CategoryNav />
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+            {isLoggingOut && (
+              <p className="text-gray-600 font-medium">Logging out...</p>
+            )}
+          </div>
         </div>
         <Footer />
       </div>
@@ -273,7 +346,6 @@ export default function MessagesPage() {
         <div className="border rounded-xl overflow-hidden bg-white shadow-sm" style={{ height: 'calc(100vh - 200px)' }}>
           <Chat client={client} theme="str-chat__theme-light">
             <div className="flex h-full">
-              {/* Liste des conversations */}
               <div className="w-96 border-r bg-white flex flex-col">
                 <div className="p-4 border-b bg-white">
                   <div className="relative mb-4">
@@ -299,13 +371,12 @@ export default function MessagesPage() {
                       <CustomChannelPreview 
                         {...previewProps} 
                         activeChannel={activeChannel}
+                        setActiveChannel={setActiveChannel}
                       />
                     )}
                   />
                 </div>
               </div>
-              
-              {/* Zone de chat */}
               <div className="flex-1 flex">
                 {activeChannel ? (
                   <>
