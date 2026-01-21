@@ -7,7 +7,7 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import disputeRoutes from "./routes/disputeRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
-import messageRoutes from "./routes/messageRoutes.js";
+import streamChatRoutes from "./routes/streamChatRoutes.js";
 
 dotenv.config();
 
@@ -26,7 +26,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/disputes", disputeRoutes);
 app.use("/api/profiles", profileRoutes);
-app.use("/api/messages", messageRoutes);
+app.use("/api/stream", streamChatRoutes);
 app.use("/api/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;
