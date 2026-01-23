@@ -263,7 +263,7 @@ export default function Header() {
               <div className="flex gap-4">
                 <Link href="/login">
                   <Button variant="outline" size="lg" className="cursor-pointer">
-                    Sign In
+                    Login
                   </Button>
                 </Link>
                 <Link href="/register">
