@@ -43,11 +43,11 @@ export default function ListingsGrid({ username }: { username?: string }) {
         currentListings.forEach((listing, index) => {
         elements.push(
             <Link key={listing.id} href={`/serviceDetail/${listing.id}`}>
-              <ListingCard
+                            <ListingCard
                 title={listing.title}
                 price={listing.price as number}
                 location={listing.location}
-                postedTime={listing.created_at}
+                                postedTime={"Recently"}
                 imageUrl={listing.image}
               />
             </Link>

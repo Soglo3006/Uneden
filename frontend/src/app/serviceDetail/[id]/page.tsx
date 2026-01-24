@@ -73,12 +73,12 @@ export default function ServiceDetailPage() {
               <img
                 src={listing.image}
                 alt={listing.title}
-                className="w-full h-80 object-cover"
+                className="w-full h-56 sm:h-80 object-cover"
               />
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-              <div className="flex items-start justify-between gap-6">
+              <div className="flex flex-col md:flex-row items-start justify-between gap-6">
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold text-gray-900">{listing.title}</h1>
 
@@ -96,7 +96,7 @@ export default function ServiceDetailPage() {
                   </p>
                 </div>
 
-                <div className="w-48 flex-shrink-0">
+                <div className="md:w-48 w-full flex-shrink-0 md:mt-0 mt-4">
                   <Link href={`/profile/${provider.name.toLowerCase().replace(/\s+/g, '-')}`}>
                     <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-green-200 transition-colors cursor-pointer">
                       <Avatar className="w-16 h-16 mx-auto mb-3">

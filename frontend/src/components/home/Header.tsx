@@ -26,13 +26,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import SettingsPage from "@/components/profile/Settings";
 import { useRef, useState, useEffect } from "react";
-import { MessageCircle, Heart } from 'lucide-react';
+import { MessageCircle, Heart, Menu } from 'lucide-react';
 
 export default function Header() {
   const { user, signOut, session } = useAuth();
   const router = useRouter();
 
   const [showSettings, setShowSettings] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const settingsScrollRef = useRef(null);
 
@@ -85,19 +86,20 @@ export default function Header() {
 
     <>
     <div className="w-full border-b border-gray-200 shadow-sm bg-white">
-      <div className="flex justify-center items-center space-x-5 p-5 max-w-7xl mx-auto">
+      {/* Desktop header */}
+      <div className="hidden md:flex justify-center items-center gap-4 p-4 max-w-7xl mx-auto">
         <Link href="/">
           <h1 className="text-2xl font-bold text-green-800 cursor-pointer">
             FieldHearts
           </h1>
         </Link>
 
-        <div className="flex items-center space-x-2">
-          <Search />
+        <div className="flex items-center gap-2 flex-1 max-w-xl">
+          <Search className="text-gray-600" />
           <Input
             placeholder="What service are you looking for today"
             type="text"
-            className="w-96"
+            className="w-full"
           />
         </div>
 
@@ -155,12 +157,12 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <Link href="/favorites">
               <Button variant="ghost" size="icon" className="relative cursor-pointer hover:bg-gray-100">
-                <Heart className="h-10 w-10 text-gray-700" />
+                <Heart className="h-6 w-6 text-gray-700" />
               </Button>
             </Link>
             <Link href="/messages">
               <Button variant="ghost" size="icon" className="relative cursor-pointer hover:bg-gray-100">
-                <MessageCircle className="h-10 w-10 text-gray-700" />
+                <MessageCircle className="h-6 w-6 text-gray-700" />
               </Button>
             </Link>
           </div>
@@ -211,26 +213,19 @@ export default function Header() {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <div
-                    className="cursor-pointer flex items-center"
-                  >
+                  <div className="cursor-pointer flex items-center">
                     <Wallet className="mr-2 h-4 w-4" />
                     <span>{isPerson ? "My Wallet" : "Company's Wallet"}</span>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <div
-                    className="cursor-pointer flex items-center"
-                  >
+                  <div className="cursor-pointer flex items-center">
                     <List className="mr-2 h-4 w-4" />
                     <span>{isPerson ? "My Listings" : "Company's Listings"}</span>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link
-                    href={`/profile/${user.id}`}
-                    className="cursor-pointer flex items-center"
-                  >
+                  <Link href={`/profile/${user.id}`} className="cursor-pointer flex items-center">
                     {isPerson ? (
                       <User className="mr-2 h-4 w-4" />
                     ) : (
@@ -283,6 +278,106 @@ export default function Header() {
             </Button>
           </Link>
         </div>
+      </div>
+
+      {/* Mobile header */}
+      <div className="md:hidden max-w-7xl mx-auto px-4 py-3">
+        <div className="flex items-center justify-between">
+          <Link href="/">
+            <h1 className="text-xl font-bold text-green-800">FieldHearts</h1>
+          </Link>
+          <div className="flex items-center gap-2">
+            {user && (
+              <>
+                <Link href="/favorites">
+                  <Button variant="ghost" size="icon" className="cursor-pointer">
+                    <Heart className="h-5 w-5 text-gray-700" />
+                  </Button>
+                </Link>
+                <Link href="/messages">
+                  <Button variant="ghost" size="icon" className="cursor-pointer">
+                    <MessageCircle className="h-5 w-5 text-gray-700" />
+                  </Button>
+                </Link>
+              </>
+            )}
+            <Button variant="outline" size="icon" className="cursor-pointer" onClick={() => setMobileOpen((v) => !v)} aria-label="Toggle menu">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {mobileOpen && (
+          <div className="mt-3 space-y-3">
+            <div className="flex items-center gap-2">
+              <Search className="text-gray-600" />
+              <Input
+                placeholder="Search services"
+                type="text"
+                className="w-full"
+              />
+            </div>
+            <Select defaultValue="all">
+              <SelectTrigger className="w-full cursor-pointer">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="cursor-pointer">All Posts</SelectItem>
+                <SelectItem value="find" className="cursor-pointer">Find Work</SelectItem>
+                <SelectItem value="hire" className="cursor-pointer">Hire Worker</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select defaultValue="canada">
+              <SelectTrigger className="w-full cursor-pointer">
+                <SelectValue placeholder="Location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Country</SelectLabel>
+                  <SelectItem value="canada" className="cursor-pointer">Canada</SelectItem>
+                  <SelectItem value="USA" className="cursor-pointer">USA</SelectItem>
+                  <SelectItem value="UK" className="cursor-pointer">UK</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <div className="flex justify-between">
+              <ToggleGroup type="single" variant="outline" size="sm">
+                <ToggleGroupItem value="EN" className="cursor-pointer">
+                  EN
+                </ToggleGroupItem>
+                <ToggleGroupItem value="FR" className="cursor-pointer">
+                  FR
+                </ToggleGroupItem>
+              </ToggleGroup>
+              <Link href="/post">
+                <Button className="bg-green-700 text-white hover:bg-green-800 cursor-pointer w-24">Post</Button>
+              </Link>
+            </div>
+            {user ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8 border-2 border-green-700">
+                    <AvatarImage src={avatarUrl} alt={displayName || "User"} />
+                    <AvatarFallback className="bg-green-100 text-green-700 font-semibold">
+                      {fallbackInitial}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium">{displayName || user.email}</span>
+                </div>
+                <Button variant="outline" size="sm" className="cursor-pointer" onClick={handleSignOut}>Log Out</Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Link href="/login">
+                  <Button variant="outline" className="w-full cursor-pointer">Sign In</Button>
+                </Link>
+                <Link href="/register">
+                  <Button variant="outline" className="w-full cursor-pointer">Register</Button>
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {showSettings && (

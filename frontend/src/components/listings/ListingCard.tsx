@@ -18,8 +18,8 @@ export default function ListingCard({
     imageUrl = "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&q=80",
     }: ListingCardProps) {
     return (
-        <div className=" cursor-pointer bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex">
-        <div className="w-40 h-32 shrink-0 ">
+        <div className="cursor-pointer bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex flex-col sm:flex-row">
+        <div className="w-full h-40 sm:w-40 sm:h-32 shrink-0">
             <img
             src={imageUrl}
             alt={title}

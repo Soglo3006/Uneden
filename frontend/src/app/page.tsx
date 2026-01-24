@@ -68,7 +68,7 @@ export default function HomePage() {
 
             <div className="col-span-full mt-10">
               <h1 className="text-3xl font-bold mb-5">Popular Categories</h1>
-              <div className="grid grid-cols-3 md:grid-cols-4 gap-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5">
                 {categories.map((category)=>(
                   <div key={category.name} className="relative w-full aspect-[4/3] h-full rounded-xl overflow-hidden cursor-pointer group">
                   <img 
