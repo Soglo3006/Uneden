@@ -74,6 +74,35 @@ export default function ServiceDetailPage() {
   // Placeholder until listing schema supports precise sharing toggle
   const shareExactLocation = false;
   const mapQuery = encodeURIComponent(listing.location);
+  const [favoritesCount, setFavoritesCount] = useState<number>(0);
+  const [faqs, setFaqs] = useState<Array<{ question: string; answer: string }>>([]);
+
+  useEffect(() => {
+    const fetchService = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services/${serviceId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const fav = (data.favorites_count ?? data.favoritesCount ?? 0) as number;
+        setFavoritesCount(typeof fav === "number" ? fav : 0);
+
+        const rawFaq = (data.faq ?? data.faqs) as any;
+        if (Array.isArray(rawFaq)) {
+          setFaqs(rawFaq.filter((x) => x && x.question && x.answer));
+        } else if (typeof rawFaq === "string") {
+          try {
+            const parsed = JSON.parse(rawFaq);
+            if (Array.isArray(parsed)) {
+              setFaqs(parsed.filter((x) => x && x.question && x.answer));
+            }
+          } catch {}
+        }
+      } catch (e) {
+        // Ignore for MVP; page works with sample data
+      }
+    };
+    fetchService();
+  }, [serviceId]);
 
   return (
     <div className="min-h-screen bg-white text-black">
@@ -111,6 +140,12 @@ export default function ServiceDetailPage() {
 
                   {/* Save & Share actions */}
                   <SaveShareActions serviceId={serviceId} title={listing.title} />
+
+                  {favoritesCount > 0 && (
+                    <div className="text-sm text-gray-600 mt-2">
+                      Favorited by <span className="font-semibold text-gray-900">{favoritesCount >= 1000 ? "1k+" : favoritesCount}</span> users
+                    </div>
+                  )}
 
                   <p className="text-3xl font-extrabold text-green-700 mt-4">
                     {formattedPrice}
@@ -150,6 +185,19 @@ export default function ServiceDetailPage() {
             </div>
 
             <div className="rounded-2xl border border-gray-200 shadow-sm p-6">
+              {faqs.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">FAQ</h2>
+                  <div className="space-y-3">
+                    {faqs.map((f, idx) => (
+                      <div key={idx} className="border border-gray-100 rounded-lg p-4">
+                        <div className="font-semibold text-gray-900 mb-1">{f.question}</div>
+                        <p className="text-gray-700 text-sm leading-relaxed">{f.answer}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Reviews</h2>
               <div className="space-y-4">
                 <div className="border border-gray-100 rounded-xl p-4">

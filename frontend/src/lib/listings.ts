@@ -8,6 +8,7 @@ export const sampleListings: Listing[] = [
     price: 75,
     location: "Toronto, ON",
     image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&q=80",
+    completedCount: 250,
     created_at: "2 hours ago",
   },
   {
@@ -16,6 +17,7 @@ export const sampleListings: Listing[] = [
     price: 45,
     location: "Vancouver, BC",
     image: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=400&q=80",
+    completedCount: 120,
     created_at: "5 hours ago",
   },
   {
@@ -24,6 +26,7 @@ export const sampleListings: Listing[] = [
     price: 120,
     location: "Montreal, QC",
     image: "https://images.unsplash.com/photo-1600518464441-9154a4dea21b?w=400&q=80",
+    completedCount: 150,
     created_at: "1 day ago",
   },
   {
@@ -32,6 +35,7 @@ export const sampleListings: Listing[] = [
     price: 25,
     location: "Calgary, AB",
     image: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&q=80",
+    completedCount: 0,
     created_at: "3 hours ago",
   },
   {
@@ -40,6 +44,7 @@ export const sampleListings: Listing[] = [
     price: 150,
     location: "Ottawa, ON",
     image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&q=80",
+    completedCount: 1000,
     created_at: "6 hours ago",
   },
   {
