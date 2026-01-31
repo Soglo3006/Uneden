@@ -11,6 +11,7 @@ import Footer from "@/components/home/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import SupportButton from "@/components/support/SupportButton";
 
 export default function HomePage() {
   const { user, loading } = useAuth();
@@ -136,6 +137,7 @@ export default function HomePage() {
       </div>
 
       <Footer/>
+      <SupportButton floating />
       </div> 
   );
 }

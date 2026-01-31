@@ -1,3 +1,7 @@
+Admin access preparation:
+- Frontend `/admin/support` is gated by admin check.
+- Configure admin emails in frontend via `NEXT_PUBLIC_ADMIN_EMAILS` (comma-separated).
+- Backend requires admin for listing/updating support tickets. Set `ADMIN_EMAILS` (comma-separated) in environment to allow specific emails, or set `role=admin` in Supabase user/app metadata.
 MVP FAIT POUR FIELDHEARTS:
 
 Backend:

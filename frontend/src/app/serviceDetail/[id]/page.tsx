@@ -12,6 +12,7 @@ import CategoryNav from "@/components/home/Category";
 import Link from "next/link";
 import StartConversationButton from "@/components/messages/StartConversationButton";
 import { useEffect, useState } from "react";
+import SupportButton from "@/components/support/SupportButton";
 
 export default function ServiceDetailPage() {
   const params = useParams();
@@ -347,6 +348,7 @@ export default function ServiceDetailPage() {
       </main>
 
       <Footer />
+      <SupportButton floating />
 
       {/* Location Map Modal */}
       {isMapOpen && (
