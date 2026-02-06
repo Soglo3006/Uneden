@@ -20,6 +20,8 @@ export interface ChatRoom {
     avatar_url: string | null;
     bio?: string;
   };
+  unread_count?: number;
+  is_archived?: boolean;
 }
 
 export function useChats() {
@@ -29,121 +31,94 @@ export function useChats() {
 
   useEffect(() => {
     if (!user) {
-      console.log('❌ No user, skipping fetch');
       setLoading(false);
       return;
     }
 
     const fetchChats = async () => {
       try {
-        console.log('🔍 [useChats] Fetching chats for user:', user.id);
-        
-        // 1. Récupérer les chat rooms où l'user est membre
         const { data: memberData, error: memberError } = await supabase
           .from('chat_room_member')
           .select('chat_room_id')
           .eq('user_id', user.id);
 
-        console.log('📊 [useChats] Member data:', memberData);
-
         if (memberError) {
-          console.error('❌ [useChats] Error fetching memberships:', memberError);
+          console.error('Error fetching memberships:', memberError);
           setLoading(false);
           return;
         }
 
         if (!memberData || memberData.length === 0) {
-          console.log('⚠️ [useChats] No chat memberships found');
           setChats([]);
           setLoading(false);
           return;
         }
 
         const chatRoomIds = memberData.map(m => m.chat_room_id);
-        console.log('📝 [useChats] Chat room IDs:', chatRoomIds);
 
-        // 2. Récupérer les infos des chat rooms
         const { data: roomsData, error: roomsError } = await supabase
           .from('chat_room')
           .select('*')
           .in('id', chatRoomIds);
 
-        console.log('🏠 [useChats] Rooms data:', roomsData);
-
         if (roomsError) {
-          console.error('❌ [useChats] Error fetching rooms:', roomsError);
+          console.error('Error fetching rooms:', roomsError);
           setLoading(false);
           return;
         }
 
         if (!roomsData) {
-          console.log('⚠️ [useChats] No rooms found');
           setChats([]);
           setLoading(false);
           return;
         }
 
-        // 3. Pour chaque chat, récupérer le dernier message et l'autre user
         const chatsWithDetails = await Promise.all(
           roomsData.map(async (room) => {
-            console.log(`🔄 [useChats] Processing room ${room.id}`);
-
-            // Dernier message
-            const { data: lastMessageArray  } = await supabase
+            const { data: lastMessageArray } = await supabase
               .from('messages')
               .select('content, created_at')
               .eq('chat_room_id', room.id)
               .order('created_at', { ascending: false })
-              .limit(1)
+              .limit(1);
 
             const lastMessage = lastMessageArray?.[0] || null;
 
-            // Si chat direct, récupérer l'autre user
             let otherUser = null;
-            // Ligne ~95 dans useChats.ts
-if (!room.is_group) {
-  const { data: members } = await supabase
-    .from('chat_room_member')
-    .select('user_id')
-    .eq('chat_room_id', room.id);
+            if (!room.is_group) {
+              const { data: members } = await supabase
+                .from('chat_room_member')
+                .select('user_id')
+                .eq('chat_room_id', room.id);
 
-  console.log('🔍 === DEBUG CHAT ===');
-  console.log('🔍 Room ID:', room.id);
-  console.log('🔍 All members:', members);
-  console.log('🔍 Current user ID:', user.id);
-  console.log('🔍 Current user type:', typeof user.id);
+              if (members) {
+                const otherUserId = members.find(m => m.user_id !== user.id)?.user_id;
+                
+                if (otherUserId) {
+                  const { data: userDataArray } = await supabase
+                    .from('profiles')
+                    .select('id, email, full_name, company_name, account_type, avatar_url, bio')
+                    .eq('id', otherUserId)
+                    .limit(1);
 
-  if (members) {
-    // Vérifier chaque membre
-    members.forEach(m => {
-      console.log('🔍 Member:', m.user_id, 'Type:', typeof m.user_id);
-      console.log('🔍 Is this me?', m.user_id === user.id);
-      console.log('🔍 String comparison:', m.user_id.toString() === user.id.toString());
-    });
+                  otherUser = userDataArray?.[0] || null;
+                }
+              }
+            }
 
-    const otherUserId = members.find(m => m.user_id !== user.id)?.user_id;
-    
-    console.log('🔍 Other user ID found:', otherUserId);
-    console.log('🔍 ==================');
-    
-    if (otherUserId) {
-      const { data: userDataArray } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, company_name, account_type, avatar_url, bio')
-        .eq('id', otherUserId)
-        .limit(1);
-
-      console.log('🔍 Profile fetched:', userDataArray?.[0]);
-
-      otherUser = userDataArray?.[0] || null;
-    }
-  }
-}
+            const { count: unreadCount } = await supabase
+              .from('messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('chat_room_id', room.id)
+              .neq('user_id', user.id)
+              .is('read_at', null);
 
             return {
               ...room,
               last_message: lastMessage || undefined,
               other_user: otherUser || undefined,
+              unread_count: unreadCount || 0,
+              is_archived: false, 
             };
           })
         );
@@ -155,10 +130,9 @@ if (!room.is_group) {
           return new Date(dateB).getTime() - new Date(dateA).getTime();
         });
 
-        console.log('✅ [useChats] Final chats:', chatsWithDetails);
         setChats(chatsWithDetails);
       } catch (error) {
-        console.error('❌ [useChats] Error:', error);
+        console.error('Error fetching chats:', error);
       } finally {
         setLoading(false);
       }
@@ -178,7 +152,6 @@ if (!room.is_group) {
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          console.log('🔔 [useChats] Real-time update');
           fetchChats();
         }
       )

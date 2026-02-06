@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageActions } from './MessageActions';
+import { RepliedMessage } from './RepliedMessage';
 
 interface FileMessageProps {
   messageId: string;
@@ -9,6 +10,12 @@ interface FileMessageProps {
   fileUrl: string;
   isImage: boolean;
   isOwn: boolean;
+  repliedTo? : {
+    id:string;
+    content: string;
+    sender_name?: string;
+  } | null;
+  onReplyClick?: (messageId : string) => void;
   otherUser?: {
     avatar_url?: string;
     account_type?: string;
@@ -29,6 +36,8 @@ export function FileMessage({
   fileUrl,
   isImage,
   isOwn,
+  repliedTo,
+  onReplyClick,
   otherUser,
   hoveredMessageId,
   openMenuKey,
@@ -45,7 +54,7 @@ export function FileMessage({
 
   return (
     <>
-      {/* TEXTE (si présent) */}
+      {/* TEXTE */}
       {text && (
         <div
           onPointerDown={(e) => e.stopPropagation()}
@@ -83,8 +92,17 @@ export function FileMessage({
                     return (name || 'U').charAt(0).toUpperCase();
                   })()}
                 </AvatarFallback>
-              </Avatar>
+              </Avatar>             
             )}
+
+            <div className="flex flex-col gap-1">
+              {repliedTo && (
+                <RepliedMessage
+                  repliedTo={repliedTo}
+                  onMessageClick={onReplyClick || (() => {})}
+                />
+              )}
+            
 
             <div
               className={`rounded-2xl px-4 py-2 ${
@@ -97,6 +115,7 @@ export function FileMessage({
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* IMAGE */}
@@ -140,6 +159,14 @@ export function FileMessage({
               </Avatar>
             )}
 
+            <div className="flex flex-col gap-1">
+              {repliedTo && (
+                <RepliedMessage
+                  repliedTo={repliedTo}
+                  onMessageClick={onReplyClick || (() => {})}
+                />
+              )}
+
             <img
               src={fileUrl}
               alt="Attachment"
@@ -155,6 +182,7 @@ export function FileMessage({
             />
           </div>
         </div>
+      </div>
       )}
 
       {/* PDF */}
@@ -169,7 +197,7 @@ export function FileMessage({
               : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          <span className="text-sm font-medium">📄 View file</span>
+          <span className="text-sm font-medium"> View file</span>
         </a>
       )}
     </>
