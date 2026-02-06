@@ -1,7 +1,18 @@
 import pool from "../config/db.js";
+import { createClient } from '@supabase/supabase-js';
 
 
-export const completeProfile = async (req,res) => {
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
+
+export const completeProfile = async (req, res) => {
     try {
         const {
             account_type,
@@ -25,15 +36,62 @@ export const completeProfile = async (req,res) => {
             
             // Portfolio (commun)
             portfolio
-            } = req.body;
+        } = req.body;
 
-            const userId = req.user.id;
-            const fullName = req.user.full_name;
+        const userId = req.user.id;
+        const fullName = req.user.full_name;
 
-            console.log("Completing profile for user:", userId);
+        console.log("Completing profile for user:", userId);
 
-            // Mettre à jour le profil
-            const result = await pool.query(
+        // 1️⃣ Préparer les métadonnées pour auth.users
+        const metaData = account_type === 'person' 
+            ? {
+                account_type: 'person',
+                full_name: fullName,
+                profession: profession,
+                bio: bio,
+                city: city,
+                province: province,
+                phone: phone,
+                address: address,
+                avatar_url: avatar,
+                profile_completed: true,
+            }
+            : {
+                account_type: 'company',
+                company_name: company_name,
+                full_name: fullName, // Nom du représentant
+                industry: industry,
+                bio: bio,
+                city: city,
+                province: province,
+                phone: phone,
+                address: address,
+                team_size: team_size,
+                avatar_url: avatar,
+                profile_completed: true,
+            };
+
+        // 2️⃣ Mettre à jour auth.users.raw_user_meta_data
+        console.log("Updating auth.users metadata...");
+        const { error: metaError } = await supabaseAdmin.auth.admin.updateUserById(
+            userId,
+            { user_metadata: metaData }
+        );
+
+        if (metaError) {
+            console.error('Error updating user metadata:', metaError);
+            return res.status(500).json({ 
+                message: 'Failed to update user metadata',
+                error: metaError.message 
+            });
+        }
+
+        console.log("✅ Metadata updated in auth.users");
+
+        // 3️⃣ Mettre à jour public.users (comme avant)
+        console.log("Updating public.users table...");
+        const result = await pool.query(
             `UPDATE users 
             SET 
                 account_type = $1,
@@ -73,47 +131,46 @@ export const completeProfile = async (req,res) => {
                 JSON.stringify(portfolio || []),
                 userId
             ]
-            );
+        );
 
-            if (result.rows.length === 0) {
+        if (result.rows.length === 0) {
             return res.status(404).json({ message: "User not found" });
-            }
+        }
 
-            console.log("Profile completed successfully");
+        console.log("✅ Data saved in public.users");
+        console.log("✅ Trigger will sync to profiles table automatically");
 
-            res.json({ 
+        res.json({ 
             message: "Profile completed successfully",
             user: result.rows[0]
-            });
-        } catch (err) {
-            console.error("Error completing profile:", err);
-            res.status(500).json({ 
+        });
+    } catch (err) {
+        console.error("Error completing profile:", err);
+        res.status(500).json({ 
             message: "Server error while completing profile",
             error: err.message 
-            });
-        }
+        });
+    }
 };
 
-export const GetMyProfile = async (req,res) => {
+export const GetMyProfile = async (req, res) => {
     try {
-
         const result = await pool.query(
-            `SELECT * FROM users WHERE id= $1`,
+            `SELECT * FROM users WHERE id = $1`,
             [req.user.id]
-        )
+        );
 
-        if (result.rows.length === 0){
-            return res.status(404).json({message: "Profile not found"});
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Profile not found" });
         }
 
         const user = result.rows[0];
-
         res.json(user);
-    } catch(err){
+    } catch (err) {
         console.error(err);
-        res.status(500).json({message: "Server error while fetching profile" });
+        res.status(500).json({ message: "Server error while fetching profile" });
     }
-}
+};
 
 export const UpdateMyProfile = async (req, res) => {
     try {
@@ -212,9 +269,9 @@ export const UpdateMyProfile = async (req, res) => {
             error: err.message 
         });
     }
-}
+};
 
-export const getUserProfile = async (req,res) => {
+export const getUserProfile = async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -229,14 +286,14 @@ export const getUserProfile = async (req,res) => {
             [id]
         );
 
-        if (userResult.rows.length === 0){
-            return res.status(404).json({message: "Profile not found"});
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ message: "Profile not found" });
         }
         
         const user = userResult.rows[0];
 
         const serviceUser = await pool.query(
-            `SELECT COUNT(*) AS total_services FROM services WHERE user_id=$1`,
+            `SELECT COUNT(*) AS total_services FROM services WHERE user_id = $1`,
             [id]
         );
 
@@ -252,7 +309,7 @@ export const getUserProfile = async (req,res) => {
 
         res.json({
             ...user,
-            stats:{
+            stats: {
                 total_services: parseInt(serviceUser.rows[0].total_services, 10),
                 completed_bookings: parseInt(completedBookings.rows[0].count, 10),
                 average_rating: avgRating.rows[0].avg_rating ? parseFloat(parseFloat(avgRating.rows[0].avg_rating).toFixed(1)) : null,
@@ -260,8 +317,8 @@ export const getUserProfile = async (req,res) => {
             }
         });
 
-    } catch(err){
+    } catch (err) {
         console.error(err);
-        res.status(500).json({message: "Server error while fetching profile" });
+        res.status(500).json({ message: "Server error while fetching profile" });
     }
 };

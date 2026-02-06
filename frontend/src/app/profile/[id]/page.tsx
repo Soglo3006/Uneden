@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabaseClient"; 
+import { useStartConversation } from '@/hooks/useStartConversation';
 import {
   Star,
   MapPin,
@@ -62,6 +63,12 @@ export default function UserProfilePage() {
 
   const isOwner = user?.id === profileId;
   const settingsScrollRef = useRef(null);
+
+  const { startConversation, loading: sendMessageLoading } = useStartConversation();
+
+  const handleSendMessage = () => {
+    startConversation(profileId);
+  };
   
 
   // Fetch profile data
@@ -360,7 +367,7 @@ export default function UserProfilePage() {
               <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
                 <AvatarImage src={profileUser.avatar} alt={displayName} />
                 <AvatarFallback className="text-2xl">
-                  {(displayName || "U").charAt(0)}
+                  {(displayName).charAt(0)}
                 </AvatarFallback>
               </Avatar>
 
@@ -473,12 +480,14 @@ export default function UserProfilePage() {
                         </>
                       ) : (
                         <>
-                          <Link href={`/messages?userId=${profileId}`}>
-                            <Button className="bg-green-700 hover:bg-green-800 text-white gap-2 cursor-pointer">
-                              <MessageCircle className="h-4 w-4" />
-                              Send Message
-                            </Button>
-                          </Link>
+                          <Button 
+                            onClick={handleSendMessage}
+                            disabled={sendMessageLoading}
+                            className="bg-green-700 hover:bg-green-800 text-white gap-2 cursor-pointer"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            {sendMessageLoading ? 'Loading...' : 'Send Message'}
+                          </Button>
                           <Button 
                             variant="outline" 
                             className="gap-2 cursor-pointer"

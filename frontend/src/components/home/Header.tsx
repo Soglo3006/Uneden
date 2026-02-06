@@ -1,3 +1,4 @@
+// frontend/src/components/home/Header.tsx
 import { Search, User, Settings, LogOut, Building2, List, Wallet  } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,7 +27,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import SettingsPage from "@/components/profile/Settings";
 import { useRef, useState, useEffect } from "react";
-import { MessageCircle, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
+import MessageNotifications from '@/components/messages/MessageNotifications'; 
 
 export default function Header() {
   const { user, signOut, session } = useAuth();
@@ -82,7 +84,6 @@ export default function Header() {
     : user?.email?.charAt(0).toUpperCase() || "U";
 
   return (
-
     <>
     <div className="w-full border-b border-gray-200 shadow-sm bg-white">
       <div className="flex justify-center items-center space-x-5 p-5 max-w-7xl mx-auto">
@@ -153,14 +154,13 @@ export default function Header() {
 
         {user && (
           <div className="flex items-center gap-3">
+            {/* ========== NOTIFICATIONS MESSAGES ========== */}
+            <MessageNotifications />
+            
+            {/* Favorites */}
             <Link href="/favorites">
               <Button variant="ghost" size="icon" className="relative cursor-pointer hover:bg-gray-100">
-                <Heart className="h-10 w-10 text-gray-700" />
-              </Button>
-            </Link>
-            <Link href="/messages">
-              <Button variant="ghost" size="icon" className="relative cursor-pointer hover:bg-gray-100">
-                <MessageCircle className="h-10 w-10 text-gray-700" />
+                <Heart className="h-6 w-6 text-gray-700" />
               </Button>
             </Link>
           </div>
@@ -171,9 +171,9 @@ export default function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <div className="relative cursor-pointer">
-                  <Avatar className="h-10 w-10 border-2 border-green-700">
+                  <Avatar className="h-10 w-10 border-4 border-white shadow-lg">
                     <AvatarImage src={avatarUrl} alt={displayName || "User"} />
-                    <AvatarFallback className="bg-green-100 text-green-700 font-semibold">
+                    <AvatarFallback className="text-sm">
                       {fallbackInitial}
                     </AvatarFallback>
                   </Avatar>
@@ -211,17 +211,13 @@ export default function Header() {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <div
-                    className="cursor-pointer flex items-center"
-                  >
+                  <div className="cursor-pointer flex items-center">
                     <Wallet className="mr-2 h-4 w-4" />
                     <span>{isPerson ? "My Wallet" : "Company's Wallet"}</span>
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <div
-                    className="cursor-pointer flex items-center"
-                  >
+                  <div className="cursor-pointer flex items-center">
                     <List className="mr-2 h-4 w-4" />
                     <span>{isPerson ? "My Listings" : "Company's Listings"}</span>
                   </div>
