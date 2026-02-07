@@ -12,6 +12,7 @@ export interface Message {
   created_at: string;
   client_temp_id?: string | null;
   replied_to_message_id?: string | null;
+  reactions?: Reaction[];
   status?: MessageStatus;
   sender?: {
     id: string;
@@ -27,6 +28,11 @@ export interface Message {
     user_id: string;
     sender_name?: string;
   } | null;
+}
+
+interface Reaction {  
+  emoji: string;
+  user_ids: string[];
 }
 
 export function useMessages(chatRoomId: string | null) {
@@ -203,6 +209,38 @@ export function useMessages(chatRoomId: string | null) {
 
             return [...prev, incoming];
           });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [chatRoomId]);
+
+  useEffect(() => {
+    if (!chatRoomId) return;
+
+    const channel = supabase
+      .channel(`reactions:${chatRoomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `chat_room_id=eq.${chatRoomId}`,
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === updated.id
+                ? { ...msg, reactions: updated.reactions }
+                : msg
+            )
+          );
         }
       )
       .subscribe();

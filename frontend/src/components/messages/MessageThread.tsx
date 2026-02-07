@@ -33,6 +33,7 @@ interface MessageThreadProps {
   retryMessage?: (tempId: string) => Promise<void>;
   onReply?: (message: any) => void; 
   onReplyClick?: (messageId: string) => void;
+  onReactionToggle?: (messageId: string, emoji: string, currentReactions: any[]) => Promise<void>;
 }
 
 export function MessageThread({
@@ -49,6 +50,7 @@ export function MessageThread({
   retryMessage,
   onReply,
   onReplyClick,
+  onReactionToggle,
 }: MessageThreadProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMessagesLength = useRef(0);
@@ -194,8 +196,11 @@ export function MessageThread({
                               fileUrl={fileUrl}
                               isImage={isImage}
                               isOwn={isOwn}
-                              repliedTo={message.replied_to}  
+                              currentUserId={currentUserId}  
+                              status={message.status}  
+                              repliedTo={message.replied_to}
                               onReplyClick={onReplyClick}
+                              reactions={message.reactions}  
                               otherUser={otherUser}
                               hoveredMessageId={hoveredMessageId}
                               openMenuKey={openMenuKey}
@@ -203,6 +208,12 @@ export function MessageThread({
                               setHoveredMessageId={setHoveredMessageId}
                               setOpenMenuKey={setOpenMenuKey}
                               setSelectedMessageKey={setSelectedMessageKey}
+                              onReact={(emoji) => {  
+                                onReactionToggle?.(message.id, emoji, message.reactions || []);
+                              }}
+                              onReactionToggle={(emoji) => { 
+                                onReactionToggle?.(message.id, emoji, message.reactions || []);
+                              }}
                             />
                           );
                         })()
@@ -211,6 +222,7 @@ export function MessageThread({
                           messageId={message.id}
                           content={message.content}
                           isOwn={isOwn}
+                          currentUserId={currentUserId}
                           status={message.status}
                           repliedTo={message.replied_to}  
                           onReplyClick={onReplyClick} 
@@ -219,6 +231,7 @@ export function MessageThread({
                           isMenuOpen={openMenuKey === message.id}
                           isSelected={selectedMessageKey === message.id}
                           openMenuKey={openMenuKey}
+                          reactions={message.reactions}
                           setOpenMenuKey={setOpenMenuKey}
                           setHoveredMessageId={setHoveredMessageId}
                           setSelectedMessageKey={setSelectedMessageKey}
@@ -227,6 +240,12 @@ export function MessageThread({
                             if (message.status === 'failed') {
                               retryMessage?.(message.id);
                             }
+                          }}
+                          onReact={(emoji) => {
+                            onReactionToggle?.(message.id, emoji, message.reactions || []);
+                          }}
+                          onReactionToggle={(emoji) => {
+                            onReactionToggle?.(message.id, emoji, message.reactions || []);
                           }}
                         />
                       )}

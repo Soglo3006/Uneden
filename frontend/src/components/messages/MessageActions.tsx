@@ -14,12 +14,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { EmojiPickerPopover } from './EmojiPickerPopover';
 
 interface MessageActionsProps {
   messageKey: string;
   openMenuKey: string | null;
   setOpenMenuKey: (key: string | null) => void;
-  onReact?: () => void;
+  onReact?: (emoji: string) => void;
   onReply?: () => void;
   onPin?: () => void;
   onDelete?: () => void;
@@ -36,21 +37,16 @@ export function MessageActions({
 }: MessageActionsProps) {
   return (
     <div className="flex items-center gap-1 mt-1">
-      {/* Bouton Réagir */}
+      {/* Bouton Réagir avec EmojiPicker + Tooltip */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 bg-white border border-gray-200 hover:bg-gray-50 rounded-full shadow-sm"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              onReact?.();
-            }}
-          >
-            <Smile className="h-3 w-3 text-gray-600" />
-          </Button>
+          <div>
+            <EmojiPickerPopover 
+              onEmojiSelect={(emoji) => {
+                onReact?.(emoji);
+              }}
+            />
+          </div>
         </TooltipTrigger>
         <TooltipContent>
           <p>Réagir</p>

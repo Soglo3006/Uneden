@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ReplyPreview } from '@/components/messages/ReplyPreview';
+import { useMessageReactions } from '@/hooks/useMessageReactions';
 
 export default function MessagesPage() {
   const { user } = useProtectedRoute({
@@ -59,6 +60,7 @@ export default function MessagesPage() {
   }, []);
   
   const { messages, loading: messagesLoading, sending, sendMessage, retryMessage } = useMessages(activeChatId);
+  const { toggleReaction } = useMessageReactions();
 
   useEffect(() => {
     if (chatIdFromUrl && chats.length > 0) {
@@ -296,6 +298,14 @@ export default function MessagesPage() {
                         });
                       }}
                       onReplyClick={scrollToMessage}
+                      onReactionToggle={async (messageId, emoji, currentReactions) => { 
+                        if (!user?.id) return;
+                        try {
+                          await toggleReaction(messageId, emoji, user.id, currentReactions);
+                        } catch (error) {
+                          console.error('Failed to toggle reaction:', error);
+                        }
+                      }}
                     />
 
                     <div className="shrink-0">

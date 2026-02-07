@@ -3,6 +3,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageActions } from './MessageActions';
 import { RepliedMessage } from './RepliedMessage';
+import { MessageReactions } from './MessageReactions';
+
+interface Reaction {
+  emoji: string;
+  user_ids: string[];
+}
 
 interface FileMessageProps {
   messageId: string;
@@ -10,12 +16,15 @@ interface FileMessageProps {
   fileUrl: string;
   isImage: boolean;
   isOwn: boolean;
-  repliedTo? : {
-    id:string;
+  currentUserId: string; 
+  status?: 'sending' | 'sent' | 'failed';
+  repliedTo?: {
+    id: string;
     content: string;
     sender_name?: string;
   } | null;
-  onReplyClick?: (messageId : string) => void;
+  onReplyClick?: (messageId: string) => void;
+  reactions?: Reaction[]; 
   otherUser?: {
     avatar_url?: string;
     account_type?: string;
@@ -28,6 +37,8 @@ interface FileMessageProps {
   setHoveredMessageId: (key: string | null) => void;
   setOpenMenuKey: (key: string | null) => void;
   setSelectedMessageKey: (key: string | null) => void;
+  onReact?: (emoji: string) => void;  
+  onReactionToggle?: (emoji: string) => void;  
 }
 
 export function FileMessage({
@@ -36,8 +47,11 @@ export function FileMessage({
   fileUrl,
   isImage,
   isOwn,
+  currentUserId,  
+  status = 'sent',
   repliedTo,
   onReplyClick,
+  reactions, 
   otherUser,
   hoveredMessageId,
   openMenuKey,
@@ -45,6 +59,8 @@ export function FileMessage({
   setHoveredMessageId,
   setOpenMenuKey,
   setSelectedMessageKey,
+  onReact, 
+  onReactionToggle,  
 }: FileMessageProps) {
   const keyText = `${messageId}-text`;
   const keyImage = `${messageId}-image`;
@@ -52,27 +68,30 @@ export function FileMessage({
   const actionsVisible = (key: string) =>
     hoveredMessageId === key || openMenuKey === key || selectedMessageKey === key;
 
+  const isSending = status === 'sending';
+  const isFailed = status === 'failed';
+
   return (
     <>
-      {/* TEXTE */}
       {text && (
         <div
           onPointerDown={(e) => e.stopPropagation()}
-          onMouseEnter={() => setHoveredMessageId(keyText)}
+          onMouseEnter={() => !isSending && setHoveredMessageId(keyText)}
           onMouseLeave={() => {
             if (openMenuKey !== keyText && selectedMessageKey !== keyText) {
               setHoveredMessageId(null);
             }
           }}
-          onClick={() => setSelectedMessageKey(prev => (prev === keyText ? null : keyText))}
+          onClick={() => !isSending && setSelectedMessageKey(prev => (prev === keyText ? null : keyText))}
           className={`flex gap-2 items-start ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}
         >
           {/* Actions */}
-          {actionsVisible(keyText) && (
+          {actionsVisible(keyText) && !isSending && !isFailed && (
             <MessageActions
               messageKey={keyText}
               openMenuKey={openMenuKey}
               setOpenMenuKey={setOpenMenuKey}
+              onReact={onReact}  
             />
           )}
 
@@ -92,51 +111,64 @@ export function FileMessage({
                     return (name || 'U').charAt(0).toUpperCase();
                   })()}
                 </AvatarFallback>
-              </Avatar>             
+              </Avatar>
             )}
 
             <div className="flex flex-col gap-1">
-              {repliedTo && (
-                <RepliedMessage
-                  repliedTo={repliedTo}
-                  onMessageClick={onReplyClick || (() => {})}
-                />
-              )}
-            
+            {repliedTo && (
+              <RepliedMessage
+                repliedTo={repliedTo}
+                onMessageClick={onReplyClick || (() => {})}
+              />
+            )}
 
-            <div
-              className={`rounded-2xl px-4 py-2 ${
-                isOwn
-                  ? 'bg-green-700 text-white'
-                  : 'bg-white border border-gray-200 text-gray-900'
-              }`}
-            >
-              <p className="text-sm whitespace-pre-wrap break-words">{text}</p>
+            {/* Bulle avec réaction en position absolue */}
+            <div className="relative">
+              <div
+                className={`rounded-2xl px-4 py-2 ${
+                  isOwn
+                    ? 'bg-green-700 text-white'
+                    : 'bg-white border border-gray-200 text-gray-900'
+                }`}
+              >
+                <p className="text-sm whitespace-pre-wrap break-words">{text}</p>
+              </div>
+
+              {/* Réactions en position absolue */}
+              {reactions && reactions.length > 0 && (
+                <div className="absolute -bottom-4 -right-2">
+                  <MessageReactions
+                    reactions={reactions}
+                    currentUserId={currentUserId}
+                    onReactionClick={onReactionToggle || (() => {})}
+                  />
+                </div>
+              )}
             </div>
           </div>
+          </div>
         </div>
-      </div>
       )}
 
-      {/* IMAGE */}
       {isImage && (
         <div
           onPointerDown={(e) => e.stopPropagation()}
-          onMouseEnter={() => setHoveredMessageId(keyImage)}
+          onMouseEnter={() => !isSending && setHoveredMessageId(keyImage)}
           onMouseLeave={() => {
             if (openMenuKey !== keyImage && selectedMessageKey !== keyImage) {
               setHoveredMessageId(null);
             }
           }}
-          onClick={() => setSelectedMessageKey(prev => (prev === keyImage ? null : keyImage))}
+          onClick={() => !isSending && setSelectedMessageKey(prev => (prev === keyImage ? null : keyImage))}
           className={`flex gap-2 items-center ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}
         >
           {/* Actions */}
-          {actionsVisible(keyImage) && (
+          {actionsVisible(keyImage) && !isSending && !isFailed && (
             <MessageActions
               messageKey={keyImage}
               openMenuKey={openMenuKey}
               setOpenMenuKey={setOpenMenuKey}
+              onReact={onReact} 
             />
           )}
 
@@ -160,32 +192,45 @@ export function FileMessage({
             )}
 
             <div className="flex flex-col gap-1">
-              {repliedTo && (
-                <RepliedMessage
-                  repliedTo={repliedTo}
-                  onMessageClick={onReplyClick || (() => {})}
-                />
-              )}
+            {repliedTo && (
+              <RepliedMessage
+                repliedTo={repliedTo}
+                onMessageClick={onReplyClick || (() => {})}
+              />
+            )}
 
-            <img
-              src={fileUrl}
-              alt="Attachment"
-              className="max-w-xs max-h-64 rounded-xl cursor-pointer object-cover shadow-md"
-              onClick={(e) => {
-                if (openMenuKey === keyImage || selectedMessageKey === keyImage) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  return;
-                }
-                window.open(fileUrl, '_blank');
-              }}
-            />
+            {/* Image avec réaction en position absolue */}
+            <div className="relative">
+              <img
+                src={fileUrl}
+                alt="Attachment"
+                className="max-w-xs max-h-64 rounded-xl cursor-pointer object-cover shadow-md"
+                onClick={(e) => {
+                  if (openMenuKey === keyImage || selectedMessageKey === keyImage) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                  }
+                  window.open(fileUrl, '_blank');
+                }}
+              />
+
+              {/* Réactions en position absolue */}
+              {reactions && reactions.length > 0 && (
+                <div className="absolute -bottom-4 -right-2">
+                  <MessageReactions
+                    reactions={reactions}
+                    currentUserId={currentUserId}
+                    onReactionClick={onReactionToggle || (() => {})}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
           </div>
         </div>
-      </div>
       )}
 
-      {/* PDF */}
       {!isImage && (
         <a
           href={fileUrl}
