@@ -38,7 +38,9 @@ interface FileMessageProps {
   setOpenMenuKey: (key: string | null) => void;
   setSelectedMessageKey: (key: string | null) => void;
   onReact?: (emoji: string) => void;  
-  onReactionToggle?: (emoji: string) => void;  
+  onReactionToggle?: (emoji: string) => void;
+  onReply?: () => void;  
+  onDelete?: () => void;
 }
 
 export function FileMessage({
@@ -60,7 +62,9 @@ export function FileMessage({
   setOpenMenuKey,
   setSelectedMessageKey,
   onReact, 
-  onReactionToggle,  
+  onReactionToggle,
+  onReply,  
+  onDelete,
 }: FileMessageProps) {
   const keyText = `${messageId}-text`;
   const keyImage = `${messageId}-image`;
@@ -92,6 +96,8 @@ export function FileMessage({
               openMenuKey={openMenuKey}
               setOpenMenuKey={setOpenMenuKey}
               onReact={onReact}  
+              onReply={onReply}
+              onDelete={onDelete} 
             />
           )}
 
@@ -115,7 +121,7 @@ export function FileMessage({
             )}
 
             <div className="flex flex-col gap-1">
-            {repliedTo && (
+            {repliedTo && repliedTo.content !== 'Message supprimé' && text !== 'Message supprimé' && (
               <RepliedMessage
                 repliedTo={repliedTo}
                 onMessageClick={onReplyClick || (() => {})}
@@ -136,7 +142,7 @@ export function FileMessage({
 
               {/* Réactions en position absolue */}
               {reactions && reactions.length > 0 && (
-                <div className="absolute -bottom-4 -right-2">
+                <div className={`absolute -bottom-4 ${isOwn ? '-left-2' : '-right-2'}`}>
                   <MessageReactions
                     reactions={reactions}
                     currentUserId={currentUserId}
@@ -169,6 +175,8 @@ export function FileMessage({
               openMenuKey={openMenuKey}
               setOpenMenuKey={setOpenMenuKey}
               onReact={onReact} 
+              onReply={onReply}
+              onDelete={onDelete} 
             />
           )}
 
@@ -192,7 +200,7 @@ export function FileMessage({
             )}
 
             <div className="flex flex-col gap-1">
-            {repliedTo && (
+            {repliedTo && repliedTo.content !== 'Message supprimé' && (
               <RepliedMessage
                 repliedTo={repliedTo}
                 onMessageClick={onReplyClick || (() => {})}
@@ -217,7 +225,7 @@ export function FileMessage({
 
               {/* Réactions en position absolue */}
               {reactions && reactions.length > 0 && (
-                <div className="absolute -bottom-4 -right-2">
+                <div className={`absolute -bottom-4 ${isOwn ? '-left-2' : '-right-2'}`}>
                   <MessageReactions
                     reactions={reactions}
                     currentUserId={currentUserId}

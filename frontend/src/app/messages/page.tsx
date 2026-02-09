@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ReplyPreview } from '@/components/messages/ReplyPreview';
 import { useMessageReactions } from '@/hooks/useMessageReactions';
+import { useDeleteMessage } from '@/hooks/useDeleteMessage';
 
 export default function MessagesPage() {
   const { user } = useProtectedRoute({
@@ -61,6 +62,7 @@ export default function MessagesPage() {
   
   const { messages, loading: messagesLoading, sending, sendMessage, retryMessage } = useMessages(activeChatId);
   const { toggleReaction } = useMessageReactions();
+  const { deleteMessage } = useDeleteMessage();
 
   useEffect(() => {
     if (chatIdFromUrl && chats.length > 0) {
@@ -118,47 +120,54 @@ export default function MessagesPage() {
   };
 
   const handleSendMessage = async () => {
-    if (!messageInput.trim() && !attachedFile) return;
+  if (!messageInput.trim() && !attachedFile) return;
 
-    try {
-      let fileUrl = null;
+  try {
+    let fileUrl = null;
 
-      if (attachedFile) {
-        const fileExt = attachedFile.name.split('.').pop();
-        const fileName = `${user?.id}-${Date.now()}.${fileExt}`;
-        const filePath = `chat-attachments/${fileName}`;
+    if (attachedFile) {
+      const fileExt = attachedFile.name.split('.').pop();
+      const fileName = `${user?.id}-${Date.now()}.${fileExt}`;
+      const filePath = `chat-attachments/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('chat-attachments')
-          .upload(filePath, attachedFile);
+      const { error: uploadError } = await supabase.storage
+        .from('chat-attachments')
+        .upload(filePath, attachedFile);
 
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          alert('Failed to upload file');
-          return;
-        }
-
-        const { data } = supabase.storage
-          .from('chat-attachments')
-          .getPublicUrl(filePath);
-
-        fileUrl = data.publicUrl;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        alert('Failed to upload file');
+        return;
       }
 
-      const messageContent = attachedFile
-        ? `${messageInput}\n[FILE:${fileUrl}]`
-        : messageInput;
+      const { data } = supabase.storage
+        .from('chat-attachments')
+        .getPublicUrl(filePath);
 
-      await sendMessage(messageContent, replyingTo?.id || null);
-
-      setMessageInput('');
-      removeAttachment();
-      setReplyingTo(null);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      alert('Failed to send message');
+      fileUrl = data.publicUrl;
     }
-  };
+
+    if (messageInput.trim() && fileUrl) {
+      // Message 1 : Texte
+      await sendMessage(messageInput.trim(), replyingTo?.id || null);
+      
+      // Message 2 : Fichier (sans replied_to car déjà répondu dans le texte)
+      await sendMessage(`[FILE:${fileUrl}]`, null);
+    } 
+    else if (fileUrl) {
+      await sendMessage(`[FILE:${fileUrl}]`, replyingTo?.id || null);
+    } else {
+      await sendMessage(messageInput.trim(), replyingTo?.id || null);
+    }
+
+    setMessageInput('');
+    removeAttachment();
+    setReplyingTo(null);
+  } catch (error) {
+    console.error('Error sending message:', error);
+    alert('Failed to send message');
+  }
+};
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -304,6 +313,14 @@ export default function MessagesPage() {
                           await toggleReaction(messageId, emoji, user.id, currentReactions);
                         } catch (error) {
                           console.error('Failed to toggle reaction:', error);
+                        }
+                      }}
+                      onDelete={async (messageId) => { 
+                        try {
+                          await deleteMessage(messageId);
+                        } catch (error) {
+                          console.error('Failed to delete message:', error);
+                          alert('Échec de la suppression');
                         }
                       }}
                     />

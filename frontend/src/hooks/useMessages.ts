@@ -11,6 +11,7 @@ export interface Message {
   content: string;
   created_at: string;
   client_temp_id?: string | null;
+  deleted_at?: string | null;
   replied_to_message_id?: string | null;
   reactions?: Reaction[];
   status?: MessageStatus;
@@ -27,6 +28,7 @@ export interface Message {
     content: string;
     user_id: string;
     sender_name?: string;
+    deleted_at?: string | null;
   } | null;
 }
 
@@ -62,7 +64,8 @@ export function useMessages(chatRoomId: string | null) {
             replied_to:replied_to_message_id (
               id,
               content,
-              user_id
+              user_id,
+              deleted_at
             )
           `)
           .eq('chat_room_id', chatRoomId)
@@ -218,37 +221,63 @@ export function useMessages(chatRoomId: string | null) {
     };
   }, [chatRoomId]);
 
+
   useEffect(() => {
-    if (!chatRoomId) return;
+  if (!chatRoomId) return;
 
-    const channel = supabase
-      .channel(`reactions:${chatRoomId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages',
-          filter: `chat_room_id=eq.${chatRoomId}`,
-        },
-        (payload) => {
-          const updated = payload.new as any;
+  const channel = supabase
+    .channel(`updates:${chatRoomId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'messages',
+        filter: `chat_room_id=eq.${chatRoomId}`,
+      },
+      (payload) => {
+        const updated = payload.new as any;
+        
+        setMessages((prev) => {
           
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === updated.id
-                ? { ...msg, reactions: updated.reactions }
-                : msg
-            )
-          );
-        }
-      )
-      .subscribe();
+          const newMessages = prev.map((msg) => {
+            
+            // Mettre à jour le message modifié
+            if (msg.id === updated.id) {
+              
+              if (updated.deleted_at) {
+                return { 
+                  ...msg, 
+                  content: 'Message supprimé',
+                  deleted_at: updated.deleted_at,
+                  reactions: []
+                };
+              }
+              
+              return { ...msg, reactions: updated.reactions };
+            }
+            
+            if (msg.replied_to_message_id === updated.id && updated.deleted_at) {
+              return {
+                ...msg,
+                replied_to: msg.replied_to
+                  ? { ...msg.replied_to, deleted_at: updated.deleted_at, content: 'Message supprimé' }
+                  : null,
+              };
+            }
+            
+            return msg;
+          });
+          return newMessages;
+        });
+      }
+    )
+    .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [chatRoomId]);
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [chatRoomId]);
 
   const sendMessage = async (content: string, repliedToMessageId?: string | null) => {
     if (!content.trim() || !chatRoomId || !user) return;
@@ -266,9 +295,14 @@ export function useMessages(chatRoomId: string | null) {
       created_at: nowIso,
       replied_to_message_id: repliedToMessageId || null,
       status: 'sending',
-      replied_to: repliedToMessageId 
-        ? messages.find(m => m.id === repliedToMessageId)?.replied_to || null
-        : null,
+      replied_to: repliedToMessageId
+      ? (() => {
+          const target = messages.find(m => m.id === repliedToMessageId);
+          return target
+            ? { id: target.id, content: target.content, user_id: target.user_id, sender_name: target.sender?.full_name }
+            : null;
+        })()
+      : null,
     };
 
     setMessages((prev) => [...prev, optimistic]);

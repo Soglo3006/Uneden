@@ -16,9 +16,11 @@ interface ReplyPreviewProps {
 export function ReplyPreview({ repliedMessage, onCancel }: ReplyPreviewProps) {
   if (!repliedMessage) return null;
 
-  // Extraire le texte (sans les fichiers)
+  // Extraire le texte et le fichier
+  const fileMatch = repliedMessage.content.match(/\[FILE:(.*?)\]/);
+  const fileUrl = fileMatch ? fileMatch[1] : null;
   const messageText = repliedMessage.content.replace(/\[FILE:.*?\]/g, '').trim();
-  const hasFile = repliedMessage.content.includes('[FILE:');
+  const isImage = fileUrl ? /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl) : false;
 
   return (
     <div className="border-t border-gray-200 bg-gray-50 px-4 py-3">
@@ -26,14 +28,24 @@ export function ReplyPreview({ repliedMessage, onCancel }: ReplyPreviewProps) {
         {/* Barre verticale verte */}
         <div className="w-1 bg-green-700 rounded-full self-stretch flex-shrink-0" />
         
+        {/* Miniature image si applicable */}
+        {isImage && fileUrl && (
+          <img 
+            src={fileUrl} 
+            alt="Preview" 
+            className="w-12 h-12 rounded object-cover flex-shrink-0"
+          />
+        )}
+        
         {/* Contenu */}
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-green-700 mb-1">
+        <div className="flex-1 min-w-0 flex flex-col gap-2">
+          <p className="text-xs font-semibold text-green-700">
             Répondre à {repliedMessage.sender_name || 'Utilisateur'}
           </p>
           <p className="text-sm text-gray-600 truncate">
-            {hasFile && '📎 '}
-            {messageText || 'Fichier'}
+            {isImage}
+            {!isImage && fileUrl}
+            {messageText && (isImage || fileUrl ? ' • ' : '')}{messageText}
           </p>
         </div>
 

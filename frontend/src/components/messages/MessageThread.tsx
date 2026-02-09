@@ -34,6 +34,7 @@ interface MessageThreadProps {
   onReply?: (message: any) => void; 
   onReplyClick?: (messageId: string) => void;
   onReactionToggle?: (messageId: string, emoji: string, currentReactions: any[]) => Promise<void>;
+  onDelete?: (messageId: string) => Promise<void>;
 }
 
 export function MessageThread({
@@ -51,6 +52,7 @@ export function MessageThread({
   onReply,
   onReplyClick,
   onReactionToggle,
+  onDelete,
 }: MessageThreadProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMessagesLength = useRef(0);
@@ -214,6 +216,8 @@ export function MessageThread({
                               onReactionToggle={(emoji) => { 
                                 onReactionToggle?.(message.id, emoji, message.reactions || []);
                               }}
+                              onReply={() => onReply?.(message)}
+                              onDelete={() => onDelete?.(message.id)}
                             />
                           );
                         })()
@@ -236,6 +240,7 @@ export function MessageThread({
                           setHoveredMessageId={setHoveredMessageId}
                           setSelectedMessageKey={setSelectedMessageKey}
                           onReply={() => onReply?.(message)}
+                          onDelete={() => onDelete?.(message.id)}
                           onRetry={() => {
                             if (message.status === 'failed') {
                               retryMessage?.(message.id);
