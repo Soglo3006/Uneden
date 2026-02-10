@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useUnreadCount } from '@/hooks/useUnreadCount';
 
 interface Chat {
   id: string;
@@ -36,6 +37,103 @@ interface ConversationListProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onChatSelect: (chatId: string) => void;
+  currentUserId: string | null;
+}
+
+function ConversationItem({ 
+  chat, 
+  isActive, 
+  currentUserId, 
+  onSelect 
+}: { 
+  chat: Chat; 
+  isActive: boolean; 
+  currentUserId: string | null; 
+  onSelect: () => void;
+}) {
+  const unreadCount = useUnreadCount(chat.id, currentUserId);
+
+  const isPerson = chat.other_user?.account_type === 'person';
+  const isCompany = chat.other_user?.account_type === 'company';
+
+  const displayName = isPerson
+    ? chat.other_user?.full_name
+    : isCompany
+    ? chat.other_user?.company_name
+    : chat.other_user?.full_name || chat.name || 'Unknown';
+
+  const lastMessagePreview = (() => {
+    if (!chat.last_message?.content) return 'No messages yet';
+    
+    const content = chat.last_message.content;
+    
+    if (content.includes('[FILE:')) {
+      const match = content.match(/\[FILE:(.*?)\]/);
+      const fileUrl = match ? match[1] : '';
+      const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
+      
+      return isImage ? 'Photo' : 'File';
+    }
+    
+    return content;
+  })();
+
+  const timeDisplay = chat.last_message?.created_at
+    ? new Date(chat.last_message.created_at).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+    : '';
+
+  return (
+    <div
+      onClick={onSelect}
+      className={`p-4 border-b cursor-pointer transition-colors ${
+        isActive
+          ? 'bg-green-50 border-l-4 border-l-green-700'
+          : 'hover:bg-gray-50 border-l-4 border-l-transparent'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <div className="relative">
+          <Avatar className="h-12 w-12 border-4 border-white shadow-lg">
+            {chat.other_user?.avatar_url ? (
+              <AvatarImage src={chat.other_user.avatar_url} alt={displayName} />
+            ) : null}
+            <AvatarFallback className="text-lg">
+              {displayName.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          
+          {/* Badge unread count */}
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-green-700 text-[10px] font-bold text-white">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between mb-1">
+            <h3 className={`font-semibold text-gray-900 truncate ${
+              unreadCount > 0 ? 'font-bold' : ''
+            }`}>
+              {displayName}
+            </h3>
+            <span className="text-xs text-gray-500 ml-2">
+              {timeDisplay}
+            </span>
+          </div>
+          <p className={`text-sm text-gray-500 truncate mt-1 ${
+            unreadCount > 0 ? 'font-semibold text-gray-900' : ''
+          }`}>
+            {lastMessagePreview}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function ConversationList({
@@ -44,6 +142,7 @@ export function ConversationList({
   searchQuery,
   onSearchChange,
   onChatSelect,
+  currentUserId,
 }: ConversationListProps) {
   const [filter, setFilter] = useState<string>('all');
 
@@ -121,90 +220,15 @@ export function ConversationList({
             </p>
           </div>
         ) : (
-          filteredChats.map((chat) => {
-            const isActive = chat.id === activeChatId;
-            const isPerson = chat.other_user?.account_type === 'person';
-            const isCompany = chat.other_user?.account_type === 'company';
-
-            const displayName = isPerson
-              ? chat.other_user?.full_name
-              : isCompany
-              ? chat.other_user?.company_name
-              : chat.other_user?.full_name || chat.name || 'Unknown';
-
-            const lastMessagePreview = (() => {
-              if (!chat.last_message?.content) return 'No messages yet';
-              
-              const content = chat.last_message.content;
-              
-              if (content.includes('[FILE:')) {
-                const match = content.match(/\[FILE:(.*?)\]/);
-                const fileUrl = match ? match[1] : '';
-                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
-                
-                return isImage ? ' Photo' : ' File';
-              }
-              
-              return content;
-            })();
-
-            const timeDisplay = chat.last_message?.created_at
-              ? new Date(chat.last_message.created_at).toLocaleTimeString('en-US', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: false,
-                })
-              : '';
-
-            return (
-              <div
-                key={chat.id}
-                onClick={() => onChatSelect(chat.id)}
-                className={`p-4 border-b cursor-pointer transition-colors ${
-                  isActive
-                    ? 'bg-green-50 border-l-4 border-l-green-700'
-                    : 'hover:bg-gray-50 border-l-4 border-l-transparent'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="relative">
-                    <Avatar className="h-12 w-12 border-4 border-white shadow-lg">
-                      {chat.other_user?.avatar_url ? (
-                        <AvatarImage src={chat.other_user.avatar_url} alt={displayName} />
-                      ) : null}
-                      <AvatarFallback className="text-lg">
-                        {displayName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {/* Badge unread count */}
-                    {chat.unread_count && chat.unread_count > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-green-700 text-[10px] font-bold text-white">
-                        {chat.unread_count > 9 ? '9+' : chat.unread_count}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-1">
-                      <h3 className={`font-semibold text-gray-900 truncate ${
-                        chat.unread_count && chat.unread_count > 0 ? 'font-bold' : ''
-                      }`}>
-                        {displayName}
-                      </h3>
-                      <span className="text-xs text-gray-500 ml-2">
-                        {timeDisplay}
-                      </span>
-                    </div>
-                    <p className={`text-sm text-gray-500 truncate mt-1 ${
-                      chat.unread_count && chat.unread_count > 0 ? 'font-semibold text-gray-900' : ''
-                    }`}>
-                      {lastMessagePreview}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })
+          filteredChats.map((chat) => (
+            <ConversationItem
+              key={chat.id}
+              chat={chat}
+              isActive={chat.id === activeChatId}
+              currentUserId={currentUserId}
+              onSelect={() => onChatSelect(chat.id)}
+            />
+          ))
         )}
       </ScrollArea>
     </div>

@@ -5,6 +5,7 @@ import { ArrowDown, MessageCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageBubble } from './MessageBubble';
 import { FileMessage } from './FileMessage';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface Message {
   id: string;
@@ -263,7 +264,25 @@ export function MessageThread({
                           minute: '2-digit',
                         })}
                       </span>
-                      {isOwn && <span className="text-xs text-gray-500">✓✓</span>}
+                      
+                      {/* Checkmarks pour les messages envoyés par l'utilisateur */}
+                      {isOwn && message.status !== 'sending' && message.status !== 'failed' && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className={`text-xs cursor-help ${message.read_at ? 'text-green-600' : 'text-gray-400'}`}>
+                              {message.read_at ? '✓✓' : '✓'}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {message.read_at 
+                                ? `Lu à ${new Date(message.read_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+                                : 'Envoyé'
+                              }
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
                   </div>
                 );

@@ -26,108 +26,80 @@ export interface ChatRoom {
 
 export function useChats() {
   const { user } = useAuth();
-  const [chats, setChats] = useState<ChatRoom[]>([]);
+  const [chats, setChats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (!user?.id) {
+      setChats([]);
       setLoading(false);
       return;
     }
 
     const fetchChats = async () => {
+      setLoading(true);
       try {
-        const { data: memberData, error: memberError } = await supabase
+        // Requête existante pour récupérer les chats
+        const { data: chatRoomMembers, error: membersError } = await supabase
           .from('chat_room_member')
           .select('chat_room_id')
           .eq('user_id', user.id);
 
-        if (memberError) {
-          console.error('Error fetching memberships:', memberError);
-          setLoading(false);
-          return;
-        }
+        if (membersError) throw membersError;
 
-        if (!memberData || memberData.length === 0) {
+        const chatRoomIds = chatRoomMembers?.map(m => m.chat_room_id) || [];
+
+        if (chatRoomIds.length === 0) {
           setChats([]);
           setLoading(false);
           return;
         }
 
-        const chatRoomIds = memberData.map(m => m.chat_room_id);
-
-        const { data: roomsData, error: roomsError } = await supabase
+        const { data: chatRooms, error: roomsError } = await supabase
           .from('chat_room')
           .select('*')
           .in('id', chatRoomIds);
 
-        if (roomsError) {
-          console.error('Error fetching rooms:', roomsError);
-          setLoading(false);
-          return;
-        }
+        if (roomsError) throw roomsError;
 
-        if (!roomsData) {
-          setChats([]);
-          setLoading(false);
-          return;
-        }
-
+        // Récupérer les derniers messages
         const chatsWithDetails = await Promise.all(
-          roomsData.map(async (room) => {
-            const { data: lastMessageArray } = await supabase
+          (chatRooms || []).map(async (room) => {
+            const { data: members } = await supabase
+              .from('chat_room_member')
+              .select('user_id')
+              .eq('chat_room_id', room.id)
+              .neq('user_id', user.id);
+
+            const otherUserId = members?.[0]?.user_id;
+
+            const { data: otherUserProfile } = await supabase
+              .from('profiles')
+              .select('id,full_name, company_name, account_type, avatar_url, bio')
+              .eq('id', otherUserId)
+              .single();
+
+            const { data: lastMessage } = await supabase
               .from('messages')
               .select('content, created_at')
               .eq('chat_room_id', room.id)
               .order('created_at', { ascending: false })
-              .limit(1);
-
-            const lastMessage = lastMessageArray?.[0] || null;
-
-            let otherUser = null;
-            if (!room.is_group) {
-              const { data: members } = await supabase
-                .from('chat_room_member')
-                .select('user_id')
-                .eq('chat_room_id', room.id);
-
-              if (members) {
-                const otherUserId = members.find(m => m.user_id !== user.id)?.user_id;
-                
-                if (otherUserId) {
-                  const { data: userDataArray } = await supabase
-                    .from('profiles')
-                    .select('id, email, full_name, company_name, account_type, avatar_url, bio')
-                    .eq('id', otherUserId)
-                    .limit(1);
-
-                  otherUser = userDataArray?.[0] || null;
-                }
-              }
-            }
-
-            const { count: unreadCount } = await supabase
-              .from('messages')
-              .select('*', { count: 'exact', head: true })
-              .eq('chat_room_id', room.id)
-              .neq('user_id', user.id)
-              .is('read_at', null);
+              .limit(1)
+              .single();
 
             return {
               ...room,
-              last_message: lastMessage || undefined,
-              other_user: otherUser || undefined,
-              unread_count: unreadCount || 0,
-              is_archived: false, 
+              other_user: otherUserProfile,
+              last_message: lastMessage,
             };
           })
         );
 
-        // Trier par dernier message
+        // Trier par dernier message (plus récent en premier)
         chatsWithDetails.sort((a, b) => {
-          const dateA = a.last_message?.created_at || a.created_at;
-          const dateB = b.last_message?.created_at || b.created_at;
-          return new Date(dateB).getTime() - new Date(dateA).getTime();
+          const timeA = a.last_message?.created_at ? new Date(a.last_message.created_at).getTime() : 0;
+          const timeB = b.last_message?.created_at ? new Date(b.last_message.created_at).getTime() : 0;
+          return timeB - timeA;
         });
 
         setChats(chatsWithDetails);
@@ -140,19 +112,40 @@ export function useChats() {
 
     fetchChats();
 
-    // Real-time
     const channel = supabase
-      .channel('user-chats')
+      .channel('chat-updates')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
-          table: 'chat_room_member',
-          filter: `user_id=eq.${user.id}`,
+          table: 'messages',
         },
-        () => {
-          fetchChats();
+        async (payload) => {
+          const newMessage = payload.new as any;
+
+          // Mettre à jour le chat concerné
+          setChats((prev) =>
+            prev
+              .map((chat) => {
+                if (chat.id === newMessage.chat_room_id) {
+                  return {
+                    ...chat,
+                    last_message: {
+                      content: newMessage.content,
+                      created_at: newMessage.created_at,
+                    },
+                  };
+                }
+                return chat;
+              })
+              // Re-trier par date de dernier message
+              .sort((a, b) => {
+                const timeA = a.last_message?.created_at ? new Date(a.last_message.created_at).getTime() : 0;
+                const timeB = b.last_message?.created_at ? new Date(b.last_message.created_at).getTime() : 0;
+                return timeB - timeA;
+              })
+          );
         }
       )
       .subscribe();
@@ -160,7 +153,6 @@ export function useChats() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
-
+  }, [user?.id]);
   return { chats, loading };
 }

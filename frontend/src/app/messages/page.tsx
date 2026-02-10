@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ReplyPreview } from '@/components/messages/ReplyPreview';
 import { useMessageReactions } from '@/hooks/useMessageReactions';
 import { useDeleteMessage } from '@/hooks/useDeleteMessage';
+import { useMarkAsRead } from '@/hooks/useMarkAsRead';
 
 export default function MessagesPage() {
   const { user } = useProtectedRoute({
@@ -63,6 +64,17 @@ export default function MessagesPage() {
   const { messages, loading: messagesLoading, sending, sendMessage, retryMessage } = useMessages(activeChatId);
   const { toggleReaction } = useMessageReactions();
   const { deleteMessage } = useDeleteMessage();
+  const { markChatAsRead } = useMarkAsRead();
+
+  useEffect(() => {
+    if (activeChatId && user?.id && !messagesLoading) {
+      const timer = setTimeout(() => {
+        markChatAsRead(activeChatId, user.id);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [activeChatId, user?.id, messagesLoading, markChatAsRead]);
 
   useEffect(() => {
     if (chatIdFromUrl && chats.length > 0) {
@@ -148,10 +160,8 @@ export default function MessagesPage() {
     }
 
     if (messageInput.trim() && fileUrl) {
-      // Message 1 : Texte
       await sendMessage(messageInput.trim(), replyingTo?.id || null);
-      
-      // Message 2 : Fichier (sans replied_to car déjà répondu dans le texte)
+
       await sendMessage(`[FILE:${fileUrl}]`, null);
     } 
     else if (fileUrl) {
@@ -226,6 +236,7 @@ export default function MessagesPage() {
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                   onChatSelect={handleChatSelect}
+                  currentUserId={user?.id || null} 
                 />
               </div>
 

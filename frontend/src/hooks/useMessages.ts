@@ -10,6 +10,7 @@ export interface Message {
   user_id: string;
   content: string;
   created_at: string;
+  read_at?: string | null;
   client_temp_id?: string | null;
   deleted_at?: string | null;
   replied_to_message_id?: string | null;
@@ -223,61 +224,66 @@ export function useMessages(chatRoomId: string | null) {
 
 
   useEffect(() => {
-  if (!chatRoomId) return;
+    if (!chatRoomId) return;
 
-  const channel = supabase
-    .channel(`updates:${chatRoomId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'messages',
-        filter: `chat_room_id=eq.${chatRoomId}`,
-      },
-      (payload) => {
-        const updated = payload.new as any;
-        
-        setMessages((prev) => {
+    const channel = supabase
+      .channel(`updates:${chatRoomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `chat_room_id=eq.${chatRoomId}`,
+        },
+        (payload) => {
+          const updated = payload.new as any;
           
-          const newMessages = prev.map((msg) => {
-            
-            // Mettre à jour le message modifié
-            if (msg.id === updated.id) {
-              
-              if (updated.deleted_at) {
+          setMessages((prev) =>
+            prev.map((msg) => {
+              // Mettre à jour le message modifié
+              if (msg.id === updated.id) {
+                // Si supprimé
+                if (updated.deleted_at) {
+                  return { 
+                    ...msg, 
+                    content: 'Message supprimé',
+                    deleted_at: updated.deleted_at,
+                    reactions: []
+                  };
+                }
+                
+                // Sinon, mettre à jour réactions + read_at
                 return { 
                   ...msg, 
-                  content: 'Message supprimé',
-                  deleted_at: updated.deleted_at,
-                  reactions: []
+                  reactions: updated.reactions,
+                  read_at: updated.read_at  
                 };
               }
               
-              return { ...msg, reactions: updated.reactions };
-            }
-            
-            if (msg.replied_to_message_id === updated.id && updated.deleted_at) {
-              return {
-                ...msg,
-                replied_to: msg.replied_to
-                  ? { ...msg.replied_to, deleted_at: updated.deleted_at, content: 'Message supprimé' }
-                  : null,
-              };
-            }
-            
-            return msg;
-          });
-          return newMessages;
-        });
-      }
-    )
-    .subscribe();
+              // Mettre à jour les messages qui répondent au message supprimé
+              if (msg.replied_to_message_id === updated.id && updated.deleted_at) {
+                return {
+                  ...msg,
+                  replied_to: msg.replied_to
+                    ? { ...msg.replied_to, deleted_at: updated.deleted_at, content: 'Message supprimé' }
+                    : null,
+                };
+              }
+              
+              return msg;
+            })
+          );
+        }
+      )
+      .subscribe();
 
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, [chatRoomId]);
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [chatRoomId]);
+
+
 
   const sendMessage = async (content: string, repliedToMessageId?: string | null) => {
     if (!content.trim() || !chatRoomId || !user) return;
