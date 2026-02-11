@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageBubble } from './MessageBubble';
 import { FileMessage } from './FileMessage';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { PinnedMessages } from './PinnedMessages';
 
 interface Message {
   id: string;
@@ -35,6 +36,8 @@ interface MessageThreadProps {
   onReply?: (message: any) => void; 
   onReplyClick?: (messageId: string) => void;
   onReactionToggle?: (messageId: string, emoji: string, currentReactions: any[]) => Promise<void>;
+  onEdit?: (messageId: string, newContent: string) => void;
+  onPin?: (messageId: string, isPinned: boolean) => void;
   onDelete?: (messageId: string) => Promise<void>;
 }
 
@@ -53,11 +56,26 @@ export function MessageThread({
   onReply,
   onReplyClick,
   onReactionToggle,
+  onEdit, 
+  onPin,
   onDelete,
 }: MessageThreadProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const prevMessagesLength = useRef(0);
-  const isInitialLoad = useRef(true);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const prevMessagesLength = useRef(0);
+    const isInitialLoad = useRef(true);
+
+
+    const pinnedMessages = messages
+    .filter(msg => msg.pinned_at && msg.content !== 'Message supprimé')
+    .sort((a, b) => new Date(a.pinned_at!).getTime() - new Date(b.pinned_at!).getTime())
+    .map(msg => ({
+      id: msg.id,
+      content: msg.content,
+      created_at: msg.created_at,
+      sender_name: msg.sender?.account_type === 'company'
+        ? msg.sender.company_name
+        : msg.sender?.full_name,
+    }));
 
     const scrollViewportRef = useRef<HTMLDivElement | null>(null);
     const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -142,6 +160,12 @@ export function MessageThread({
 
   return (
     <div className="relative flex-1 min-h-0 overflow-hidden">
+      <PinnedMessages
+        pinnedMessages={pinnedMessages}
+        onMessageClick={onReplyClick || (() => {})}
+        onUnpin={(messageId) => onPin?.(messageId, true)}
+      />
+
       <ScrollArea className="h-full" ref={(node: any) => {
         if (!node) return;
         const viewport = node.querySelector?.('[data-radix-scroll-area-viewport]');
@@ -229,6 +253,8 @@ export function MessageThread({
                           isOwn={isOwn}
                           currentUserId={currentUserId}
                           status={message.status}
+                          editedAt={message.edited_at}
+                          isPinned={!!message.pinned_at}
                           repliedTo={message.replied_to}  
                           onReplyClick={onReplyClick} 
                           otherUser={otherUser}
@@ -242,6 +268,8 @@ export function MessageThread({
                           setSelectedMessageKey={setSelectedMessageKey}
                           onReply={() => onReply?.(message)}
                           onDelete={() => onDelete?.(message.id)}
+                          onEdit={(newContent) => onEdit?.(message.id, newContent)}
+                          onPin={() => onPin?.(message.id, !!message.pinned_at)}
                           onRetry={() => {
                             if (message.status === 'failed') {
                               retryMessage?.(message.id);

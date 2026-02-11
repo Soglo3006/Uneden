@@ -1,12 +1,15 @@
 "use client";
 
+import { useState, useRef, useEffect } from 'react';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageActions } from './MessageActions';
-import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw,Check, X, Pin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { RepliedMessage } from './RepliedMessage';
 import { MessageReactions } from './MessageReactions';
+import { sanitizeAndFormatMessage } from '@/lib/sanitize';
 
 interface Reaction {  
   emoji: string;
@@ -19,6 +22,7 @@ interface MessageBubbleProps {
   isOwn: boolean;
   currentUserId: string;  
   status?: 'sending' | 'sent' | 'failed';
+  editedAt?: string | null;
   repliedTo?: {
     id: string;
     content: string;
@@ -42,6 +46,8 @@ interface MessageBubbleProps {
   setSelectedMessageKey: (key: string | null) => void;
   onReact?: (emoji: string) => void;  
   onReply?: () => void;
+  onEdit?: (newContent: string) => void;
+  isPinned?: boolean;
   onPin?: () => void;
   onDelete?: () => void;
   onRetry?: () => void;
@@ -54,6 +60,8 @@ export function MessageBubble({
   isOwn,
   currentUserId,  
   status = 'sent',
+  editedAt,
+  isPinned,
   repliedTo,
   onReplyClick,
   otherUser,
@@ -67,14 +75,59 @@ export function MessageBubble({
   setSelectedMessageKey,
   onReact,
   onReply,
+  onEdit,
   onPin,
   onDelete,
   onRetry,
   onReactionToggle,
 }: MessageBubbleProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(content);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const showActions = isHovered || isMenuOpen || isSelected;
   const isSending = status === 'sending';
   const isFailed = status === 'failed';
+
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+      // Placer le curseur à la fin
+      textareaRef.current.setSelectionRange(
+        textareaRef.current.value.length,
+        textareaRef.current.value.length
+      );
+    }
+  }, [isEditing]);
+
+
+  const handleStartEdit = () => {
+    setIsEditing(true);
+    setEditedContent(content);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedContent(content);
+  };
+
+  const handleSaveEdit = () => {
+    if (editedContent.trim() && editedContent.trim() !== content) {
+      onEdit?.(editedContent.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSaveEdit();
+    }
+    if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
+  };
 
   return (
     <div
@@ -133,26 +186,85 @@ export function MessageBubble({
                 : 'bg-white border border-gray-200 text-gray-900'
             } ${isSending ? 'opacity-60' : ''}`}
           >
-            <p className="text-sm whitespace-pre-wrap break-words">
-              {content === 'Message supprimé' ? (
-                <span className="italic text-gray-400">{content}</span>
-              ) : (
-                content
-              )}
-            </p>
-
-            {/* Indicateur sending */}
-            {isSending && isOwn && (
-              <div className="absolute -bottom-1 -right-1">
-                <Loader2 className="h-4 w-4 text-green-600 animate-spin" />
+            {/* MODE ÉDITION */}
+            {isEditing ? (
+              <div className="space-y-2">
+                <Textarea
+                  ref={textareaRef}
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className={`min-h-[60px] text-sm resize-none ${
+                    isOwn ? 'bg-green-600 text-white placeholder:text-green-200' : 'bg-white'
+                  }`}
+                  placeholder="Modifier le message..."
+                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={`h-7 ${isOwn ? 'text-white hover:bg-green-600' : ''}`}
+                    onClick={handleSaveEdit}
+                  >
+                    <Check className="h-4 w-4 mr-1" />
+                    Enregistrer
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={`h-7 ${isOwn ? 'text-white hover:bg-green-600' : ''}`}
+                    onClick={handleCancelEdit}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Annuler
+                  </Button>
+                </div>
               </div>
-            )}
+            ) : (
+              <>
+                {/* MODE LECTURE */}
+                <div className="text-sm break-words">
+                  {content === 'Message supprimé' ? (
+                    <span className="italic text-gray-400">{content}</span>
+                  ) : (
+                    <span 
+                      dangerouslySetInnerHTML={{ 
+                        __html: sanitizeAndFormatMessage(content) 
+                      }} 
+                    />
+                  )}
+                </div>
 
-            {/* Indicateur failed */}
-            {isFailed && isOwn && (
-              <div className="absolute -bottom-1 -right-1">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-              </div>
+                {isPinned && content !== 'Message supprimé' && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <Pin className={`h-3 w-3 ${isOwn ? 'text-green-200' : 'text-blue-600'}`} />
+                    <span className={`text-xs ${isOwn ? 'text-green-200' : 'text-blue-600'}`}>
+                      Épinglé
+                    </span>
+                  </div>
+                )}
+
+                {/* INDICATEUR "modifié" */}
+                {editedAt && content !== 'Message supprimé' && (
+                  <p className={`text-xs mt-1 ${isOwn ? 'text-green-200' : 'text-gray-400'}`}>
+                    (modifié)
+                  </p>
+                )}
+
+                {/* Indicateur sending */}
+                {isSending && isOwn && (
+                  <div className="absolute -bottom-1 -right-1">
+                    <Loader2 className="h-4 w-4 text-green-600 animate-spin" />
+                  </div>
+                )}
+
+                {/* Indicateur failed */}
+                {isFailed && isOwn && (
+                  <div className="absolute -bottom-1 -right-1">
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -169,13 +281,15 @@ export function MessageBubble({
         </div>
 
         {/* Boutons d'action - alignés avec la bulle */}
-        {showActions && !isSending && !isFailed && content !== 'Message supprimé' && ( 
+        {showActions && !isSending && !isFailed && content !== 'Message supprimé' && !isEditing && (
           <MessageActions
             messageKey={messageId}
             openMenuKey={openMenuKey}
             setOpenMenuKey={setOpenMenuKey}
+            isPinned={isPinned}
             onReact={onReact}
             onReply={onReply}
+            onEdit={isOwn ? handleStartEdit : undefined} 
             onPin={onPin}
             onDelete={onDelete}
           />

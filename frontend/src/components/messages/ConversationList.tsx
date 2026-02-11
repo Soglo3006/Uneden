@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
+import { sanitizeMessage } from '@/lib/sanitize';
 
 interface Chat {
   id: string;
@@ -125,11 +126,15 @@ function ConversationItem({
               {timeDisplay}
             </span>
           </div>
-          <p className={`text-sm text-gray-500 truncate mt-1 ${
+          <div className={`text-sm text-gray-500 truncate mt-1 ${
             unreadCount > 0 ? 'font-semibold text-gray-900' : ''
           }`}>
-            {lastMessagePreview}
-          </p>
+            <span 
+              dangerouslySetInnerHTML={{ 
+                __html: sanitizeMessage(lastMessagePreview) 
+              }} 
+            />
+          </div>
         </div>
       </div>
     </div>

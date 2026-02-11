@@ -2,6 +2,7 @@
 
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { sanitizeMessage } from '@/lib/sanitize';
 
 interface ReplyPreviewProps {
   repliedMessage: {
@@ -42,11 +43,16 @@ export function ReplyPreview({ repliedMessage, onCancel }: ReplyPreviewProps) {
           <p className="text-xs font-semibold text-green-700">
             Répondre à {repliedMessage.sender_name || 'Utilisateur'}
           </p>
-          <p className="text-sm text-gray-600 truncate">
+          <div className="text-sm text-gray-600 truncate">
             {isImage}
             {!isImage && fileUrl}
-            {messageText && (isImage || fileUrl ? ' • ' : '')}{messageText}
-          </p>
+            {messageText && (isImage || fileUrl ? ' • ' : '')}
+            <span 
+              dangerouslySetInnerHTML={{ 
+                __html: sanitizeMessage(messageText) 
+              }} 
+            />
+          </div>
         </div>
 
         {/* Bouton fermer */}

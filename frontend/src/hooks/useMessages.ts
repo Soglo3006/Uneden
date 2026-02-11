@@ -11,6 +11,8 @@ export interface Message {
   content: string;
   created_at: string;
   read_at?: string | null;
+  edited_at?: string | null;
+  pinned_at?: string | null;
   client_temp_id?: string | null;
   deleted_at?: string | null;
   replied_to_message_id?: string | null;
@@ -256,6 +258,9 @@ export function useMessages(chatRoomId: string | null) {
                 // Sinon, mettre à jour réactions + read_at
                 return { 
                   ...msg, 
+                  content: updated.content,        
+                  edited_at: updated.edited_at,
+                  pinned_at: updated.pinned_at,
                   reactions: updated.reactions,
                   read_at: updated.read_at  
                 };

@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageActions } from './MessageActions';
 import { RepliedMessage } from './RepliedMessage';
 import { MessageReactions } from './MessageReactions';
+import { sanitizeAndFormatMessage } from '@/lib/sanitize';
 
 interface Reaction {
   emoji: string;
@@ -137,7 +138,12 @@ export function FileMessage({
                     : 'bg-white border border-gray-200 text-gray-900'
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap break-words">{text}</p>
+                <div 
+                  className="text-sm break-words"
+                  dangerouslySetInnerHTML={{ 
+                    __html: sanitizeAndFormatMessage(text || '') 
+                  }} 
+                />
               </div>
 
               {/* Réactions en position absolue */}

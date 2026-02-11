@@ -21,6 +21,8 @@ import { ReplyPreview } from '@/components/messages/ReplyPreview';
 import { useMessageReactions } from '@/hooks/useMessageReactions';
 import { useDeleteMessage } from '@/hooks/useDeleteMessage';
 import { useMarkAsRead } from '@/hooks/useMarkAsRead';
+import { useEditMessage } from '@/hooks/useEditMessage';
+import { usePinMessage } from '@/hooks/usePinMessage';
 
 export default function MessagesPage() {
   const { user } = useProtectedRoute({
@@ -65,6 +67,8 @@ export default function MessagesPage() {
   const { toggleReaction } = useMessageReactions();
   const { deleteMessage } = useDeleteMessage();
   const { markChatAsRead } = useMarkAsRead();
+  const { editMessage } = useEditMessage();
+  const { togglePin, checkPinLimit } = usePinMessage();
 
   useEffect(() => {
     if (activeChatId && user?.id && !messagesLoading) {
@@ -99,14 +103,25 @@ export default function MessagesPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    const validTypes = [
+      'image/jpeg',
+      'image/jpg', 
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/pdf'
+    ];
+    
     if (!validTypes.includes(file.type)) {
-      alert('Please select an image (JPEG, PNG, GIF, WebP) or PDF file');
+      alert('Type de fichier non autorisé. Formats acceptés : JPEG, PNG, GIF, WebP, PDF');
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+    const MAX_SIZE = 5 * 1024 * 1024; 
+    if (file.size > MAX_SIZE) {
+      alert(`Fichier trop volumineux. Taille maximum : 5MB (votre fichier : ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
@@ -132,52 +147,50 @@ export default function MessagesPage() {
   };
 
   const handleSendMessage = async () => {
-  if (!messageInput.trim() && !attachedFile) return;
+    if (!messageInput.trim() && !attachedFile) return;
 
-  try {
-    let fileUrl = null;
+    try {
+      let fileUrl = null;
 
-    if (attachedFile) {
-      const fileExt = attachedFile.name.split('.').pop();
-      const fileName = `${user?.id}-${Date.now()}.${fileExt}`;
-      const filePath = `chat-attachments/${fileName}`;
+      if (attachedFile) {
+        const fileExt = attachedFile.name.split('.').pop();
+        const fileName = `${user?.id}/${Date.now()}.${fileExt}`;  
+        
+        const { error: uploadError } = await supabase.storage
+          .from('chat-attachments')
+          .upload(fileName, attachedFile);  
 
-      const { error: uploadError } = await supabase.storage
-        .from('chat-attachments')
-        .upload(filePath, attachedFile);
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          alert('Failed to upload file');
+          return;
+        }
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        alert('Failed to upload file');
-        return;
+        const { data } = supabase.storage
+          .from('chat-attachments')
+          .getPublicUrl(fileName);  
+
+        fileUrl = data.publicUrl;
       }
 
-      const { data } = supabase.storage
-        .from('chat-attachments')
-        .getPublicUrl(filePath);
+      if (messageInput.trim() && fileUrl) {
+        await sendMessage(messageInput.trim(), replyingTo?.id || null);
+        await sendMessage(`[FILE:${fileUrl}]`, null);
+      } 
+      else if (fileUrl) {
+        await sendMessage(`[FILE:${fileUrl}]`, replyingTo?.id || null);
+      } else {
+        await sendMessage(messageInput.trim(), replyingTo?.id || null);
+      }
 
-      fileUrl = data.publicUrl;
+      setMessageInput('');
+      removeAttachment();
+      setReplyingTo(null);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message');
     }
-
-    if (messageInput.trim() && fileUrl) {
-      await sendMessage(messageInput.trim(), replyingTo?.id || null);
-
-      await sendMessage(`[FILE:${fileUrl}]`, null);
-    } 
-    else if (fileUrl) {
-      await sendMessage(`[FILE:${fileUrl}]`, replyingTo?.id || null);
-    } else {
-      await sendMessage(messageInput.trim(), replyingTo?.id || null);
-    }
-
-    setMessageInput('');
-    removeAttachment();
-    setReplyingTo(null);
-  } catch (error) {
-    console.error('Error sending message:', error);
-    alert('Failed to send message');
-  }
-};
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -324,6 +337,30 @@ export default function MessagesPage() {
                           await toggleReaction(messageId, emoji, user.id, currentReactions);
                         } catch (error) {
                           console.error('Failed to toggle reaction:', error);
+                        }
+                      }}
+                      onEdit={async (messageId, newContent) => { 
+                        try {
+                          await editMessage(messageId, newContent);
+                        } catch (error) {
+                          console.error('Failed to edit message:', error);
+                          alert('Échec de la modification');
+                        }
+                      }}
+                      onPin={async (messageId, isPinned) => {  
+                        try {
+                          if (!isPinned && activeChatId) {
+                            // Vérifier la limite avant d'épingler
+                            const pinnedCount = await checkPinLimit(activeChatId);
+                            if (pinnedCount >= 3) {
+                              alert('Maximum 3 messages épinglés. Désépinglez-en un d\'abord.');
+                              return;
+                            }
+                          }
+                          await togglePin(messageId, isPinned);
+                        } catch (error) {
+                          console.error('Failed to pin message:', error);
+                          alert('Échec de l\'épinglage');
                         }
                       }}
                       onDelete={async (messageId) => { 

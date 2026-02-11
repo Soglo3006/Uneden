@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from '@/components/ui/button';
-import { Smile, MessageCircle, MoreVertical, Star } from 'lucide-react';
+import { Smile, MessageCircle, MoreVertical, Star, Pencil } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -20,20 +20,24 @@ interface MessageActionsProps {
   messageKey: string;
   openMenuKey: string | null;
   setOpenMenuKey: (key: string | null) => void;
+  isPinned?: boolean;
   onReact?: (emoji: string) => void;
   onReply?: () => void;
   onPin?: () => void;
   onDelete?: () => void;
+  onEdit?: () => void;
 }
 
 export function MessageActions({
   messageKey,
   openMenuKey,
   setOpenMenuKey,
+  isPinned,
   onReact,
   onReply,
   onPin,
   onDelete,
+  onEdit,
 }: MessageActionsProps) {
   return (
     <div className="flex items-center gap-1 mt-1">
@@ -112,6 +116,19 @@ export function MessageActions({
             <MessageCircle className="mr-2 h-4 w-4" />
             Répondre
           </DropdownMenuItem>
+
+          {onEdit && (
+            <DropdownMenuItem
+              onSelect={() => {
+                setOpenMenuKey(null);
+                onEdit?.();
+              }}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Modifier
+            </DropdownMenuItem>
+          )}
+
           <DropdownMenuItem
             onSelect={() => {
               setOpenMenuKey(null);
@@ -119,7 +136,7 @@ export function MessageActions({
             }}
           >
             <Star className="mr-2 h-4 w-4" />
-            Épingler
+            {isPinned ? 'Désépingler' : 'Épingler'}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem

@@ -1,5 +1,7 @@
 "use client";
 
+import { sanitizeMessage } from '@/lib/sanitize';
+
 interface RepliedMessageProps {
   repliedTo: {
     id: string;
@@ -36,11 +38,16 @@ export function RepliedMessage({ repliedTo, onMessageClick }: RepliedMessageProp
         )}
         
         {/* Texte du message */}
-        <p className="text-sm text-gray-600 truncate flex-1">
+        <div className="text-sm text-gray-600 truncate flex-1">
           {isImage}
           {!isImage && fileUrl}
-          {messageText && (isImage || fileUrl ? ' • ' : '')}{messageText}
-        </p>
+          {messageText && (isImage || fileUrl ? ' • ' : '')}
+          <span 
+            dangerouslySetInnerHTML={{ 
+              __html: sanitizeMessage(messageText) 
+            }} 
+          />
+        </div>
       </div>
     </div>
   );
