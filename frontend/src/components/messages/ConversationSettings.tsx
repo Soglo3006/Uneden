@@ -285,7 +285,11 @@ export function ConversationSettings({
           <DialogFooter className="gap-2">
             <Button className='cursor-pointer' variant="outline" onClick={() => setConfirmAction(null)}>Annuler</Button>
             <Button
+<<<<<<< HEAD
               className={`text-white cursor-pointer ${confirmAction && confirmTexts[confirmAction].color}`}
+=======
+              className={`text-white ${confirmAction && confirmTexts[confirmAction].color}`}
+>>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
               onClick={handleConfirm}
               disabled={loading}
             >

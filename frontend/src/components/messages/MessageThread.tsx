@@ -386,7 +386,11 @@ export function MessageThread({
       {showScrollToBottom && !loading && messages.length > 0 && (
       <button
           onClick={() => scrollToBottom('smooth')}
+<<<<<<< HEAD
           className="absolute bottom-2 left-1/2 z-50 -translate-x-1/2 h-11 w-11 rounded-full bg-green-700 cursor-pointer text-white shadow-lg flex items-center justify-center transition-all duration-300 animate-in fade-in zoom-in-95"  >
+=======
+          className="absolute -bottom-24 left-1/2 z-50 -translate-x-1/2 h-11 w-11 rounded-full bg-green-700 cursor-pointer text-white shadow-lg flex items-center justify-center transition-all duration-300 animate-in fade-in zoom-in-95"  >
+>>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
           <ArrowDown className="h-5 w-5" />
       </button>
       )}

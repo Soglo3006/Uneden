@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from 'react';
+<<<<<<< HEAD
 import { Pin, ChevronDown } from 'lucide-react';
+=======
+import { Pin, X, ChevronDown, MessageSquare } from 'lucide-react';
+>>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {

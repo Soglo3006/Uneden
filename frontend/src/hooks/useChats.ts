@@ -197,6 +197,7 @@ export function useChats() {
           );
         }
       )
+<<<<<<< HEAD
       .on(
         'postgres_changes',
         {
@@ -211,6 +212,8 @@ export function useChats() {
           }
         }
       )
+=======
+>>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
       .subscribe();
 
     return () => {

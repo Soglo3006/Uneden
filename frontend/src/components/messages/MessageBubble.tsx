@@ -261,7 +261,16 @@ export function MessageBubble({
                   </div>
                 )}
 
+<<<<<<< HEAD
             
+=======
+                {/* Indicateur sending */}
+                {isSending && isOwn && (
+                  <div className="absolute -bottom-1 -right-1">
+                    <Loader2 className="h-4 w-4 text-green-600 animate-spin" />
+                  </div>
+                )}
+>>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
 
               </>
             )}
@@ -281,17 +290,22 @@ export function MessageBubble({
 
           {/* Boutons d'action - alignés avec la bulle */}
         {showActions && !isSending && !isFailed && content !== 'Message supprimé' && !isEditing && (
+<<<<<<< HEAD
           <div
             ref={actionsRef}
             className={`absolute ${isOwn ? 'right-full mr-2' : 'left-full ml-2'} top-0 bottom-0 flex items-center`}
             onMouseEnter={() => !isSending && setHoveredMessageId(messageId)}
           >
+=======
+          <div className={`absolute ${isOwn ? 'right-full mr-2' : 'left-full ml-2'} top-0 bottom-0 flex items-center`}>
+>>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
             <MessageActions
               messageKey={messageId}
               openMenuKey={openMenuKey}
               onEmojiOpenChange={setIsEmojiOpen}
               setOpenMenuKey={setOpenMenuKey}
               isPinned={isPinned}
+<<<<<<< HEAD
               onReact={(emoji) => {
                 onReact?.(emoji);
                 setIsEmojiOpen(false);
@@ -299,6 +313,9 @@ export function MessageBubble({
                 setSelectedMessageKey(null);
                 setHoveredMessageId(null);
               }}
+=======
+              onReact={onReact}
+>>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
               onReply={onReply}
               onEdit={isOwn ? handleStartEdit : undefined}
               onPin={onPin}

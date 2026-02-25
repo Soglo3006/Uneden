@@ -42,7 +42,11 @@ export function useMessages(chatRoomId: string | null) {
     // show cache instantly (Messenger feel)
     const cached = messagesCacheRef.current.get(chatRoomId);
     if (cached) {
+<<<<<<< HEAD
       setMessages(cached);
+=======
+      setMessages(cached.map(m => ({ ...m, pinned_at: null })));
+>>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
       setLoading(false);
     } else {
       setMessages([]);
