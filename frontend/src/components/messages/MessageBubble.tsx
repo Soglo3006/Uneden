@@ -83,9 +83,10 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
+  const [isEmojiOpen, setIsEmojiOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const showActions = isHovered || isMenuOpen || isSelected;
+  const showActions = isHovered || isMenuOpen || isSelected || isEmojiOpen;
   const isSending = status === 'sending';
   const isFailed = status === 'failed';
 
@@ -162,10 +163,10 @@ export function MessageBubble({
     )}
 
     {/* Conteneur pour replied + bulle + reactions */}
-    <div className="flex flex-col gap-1">
+    <div className="relative flex flex-col gap-1  w-fit">
       {/* Message cité */}
       {repliedTo && repliedTo.content !== 'Message supprimé' && content !== 'Message supprimé' && (
-        <div className="self-start">
+        <div className="max-w-xs md:max-w-md">
           <RepliedMessage
             repliedTo={repliedTo}
             onMessageClick={onReplyClick || (() => {})}
@@ -173,19 +174,26 @@ export function MessageBubble({
         </div>
       )}
 
+      {/* INDICATEUR "modifié" */}
+      {editedAt && content !== 'Message supprimé' && (
+        <p className={`text-xs mr-2 ${isOwn ? 'text-right text-gray-400' : 'text-left text-gray-400'}`}>
+          modifié
+        </p>
+      )}
+
       {/* Container pour bulle + actions (sur la même ligne) */}
       <div className={`flex items-center gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
         {/* Bulle de message avec réaction en position absolue */}
         <div className="relative">
           <div
-            className={`rounded-2xl px-4 py-2 ${
-              isOwn
-                ? isFailed
-                  ? 'bg-red-100 border border-red-300 text-gray-900'
-                  : 'bg-green-700 text-white'
-                : 'bg-white border border-gray-200 text-gray-900'
-            } ${isSending ? 'opacity-60' : ''}`}
-          >
+              className={`rounded-2xl px-4 py-2 max-w-xs md:max-w-md ${
+                isOwn
+                  ? isFailed
+                    ? 'bg-red-100 border border-red-300 text-gray-900'
+                    : 'bg-green-700 text-white'
+                  : 'bg-white border border-gray-200 text-gray-900'
+              } ${isSending ? 'opacity-60' : ''}`}
+            >
             {/* MODE ÉDITION */}
             {isEditing ? (
               <div className="space-y-2">
@@ -203,7 +211,7 @@ export function MessageBubble({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className={`h-7 ${isOwn ? 'text-white hover:bg-green-600' : ''}`}
+                    className={`h-7 cursor-pointer ${isOwn ? 'text-white hover:bg-green-600' : ''}`}
                     onClick={handleSaveEdit}
                   >
                     <Check className="h-4 w-4 mr-1" />
@@ -212,7 +220,7 @@ export function MessageBubble({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className={`h-7 ${isOwn ? 'text-white hover:bg-green-600' : ''}`}
+                    className={`h-7 cursor-pointer ${isOwn ? 'text-white hover:bg-green-600' : ''}`}
                     onClick={handleCancelEdit}
                   >
                     <X className="h-4 w-4 mr-1" />
@@ -244,13 +252,6 @@ export function MessageBubble({
                   </div>
                 )}
 
-                {/* INDICATEUR "modifié" */}
-                {editedAt && content !== 'Message supprimé' && (
-                  <p className={`text-xs mt-1 ${isOwn ? 'text-green-200' : 'text-gray-400'}`}>
-                    (modifié)
-                  </p>
-                )}
-
                 {/* Indicateur sending */}
                 {isSending && isOwn && (
                   <div className="absolute -bottom-1 -right-1">
@@ -258,12 +259,6 @@ export function MessageBubble({
                   </div>
                 )}
 
-                {/* Indicateur failed */}
-                {isFailed && isOwn && (
-                  <div className="absolute -bottom-1 -right-1">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                  </div>
-                )}
               </>
             )}
           </div>
@@ -275,25 +270,31 @@ export function MessageBubble({
                 reactions={reactions}
                 currentUserId={currentUserId}
                 onReactionClick={onReactionToggle || (() => {})}
+                isOwn={isOwn}
               />
             </div>
           )}
+
+          {/* Boutons d'action - alignés avec la bulle */}
+        {showActions && !isSending && !isFailed && content !== 'Message supprimé' && !isEditing && (
+          <div className={`absolute ${isOwn ? 'right-full mr-2' : 'left-full ml-2'} top-0 bottom-0 flex items-center`}>
+            <MessageActions
+              messageKey={messageId}
+              openMenuKey={openMenuKey}
+              onEmojiOpenChange={setIsEmojiOpen}
+              setOpenMenuKey={setOpenMenuKey}
+              isPinned={isPinned}
+              onReact={onReact}
+              onReply={onReply}
+              onEdit={isOwn ? handleStartEdit : undefined}
+              onPin={onPin}
+              onDelete={onDelete}
+            />
+          </div>
+        )}
+
         </div>
 
-        {/* Boutons d'action - alignés avec la bulle */}
-        {showActions && !isSending && !isFailed && content !== 'Message supprimé' && !isEditing && (
-          <MessageActions
-            messageKey={messageId}
-            openMenuKey={openMenuKey}
-            setOpenMenuKey={setOpenMenuKey}
-            isPinned={isPinned}
-            onReact={onReact}
-            onReply={onReply}
-            onEdit={isOwn ? handleStartEdit : undefined} 
-            onPin={onPin}
-            onDelete={onDelete}
-          />
-        )}
 
         {/* Bouton Retry pour messages failed */}
         {isFailed && isOwn && (
@@ -317,6 +318,14 @@ export function MessageBubble({
           </Tooltip>
         )}
       </div>
+
+      {/* Indicateur failed */}
+      {isFailed && isOwn && (
+        <div className="absolute -bottom-1 -right-1">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+        </div>
+      )}
+
     </div>
   </div>
 </div>

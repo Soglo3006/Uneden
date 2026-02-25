@@ -1,44 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
-
-export type MessageStatus = 'sending' | 'sent' | 'failed';
-
-export interface Message {
-  id: string;
-  chat_room_id: string;
-  user_id: string;
-  content: string;
-  created_at: string;
-  read_at?: string | null;
-  edited_at?: string | null;
-  pinned_at?: string | null;
-  client_temp_id?: string | null;
-  deleted_at?: string | null;
-  replied_to_message_id?: string | null;
-  reactions?: Reaction[];
-  status?: MessageStatus;
-  sender?: {
-    id: string;
-    email: string;
-    full_name: string;
-    company_name?: string;
-    account_type?: string;
-    avatar_url: string | null;
-  };
-  replied_to?: {
-    id: string;
-    content: string;
-    user_id: string;
-    sender_name?: string;
-    deleted_at?: string | null;
-  } | null;
-}
-
-interface Reaction {  
-  emoji: string;
-  user_ids: string[];
-}
 
 export function useMessages(chatRoomId: string | null) {
   const { user } = useAuth();
@@ -46,8 +8,27 @@ export function useMessages(chatRoomId: string | null) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
+  const requestIdRef = useRef(0);
+
+  const messagesCacheRef = useRef<Map<string, Message[]>>(new Map());
+
+  const profilesCacheRef = useRef<Map<string, any>>(new Map());
+
   const makeTempId = () =>
     `tmp_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+  // charge profils manquants en batch
+  const ensureProfiles = async (ids: string[]) => {
+    const missing = ids.filter((id) => !profilesCacheRef.current.has(id));
+    if (!missing.length) return;
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, company_name, account_type, avatar_url')
+      .in('id', missing);
+
+    (data || []).forEach((p) => profilesCacheRef.current.set(p.id, p));
+  };
 
   useEffect(() => {
     if (!chatRoomId) {
@@ -56,11 +37,21 @@ export function useMessages(chatRoomId: string | null) {
       return;
     }
 
-    const fetchMessages = async () => {
-      setLoading(true);
+    const currentRequestId = ++requestIdRef.current;
 
+    // show cache instantly (Messenger feel)
+    const cached = messagesCacheRef.current.get(chatRoomId);
+    if (cached) {
+      setMessages(cached.map(m => ({ ...m, pinned_at: null })));
+      setLoading(false);
+    } else {
+      setMessages([]);
+      setLoading(true);
+    }
+
+    const fetchMessages = async () => {
       try {
-        const { data: messagesData, error: messagesError } = await supabase
+        const { data: messagesData, error } = await supabase
           .from('messages')
           .select(`
             *,
@@ -74,70 +65,60 @@ export function useMessages(chatRoomId: string | null) {
           .eq('chat_room_id', chatRoomId)
           .order('created_at', { ascending: true });
 
-        if (messagesError) throw messagesError;
+        if (error) throw error;
 
-        if (messagesData) {
-          const senderIds = [...new Set(messagesData.map((m) => m.user_id))];
+        // si request stale, on ignore
+        if (currentRequestId !== requestIdRef.current) return;
 
-          // Fetch sender profiles
-          const { data: profilesData } = await supabase
-            .from('profiles')
-            .select('id, email, full_name, company_name, account_type, avatar_url')
-            .in('id', senderIds);
+        const senderIds = [...new Set((messagesData || []).map((m: any) => m.user_id))];
 
-          const profilesMap = new Map(
-            profilesData?.map((p) => [p.id, p]) || []
-          );
-
-          // Fetch replied message senders
-          const repliedUserIds = messagesData
+        // replied profiles only if needed
+        const repliedUserIds = [...new Set(
+          (messagesData || [])
             .filter((m: any) => m.replied_to?.user_id)
-            .map((m: any) => m.replied_to.user_id);
+            .map((m: any) => m.replied_to.user_id)
+        )];
 
-          const { data: repliedProfiles } = await supabase
-            .from('profiles')
-            .select('id, full_name, company_name, account_type')
-            .in('id', repliedUserIds);
+        await ensureProfiles([...senderIds, ...repliedUserIds]);
 
-          const repliedProfilesMap = new Map(
-            repliedProfiles?.map((p) => [p.id, p]) || []
-          );
+        const messagesWithDetails: Message[] = (messagesData || []).map((msg: any) => {
+          let repliedToData = null;
 
-          const messagesWithDetails = messagesData.map((msg: any) => {
-            let repliedToData = null;
-
-            if (msg.replied_to) {
-              const repliedProfile = repliedProfilesMap.get(msg.replied_to.user_id);
-              repliedToData = {
-                id: msg.replied_to.id,
-                content: msg.replied_to.content,
-                user_id: msg.replied_to.user_id,
-                sender_name: repliedProfile?.account_type === 'company'
+          if (msg.replied_to) {
+            const repliedProfile = profilesCacheRef.current.get(msg.replied_to.user_id);
+            repliedToData = {
+              id: msg.replied_to.id,
+              content: msg.replied_to.content,
+              user_id: msg.replied_to.user_id,
+              deleted_at: msg.replied_to.deleted_at,
+              sender_name:
+                repliedProfile?.account_type === 'company'
                   ? repliedProfile.company_name
                   : repliedProfile?.full_name,
-              };
-            }
-
-            return {
-              ...msg,
-              status: 'sent' as const,
-              sender: profilesMap.get(msg.user_id),
-              replied_to: repliedToData,
             };
-          });
+          }
 
-          setMessages(messagesWithDetails);
-        }
-      } catch (error) {
-        console.error('Error fetching messages:', error);
+          return {
+            ...msg,
+            status: 'sent',
+            sender: profilesCacheRef.current.get(msg.user_id) || null,
+            replied_to: repliedToData,
+          };
+        });
+
+        setMessages(messagesWithDetails);
+        messagesCacheRef.current.set(chatRoomId, messagesWithDetails);
+      } catch (err) {
+        console.error('Error fetching messages:', err);
       } finally {
-        setLoading(false);
+        if (currentRequestId === requestIdRef.current) setLoading(false);
       }
     };
 
     fetchMessages();
   }, [chatRoomId]);
 
+  // INSERT listener (plus léger + utilise caches)
   useEffect(() => {
     if (!chatRoomId) return;
 
@@ -154,47 +135,36 @@ export function useMessages(chatRoomId: string | null) {
         async (payload) => {
           const row = payload.new as any;
 
-          // Fetch sender
-          const { data: senderDataArray } = await supabase
-            .from('profiles')
-            .select('id, email, full_name, company_name, account_type, avatar_url')
-            .eq('id', row.user_id)
-            .limit(1);
+          // évite overwrite si on a changé de chat pendant l’async
+          const activeId = chatRoomId;
 
-          const senderData = senderDataArray?.[0] || null;
+          // assure profile sender via cache (1 requête max si missing)
+          await ensureProfiles([row.user_id]);
 
-          // Fetch replied message if exists
+          // replied_to: enrich seulement si on peut sans faire 2-3 requêtes
+          // (si tu veux full details, on pourra le faire async mais pas bloquant)
           let repliedToData = null;
           if (row.replied_to_message_id) {
-            const { data: repliedMsgArray } = await supabase
-              .from('messages')
-              .select('id, content, user_id')
-              .eq('id', row.replied_to_message_id)
-              .limit(1);
-
-            if (repliedMsgArray?.[0]) {
-              const { data: repliedProfileArray } = await supabase
-                .from('profiles')
-                .select('id, full_name, company_name, account_type')
-                .eq('id', repliedMsgArray[0].user_id)
-                .limit(1);
-
-              const repliedProfile = repliedProfileArray?.[0];
-
+            // si le message replied-to est déjà dans messages (cache/local), on enrichit sans requête
+            const existing = (messagesCacheRef.current.get(activeId) || []).find(
+              (m) => m.id === row.replied_to_message_id
+            );
+            if (existing) {
               repliedToData = {
-                id: repliedMsgArray[0].id,
-                content: repliedMsgArray[0].content,
-                user_id: repliedMsgArray[0].user_id,
-                sender_name: repliedProfile?.account_type === 'company'
-                  ? repliedProfile.company_name
-                  : repliedProfile?.full_name,
+                id: existing.id,
+                content: existing.content,
+                user_id: existing.user_id,
+                sender_name: existing.sender?.account_type === 'company'
+                  ? existing.sender.company_name
+                  : existing.sender?.full_name,
+                deleted_at: existing.deleted_at || null,
               };
             }
           }
 
           const incoming: Message = {
             ...row,
-            sender: senderData,
+            sender: profilesCacheRef.current.get(row.user_id) || null,
             replied_to: repliedToData,
             status: 'sent',
           };
@@ -202,18 +172,20 @@ export function useMessages(chatRoomId: string | null) {
           setMessages((prev) => {
             if (prev.some((m) => m.id === incoming.id)) return prev;
 
+            // replace optimistic by client_temp_id
             if (incoming.client_temp_id) {
-              const idx = prev.findIndex(
-                (m) => m.client_temp_id && m.client_temp_id === incoming.client_temp_id
-              );
+              const idx = prev.findIndex((m) => m.client_temp_id === incoming.client_temp_id);
               if (idx !== -1) {
                 const copy = [...prev];
                 copy[idx] = incoming;
+                messagesCacheRef.current.set(activeId, copy);
                 return copy;
               }
             }
 
-            return [...prev, incoming];
+            const next = [...prev, incoming];
+            messagesCacheRef.current.set(activeId, next);
+            return next;
           });
         }
       )
@@ -224,7 +196,7 @@ export function useMessages(chatRoomId: string | null) {
     };
   }, [chatRoomId]);
 
-
+  // UPDATE listener: garde, mais pense à mettre à jour le cache aussi
   useEffect(() => {
     if (!chatRoomId) return;
 
@@ -240,33 +212,24 @@ export function useMessages(chatRoomId: string | null) {
         },
         (payload) => {
           const updated = payload.new as any;
-          
-          setMessages((prev) =>
-            prev.map((msg) => {
-              // Mettre à jour le message modifié
+          const activeId = chatRoomId;
+
+          setMessages((prev) => {
+            const next = prev.map((msg) => {
               if (msg.id === updated.id) {
-                // Si supprimé
                 if (updated.deleted_at) {
-                  return { 
-                    ...msg, 
-                    content: 'Message supprimé',
-                    deleted_at: updated.deleted_at,
-                    reactions: []
-                  };
+                  return { ...msg, content: 'Message supprimé', deleted_at: updated.deleted_at, reactions: [] };
                 }
-                
-                // Sinon, mettre à jour réactions + read_at
-                return { 
-                  ...msg, 
-                  content: updated.content,        
+                return {
+                  ...msg,
+                  content: updated.content,
                   edited_at: updated.edited_at,
                   pinned_at: updated.pinned_at,
                   reactions: updated.reactions,
-                  read_at: updated.read_at  
+                  read_at: updated.read_at,
                 };
               }
-              
-              // Mettre à jour les messages qui répondent au message supprimé
+
               if (msg.replied_to_message_id === updated.id && updated.deleted_at) {
                 return {
                   ...msg,
@@ -275,10 +238,13 @@ export function useMessages(chatRoomId: string | null) {
                     : null,
                 };
               }
-              
+
               return msg;
-            })
-          );
+            });
+
+            messagesCacheRef.current.set(activeId, next);
+            return next;
+          });
         }
       )
       .subscribe();
@@ -288,8 +254,7 @@ export function useMessages(chatRoomId: string | null) {
     };
   }, [chatRoomId]);
 
-
-
+  // sendMessage: garde, mais update aussi le cache
   const sendMessage = async (content: string, repliedToMessageId?: string | null) => {
     if (!content.trim() || !chatRoomId || !user) return;
 
@@ -307,16 +272,21 @@ export function useMessages(chatRoomId: string | null) {
       replied_to_message_id: repliedToMessageId || null,
       status: 'sending',
       replied_to: repliedToMessageId
-      ? (() => {
-          const target = messages.find(m => m.id === repliedToMessageId);
-          return target
-            ? { id: target.id, content: target.content, user_id: target.user_id, sender_name: target.sender?.full_name }
-            : null;
-        })()
-      : null,
+        ? (() => {
+            const target = messages.find((m) => m.id === repliedToMessageId);
+            return target
+              ? { id: target.id, content: target.content, user_id: target.user_id, sender_name: target.sender?.full_name }
+              : null;
+          })()
+        : null,
     };
 
-    setMessages((prev) => [...prev, optimistic]);
+    setMessages((prev) => {
+      const next = [...prev, optimistic];
+      messagesCacheRef.current.set(chatRoomId, next);
+      return next;
+    });
+
     setSending(true);
 
     try {
@@ -327,13 +297,25 @@ export function useMessages(chatRoomId: string | null) {
         client_temp_id: tempId,
         replied_to_message_id: repliedToMessageId || null,
       });
-
       if (error) throw error;
+
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/messages/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatRoomId,
+          senderUserId: user.id,
+          messagePreview: trimmed.substring(0, 100),
+        }),
+      }).catch(console.error);
+      
     } catch (err) {
       console.error('Error sending message:', err);
-      setMessages((prev) =>
-        prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' } : m))
-      );
+      setMessages((prev) => {
+        const next = prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' } : m));
+        messagesCacheRef.current.set(chatRoomId, next);
+        return next;
+      });
     } finally {
       setSending(false);
     }

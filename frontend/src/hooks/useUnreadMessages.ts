@@ -1,5 +1,5 @@
 // frontend/src/hooks/useUnreadMessages.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -14,16 +14,31 @@ export interface UnreadChat {
   is_read: boolean;
 }
 
+// Petit helper pour jouer le son de notification
+function playNotificationSound() {
+  try {
+    const audio = new Audio('/sounds/notification.mp3');
+    audio.volume = 0.5;
+    audio.play().catch(() => {
+      // Le navigateur bloque l'audio si l'utilisateur n'a pas encore interagi avec la page
+      // C'est normal, on ignore silencieusement
+    });
+  } catch {
+    // Fallback silencieux
+  }
+}
+
 export function useUnreadMessages() {
   const { user } = useAuth();
   const [unreadChats, setUnreadChats] = useState<UnreadChat[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const prevUnreadCountRef = useRef(0);
 
   useEffect(() => {
     if (!user) return;
 
-    const fetchUnreadMessages = async () => {
+    const fetchMessages = async (playSound = false) => {
       try {
         // 1. Récupérer tous les chats de l'user
         const { data: memberData } = await supabase
@@ -40,8 +55,8 @@ export function useUnreadMessages() {
 
         const chatRoomIds = memberData.map(m => m.chat_room_id);
 
-        // 2. Pour chaque chat, récupérer le dernier message
-        const chatsWithMessages = await Promise.all(
+        // 2. Pour chaque chat, récupérer le dernier message + compter les non-lus via read_at
+        const allChats = await Promise.all(
           chatRoomIds.map(async (chatId) => {
             // Dernier message du chat
             const { data: lastMsg } = await supabase
@@ -54,66 +69,82 @@ export function useUnreadMessages() {
 
             if (!lastMsg) return null;
 
-            // Si le message n'est pas de nous et qu'on ne l'a pas lu
-            if (lastMsg.user_id !== user.id) {
-              // Récupérer les infos du sender
-              const { data: senderProfile } = await supabase
-                .from('profiles')
-                .select('id, full_name, avatar_url')
-                .eq('id', lastMsg.user_id)
-                .single();
+            // Compter les messages non lus (de l'autre personne, read_at IS NULL)
+            const { count: unreadMsgCount } = await supabase
+              .from('messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('chat_room_id', chatId)
+              .neq('user_id', user.id)
+              .is('read_at', null);
 
-              // Vérifier s'il y a des messages non lus
-              // On considère un message comme "lu" s'il y a un message plus récent de notre part
-              const { data: ourLastMsg } = await supabase
-                .from('messages')
-                .select('created_at')
-                .eq('chat_room_id', chatId)
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single();
+            const isUnread = (unreadMsgCount || 0) > 0;
 
-              const isUnread = !ourLastMsg || 
-                new Date(lastMsg.created_at) > new Date(ourLastMsg.created_at);
+            // Trouver l'autre membre pour afficher son profil
+            const { data: otherMember } = await supabase
+              .from('chat_room_member')
+              .select('user_id')
+              .eq('chat_room_id', chatId)
+              .neq('user_id', user.id)
+              .limit(1)
+              .single();
 
-              if (isUnread) {
-                return {
-                  id: lastMsg.id,
-                  chat_room_id: chatId,
-                  last_message: lastMsg.content,
-                  last_message_time: lastMsg.created_at,
-                  sender_name: senderProfile?.full_name || 'Unknown',
-                  sender_avatar: senderProfile?.avatar_url || null,
-                  sender_id: lastMsg.user_id,
-                  is_read: false,
-                };
-              }
-            }
+            const displayUserId = otherMember?.user_id || lastMsg.user_id;
 
-            return null;
+            // Récupérer le profil
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id, full_name, avatar_url')
+              .eq('id', displayUserId)
+              .single();
+
+            // Préfixer "Vous: " si le dernier message est le nôtre
+            const messagePreview = lastMsg.user_id === user.id
+              ? `Vous: ${lastMsg.content}`
+              : lastMsg.content;
+
+            return {
+              id: lastMsg.id,
+              chat_room_id: chatId,
+              last_message: messagePreview,
+              last_message_time: lastMsg.created_at,
+              sender_name: profile?.full_name || 'Inconnu',
+              sender_avatar: profile?.avatar_url || null,
+              sender_id: displayUserId,
+              is_read: !isUnread,
+            };
           })
         );
 
-        // Filtrer les null et trier par date
-        const unread = chatsWithMessages
+        // Filtrer les null, trier : non-lus d'abord, puis par date décroissante
+        const validChats = allChats
           .filter((chat): chat is UnreadChat => chat !== null)
-          .sort((a, b) => 
-            new Date(b.last_message_time).getTime() - new Date(a.last_message_time).getTime()
-          );
+          .sort((a, b) => {
+            if (!a.is_read && b.is_read) return -1;
+            if (a.is_read && !b.is_read) return 1;
+            return new Date(b.last_message_time).getTime() - new Date(a.last_message_time).getTime();
+          });
 
-        setUnreadChats(unread);
-        setUnreadCount(unread.length);
+        const newUnreadCount = validChats.filter(c => !c.is_read).length;
+
+        // Jouer le son si le nombre de non-lus a augmenté (nouveau message reçu)
+        if (playSound && newUnreadCount > prevUnreadCountRef.current) {
+          playNotificationSound();
+        }
+
+        prevUnreadCountRef.current = newUnreadCount;
+        setUnreadChats(validChats);
+        setUnreadCount(newUnreadCount);
       } catch (error) {
-        console.error('Error fetching unread messages:', error);
+        console.error('Error fetching messages:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUnreadMessages();
+    // Fetch initial sans son
+    fetchMessages(false);
 
-    // Real-time : écouter les nouveaux messages
+    // Real-time : écouter les nouveaux messages ET les updates (read_at)
     const channel = supabase
       .channel('new-messages-notif')
       .on(
@@ -124,10 +155,25 @@ export function useUnreadMessages() {
           table: 'messages',
         },
         (payload) => {
-          // Si ce n'est pas notre message, recharger
+          // Nouveau message de quelqu'un d'autre → re-fetch avec son
           if (payload.new.user_id !== user.id) {
-            fetchUnreadMessages();
+            fetchMessages(true);
+          } else {
+            // Notre propre message → re-fetch sans son
+            fetchMessages(false);
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+        },
+        () => {
+          // Update (read_at changé) → re-fetch sans son
+          fetchMessages(false);
         }
       )
       .subscribe();
@@ -138,9 +184,32 @@ export function useUnreadMessages() {
   }, [user]);
 
   const markAsRead = async (chatRoomId: string) => {
-    // Retirer de la liste locale
-    setUnreadChats(prev => prev.filter(c => c.chat_room_id !== chatRoomId));
-    setUnreadCount(prev => Math.max(0, prev - 1));
+    if (!user) return;
+
+    // 1. Update en base : mettre read_at sur tous les messages non lus de l'autre personne
+    const { error } = await supabase
+      .from('messages')
+      .update({ read_at: new Date().toISOString() })
+      .eq('chat_room_id', chatRoomId)
+      .neq('user_id', user.id)
+      .is('read_at', null);
+
+    if (error) {
+      console.error('Error marking messages as read:', error);
+      return;
+    }
+
+    // 2. Mettre à jour localement
+    setUnreadChats(prev =>
+      prev.map(c =>
+        c.chat_room_id === chatRoomId ? { ...c, is_read: true } : c
+      )
+    );
+    setUnreadCount(prev => {
+      const newCount = Math.max(0, prev - 1);
+      prevUnreadCountRef.current = newCount;
+      return newCount;
+    });
   };
 
   return { unreadChats, unreadCount, loading, markAsRead };

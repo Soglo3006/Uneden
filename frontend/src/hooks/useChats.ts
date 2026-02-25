@@ -19,6 +19,7 @@ export interface ChatRoom {
     account_type?: string;
     avatar_url: string | null;
     bio?: string;
+    created_at?: string;
   };
   unread_count?: number;
   is_archived?: boolean;
@@ -75,13 +76,13 @@ export function useChats() {
 
             const { data: otherUserProfile } = await supabase
               .from('profiles')
-              .select('id,full_name, company_name, account_type, avatar_url, bio')
+              .select('id, full_name, company_name, account_type, avatar_url, bio, created_at')
               .eq('id', otherUserId)
               .single();
 
             const { data: lastMessage } = await supabase
               .from('messages')
-              .select('content, created_at')
+              .select('content, created_at, user_id')
               .eq('chat_room_id', room.id)
               .order('created_at', { ascending: false })
               .limit(1)
@@ -97,8 +98,15 @@ export function useChats() {
 
         // Trier par dernier message (plus récent en premier)
         chatsWithDetails.sort((a, b) => {
-          const timeA = a.last_message?.created_at ? new Date(a.last_message.created_at).getTime() : 0;
-          const timeB = b.last_message?.created_at ? new Date(b.last_message.created_at).getTime() : 0;
+          // Priorité 1 : Date du dernier message
+          const timeA = a.last_message?.created_at 
+            ? new Date(a.last_message.created_at).getTime() 
+            : new Date(a.created_at).getTime(); 
+          
+          const timeB = b.last_message?.created_at 
+            ? new Date(b.last_message.created_at).getTime() 
+            : new Date(b.created_at).getTime();  
+          
           return timeB - timeA;
         });
 
@@ -134,17 +142,58 @@ export function useChats() {
                     last_message: {
                       content: newMessage.content,
                       created_at: newMessage.created_at,
+                      user_id: newMessage.user_id
                     },
                   };
                 }
                 return chat;
               })
-              // Re-trier par date de dernier message
+              // Re-trier avec fallback sur created_at du chat
               .sort((a, b) => {
-                const timeA = a.last_message?.created_at ? new Date(a.last_message.created_at).getTime() : 0;
-                const timeB = b.last_message?.created_at ? new Date(b.last_message.created_at).getTime() : 0;
+                const timeA = a.last_message?.created_at 
+                  ? new Date(a.last_message.created_at).getTime() 
+                  : new Date(a.created_at).getTime();
+                
+                const timeB = b.last_message?.created_at 
+                  ? new Date(b.last_message.created_at).getTime() 
+                  : new Date(b.created_at).getTime();
+                
                 return timeB - timeA;
               })
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+        },
+        async (payload) => {
+          const updatedMessage = payload.new as any;
+
+          // Refetch le dernier message de ce chat pour être sûr
+          const { data: lastMessage } = await supabase
+            .from('messages')
+            .select('content, created_at, user_id')
+            .eq('chat_room_id', updatedMessage.chat_room_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (!lastMessage) return;
+
+          setChats((prev) =>
+            prev.map((chat) => {
+              if (chat.id === updatedMessage.chat_room_id) {
+                return {
+                  ...chat,
+                  last_message: lastMessage,
+                };
+              }
+              return chat;
+            })
           );
         }
       )

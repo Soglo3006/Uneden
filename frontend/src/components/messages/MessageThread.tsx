@@ -1,12 +1,15 @@
 "use client";
 
 import { useRef, useEffect, useState } from 'react';
-import { ArrowDown, MessageCircle } from 'lucide-react';
+import { ArrowDown, MessageCircle, Check, CheckCheck } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageBubble } from './MessageBubble';
 import { FileMessage } from './FileMessage';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { PinnedMessages } from './PinnedMessages';
+import { VoiceMessage } from './VoiceMessage';
+import { MessageActions } from './MessageActions';
+import { MessageReactions } from './MessageReactions';
 
 interface Message {
   id: string;
@@ -39,6 +42,7 @@ interface MessageThreadProps {
   onEdit?: (messageId: string, newContent: string) => void;
   onPin?: (messageId: string, isPinned: boolean) => void;
   onDelete?: (messageId: string) => Promise<void>;
+  isTyping?: boolean;
 }
 
 export function MessageThread({
@@ -58,6 +62,7 @@ export function MessageThread({
   onReactionToggle,
   onEdit, 
   onPin,
+  isTyping,
   onDelete,
 }: MessageThreadProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -65,17 +70,17 @@ export function MessageThread({
     const isInitialLoad = useRef(true);
 
 
-    const pinnedMessages = messages
-    .filter(msg => msg.pinned_at && msg.content !== 'Message supprimé')
-    .sort((a, b) => new Date(a.pinned_at!).getTime() - new Date(b.pinned_at!).getTime())
-    .map(msg => ({
-      id: msg.id,
-      content: msg.content,
-      created_at: msg.created_at,
-      sender_name: msg.sender?.account_type === 'company'
-        ? msg.sender.company_name
-        : msg.sender?.full_name,
-    }));
+    const pinnedMessages = loading ? [] : messages
+      .filter(msg => msg.pinned_at && msg.content !== 'Message supprimé')
+      .sort((a, b) => new Date(a.pinned_at!).getTime() - new Date(b.pinned_at!).getTime())
+      .map(msg => ({
+        id: msg.id,
+        content: msg.content,
+        created_at: msg.created_at,
+        sender_name: msg.sender?.account_type === 'company'
+          ? msg.sender.company_name
+          : msg.sender?.full_name,
+      }));
 
     const scrollViewportRef = useRef<HTMLDivElement | null>(null);
     const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -173,7 +178,7 @@ export function MessageThread({
         }}>
         <div className="p-4 bg-gray-50">
           {loading ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center min-h-[400px]">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700" />
             </div>
           ) : messages.length === 0 ? (
@@ -209,12 +214,55 @@ export function MessageThread({
                     )}
 
                     <div className={`flex flex-col gap-2 ${isOwn ? 'items-end' : 'items-start'}`}>
-                      {message.content.includes('[FILE:') ? (
+                      {message.content.includes('[AUDIO:') ? (
+                        (() => {
+                          const match = message.content.match(/\[AUDIO:(.*?):(\d+)\]/);
+                          const audioUrl = match ? match[1] : '';
+                          const dur = match ? parseInt(match[2]) : 0;
+                          return (
+                            <div
+                              onMouseEnter={() => setHoveredMessageId(message.id)}
+                              onMouseLeave={() => {
+                                if (openMenuKey !== message.id) setHoveredMessageId(null);
+                              }}
+                              className={`relative flex items-center gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
+                            >
+                              <VoiceMessage
+                                audioUrl={audioUrl}
+                                duration={dur}
+                                isOwn={isOwn}
+                              />
+                              {message.reactions && message.reactions.length > 0 && (
+                                <div className={`absolute -bottom-4 ${isOwn ? '-left-2' : '-right-2'}`}>
+                                  <MessageReactions
+                                    reactions={message.reactions}
+                                    currentUserId={currentUserId}
+                                    onReactionClick={(emoji) => onReactionToggle?.(message.id, emoji, message.reactions || [])}
+                                    isOwn={isOwn}
+                                  />
+                                </div>
+                              )}
+                              {(hoveredMessageId === message.id || openMenuKey === message.id || selectedMessageKey === message.id) && (
+                                <div className={`absolute ${isOwn ? 'right-full mr-2' : 'left-full ml-2'} top-1/2 -translate-y-1/2`}>
+                                  <MessageActions
+                                    messageKey={message.id}
+                                    openMenuKey={openMenuKey}
+                                    setOpenMenuKey={setOpenMenuKey}
+                                    onReact={(emoji) => onReactionToggle?.(message.id, emoji, message.reactions || [])}
+                                    onReply={() => onReply?.(message)}
+                                    onDelete={() => onDelete?.(message.id)}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()
+                        ) : message.content.includes('[FILE:') ? (
                         (() => {
                           const match = message.content.match(/\[FILE:(.*?)\]/);
                           const fileUrl = match ? match[1] : '';
                           const text = message.content.replace(/\[FILE:.*?\]/, '').trim();
-                          const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
+                          const isImage = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(fileUrl);
 
                           return (
                             <FileMessage
@@ -298,7 +346,10 @@ export function MessageThread({
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span className={`text-xs cursor-help ${message.read_at ? 'text-green-600' : 'text-gray-400'}`}>
-                              {message.read_at ? '✓✓' : '✓'}
+                              {message.read_at 
+                                ? <CheckCheck className="h-3.5 w-3.5" />
+                                : <Check className="h-3.5 w-3.5" />
+                              }
                             </span>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -315,6 +366,17 @@ export function MessageThread({
                   </div>
                 );
               })}
+              {isTyping && (
+                <div className="flex items-end gap-2">
+                  <div className="bg-white border rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm w-16">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                    </div>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           )}
@@ -322,12 +384,12 @@ export function MessageThread({
       </ScrollArea>
 
       {showScrollToBottom && !loading && messages.length > 0 && (
-    <button
-        onClick={() => scrollToBottom('smooth')}
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 h-11 w-11 rounded-full bg-green-700 text-white shadow-lg flex items-center justify-center hover:bg-green-800 transition-all duration-300 animate-in fade-in zoom-in-95"    >
-        <ArrowDown className="h-5 w-5" />
-    </button>
-    )}
-    </div>
+      <button
+          onClick={() => scrollToBottom('smooth')}
+          className="absolute -bottom-24 left-1/2 z-50 -translate-x-1/2 h-11 w-11 rounded-full bg-green-700 cursor-pointer text-white shadow-lg flex items-center justify-center transition-all duration-300 animate-in fade-in zoom-in-95"  >
+          <ArrowDown className="h-5 w-5" />
+      </button>
+      )}
+      </div>
   );
 }

@@ -26,6 +26,7 @@ interface MessageActionsProps {
   onPin?: () => void;
   onDelete?: () => void;
   onEdit?: () => void;
+  onEmojiOpenChange?: (open: boolean) => void;
 }
 
 export function MessageActions({
@@ -38,6 +39,7 @@ export function MessageActions({
   onPin,
   onDelete,
   onEdit,
+  onEmojiOpenChange,
 }: MessageActionsProps) {
   return (
     <div className="flex items-center gap-1 mt-1">
@@ -49,6 +51,7 @@ export function MessageActions({
               onEmojiSelect={(emoji) => {
                 onReact?.(emoji);
               }}
+              onOpenChange={onEmojiOpenChange}
             />
           </div>
         </TooltipTrigger>
@@ -63,7 +66,7 @@ export function MessageActions({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 bg-white border border-gray-200 hover:bg-gray-50 rounded-full shadow-sm"
+            className="h-7 w-7 bg-white border border-gray-200 hover:bg-gray-50 rounded-full shadow-sm cursor-pointer"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
@@ -89,7 +92,7 @@ export function MessageActions({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 bg-white border border-gray-200 hover:bg-gray-50 rounded-full shadow-sm"
+                className="h-7 w-7 bg-white border border-gray-200 hover:bg-gray-50 rounded-full shadow-sm cursor-pointer"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -108,39 +111,39 @@ export function MessageActions({
           onPointerDown={(e) => e.stopPropagation()}
         >
           <DropdownMenuItem
+            className="cursor-pointer"
             onSelect={() => {
               setOpenMenuKey(null);
               onReply?.();
             }}
           >
-            <MessageCircle className="mr-2 h-4 w-4" />
             Répondre
           </DropdownMenuItem>
 
           {onEdit && (
             <DropdownMenuItem
+              className="cursor-pointer"
               onSelect={() => {
                 setOpenMenuKey(null);
                 onEdit?.();
               }}
             >
-              <Pencil className="mr-2 h-4 w-4" />
               Modifier
             </DropdownMenuItem>
           )}
 
           <DropdownMenuItem
+            className="cursor-pointer"
             onSelect={() => {
               setOpenMenuKey(null);
               onPin?.();
             }}
           >
-            <Star className="mr-2 h-4 w-4" />
             {isPinned ? 'Désépingler' : 'Épingler'}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-red-600"
+            className="text-red-600 cursor-pointer"
             onSelect={() => {
               setOpenMenuKey(null);
               onDelete?.();

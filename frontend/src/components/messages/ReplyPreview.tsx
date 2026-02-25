@@ -60,7 +60,7 @@ export function ReplyPreview({ repliedMessage, onCancel }: ReplyPreviewProps) {
           variant="ghost"
           size="icon"
           onClick={onCancel}
-          className="h-6 w-6 text-gray-400 hover:text-gray-600 flex-shrink-0"
+          className="h-6 w-6 text-gray-400 hover:text-gray-600 flex-shrink-0 cursor-pointer"
         >
           <X className="h-4 w-4" />
         </Button>

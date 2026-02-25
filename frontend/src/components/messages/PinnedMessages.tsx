@@ -1,8 +1,15 @@
 "use client";
 
-import { Pin, X } from 'lucide-react';
+import { useState } from 'react';
+import { Pin, X, ChevronDown, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Message {
   id: string;
@@ -22,56 +29,115 @@ export function PinnedMessages({
   onMessageClick, 
   onUnpin 
 }: PinnedMessagesProps) {
+  const [modalOpen, setModalOpen] = useState(false);
+
   if (pinnedMessages.length === 0) return null;
 
+  const lastPinned = pinnedMessages[pinnedMessages.length - 1];
+
+  const getPreview = (content: string) => {
+    if (content.includes('[AUDIO:')) return ' Message vocal';
+    if (content.includes('[FILE:')) return 'Fichier';
+    return content.replace(/\[FILE:.*?\]/g, '').trim();
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+    });
+  };
+
   return (
-    <div className="border-b bg-blue-50 px-4 py-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Pin className="h-4 w-4 text-blue-600" />
-        <span className="text-sm font-semibold text-blue-900">
-          Messages épinglés ({pinnedMessages.length}/3)
-        </span>
-      </div>
-      
-      <ScrollArea className="max-h-32">
-        <div className="space-y-2">
-          {pinnedMessages.map((message) => {
-            // Extraire le texte (sans [FILE:...])
-            const textContent = message.content.replace(/\[FILE:.*?\]/g, '').trim();
-            const hasFile = message.content.includes('[FILE:');
-            
-            return (
-              <div
-                key={message.id}
-                className="flex items-start gap-2 p-2 bg-white rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors cursor-pointer group"
-                onClick={() => onMessageClick(message.id)}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-blue-900 mb-1">
-                    {message.sender_name || 'Utilisateur'}
-                  </p>
-                  <p className="text-sm text-gray-700 truncate">
-                    {hasFile }
-                    {textContent}
-                  </p>
-                </div>
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onUnpin(message.id);
-                  }}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            );
-          })}
+    <>
+      {/* Barre compacte - dernier message épinglé */}
+      <div className="border-b bg-green-50 px-4 py-2 flex items-center gap-3">
+        <Pin className="h-4 w-4 text-green-700 shrink-0" />
+        
+        <div
+          className="flex-1 min-w-0 cursor-pointer"
+          onClick={() => {
+            onMessageClick(lastPinned.id);
+          }}
+        >
+          <p className="text-xs font-semibold text-green-800">
+            {lastPinned.sender_name || 'Utilisateur'}
+          </p>
+          <p className="text-sm text-gray-600 truncate">
+            {getPreview(lastPinned.content)}
+          </p>
         </div>
-      </ScrollArea>
-    </div>
+
+        {pinnedMessages.length > 1 && (
+          <span className="text-xs text-green-700 font-medium shrink-0">
+            {pinnedMessages.length}
+          </span>
+        )}
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-green-700 hover:bg-green-100 shrink-0 cursor-pointer"
+          onClick={() => setModalOpen(true)}
+        >
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Modal Messages épinglés */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Messages épinglés ({pinnedMessages.length})
+            </DialogTitle>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-0 divide-y">
+              {[...pinnedMessages].reverse().map((message) => (
+                <div key={message.id} className="py-3 px-1 group">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-gray-700">
+                          {message.sender_name || 'Utilisateur'}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {formatDate(message.created_at)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {getPreview(message.content)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => {
+                        onMessageClick(message.id);
+                        setModalOpen(false);
+                      }}
+                      className="flex items-center gap-1.5 text-xs text-green-700 hover:text-green-900 cursor-pointer font-medium"
+                    >
+                      Voir dans la discussion
+                    </button>
+                    <span className="text-gray-300">•</span>
+                    <button
+                      onClick={() => onUnpin(message.id)}
+                      className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 cursor-pointer font-medium"
+                    >
+                      Désépingler
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

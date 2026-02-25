@@ -153,6 +153,7 @@ export function FileMessage({
                     reactions={reactions}
                     currentUserId={currentUserId}
                     onReactionClick={onReactionToggle || (() => {})}
+                    isOwn={isOwn}
                   />
                 </div>
               )}
@@ -236,6 +237,7 @@ export function FileMessage({
                     reactions={reactions}
                     currentUserId={currentUserId}
                     onReactionClick={onReactionToggle || (() => {})}
+                    isOwn={isOwn}
                   />
                 </div>
               )}

@@ -64,28 +64,50 @@ function ConversationItem({
     : chat.other_user?.full_name || chat.name || 'Unknown';
 
   const lastMessagePreview = (() => {
-    if (!chat.last_message?.content) return 'No messages yet';
-    
-    const content = chat.last_message.content;
-    
-    if (content.includes('[FILE:')) {
-      const match = content.match(/\[FILE:(.*?)\]/);
-      const fileUrl = match ? match[1] : '';
-      const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
-      
-      return isImage ? 'Photo' : 'File';
-    }
-    
-    return content;
-  })();
+  if (!chat.last_message?.content) return 'No messages yet';
+  
+  const content = chat.last_message.content;
+  
+  if (content.includes('[AUDIO:')) {
+    const isOwn = chat.last_message.user_id === currentUserId;
+    const senderName = chat.other_user?.account_type === 'company'
+      ? chat.other_user?.company_name
+      : chat.other_user?.full_name;
+    return isOwn ? ' Vous avez envoyé un message vocal' : ` ${senderName} a envoyé un message vocal`;
+  }
+  
+  if (content.includes('[FILE:')) {
+    const match = content.match(/\[FILE:(.*?)\]/);
+    const fileUrl = match ? match[1] : '';
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
+    return isImage ? ' Photo' : ' Fichier';
+  }
+  
+  return content;
+})();
 
-  const timeDisplay = chat.last_message?.created_at
-    ? new Date(chat.last_message.created_at).toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-    : '';
+  const timeDisplay = (() => {
+  if (!chat.last_message?.created_at) return '';
+  
+  const messageDate = new Date(chat.last_message.created_at);
+  const now = new Date();
+  
+  const diffMs = now.getTime() - messageDate.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffMins < 1) return "À l'instant";
+  if (diffMins < 60) return `${diffMins} min`;
+  if (diffHours < 24) return `${diffHours} h`;
+  if (diffDays < 7) return `${diffDays} j`;
+  if (diffWeeks < 4) return `${diffWeeks} sem`;
+  if (diffMonths < 12) return `${diffMonths} mois`;
+  return `${diffYears} an${diffYears > 1 ? 's' : ''}`;
+})();
 
   return (
     <div
@@ -116,24 +138,20 @@ function ConversationItem({
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-1">
-            <h3 className={`font-semibold text-gray-900 truncate ${
-              unreadCount > 0 ? 'font-bold' : ''
-            }`}>
-              {displayName}
-            </h3>
-            <span className="text-xs text-gray-500 ml-2">
-              {timeDisplay}
-            </span>
-          </div>
-          <div className={`text-sm text-gray-500 truncate mt-1 ${
-            unreadCount > 0 ? 'font-semibold text-gray-900' : ''
+          <h3 className={`font-semibold text-gray-900 truncate ${
+            unreadCount > 0 ? 'font-bold' : ''
           }`}>
-            <span 
-              dangerouslySetInnerHTML={{ 
-                __html: sanitizeMessage(lastMessagePreview) 
-              }} 
-            />
+            {displayName}
+          </h3>
+          <div className={`flex items-center gap-1 text-sm mt-1 ${
+            unreadCount > 0 ? 'font-semibold text-gray-900' : 'text-gray-500'
+          }`}>
+            <span className="truncate min-w-0 flex-1 block max-w-[160px]">
+              <span dangerouslySetInnerHTML={{ __html: sanitizeMessage(lastMessagePreview) }} />
+            </span>
+            {timeDisplay && (
+              <span className="text-xs text-gray-400 shrink-0">· {timeDisplay}</span>
+            )}
           </div>
         </div>
       </div>
@@ -183,7 +201,7 @@ export function ConversationList({
   return (
     <div className="w-full md:w-80 border-r flex flex-col bg-white h-full min-h-0">
       {/* Search bar sticky */}
-      <div className="sticky top-0 z-10 p-4 border-b bg-white">
+      <div className="sticky top-0 z-10 p-4 border-b bg-white h-[73px] flex items-center">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
