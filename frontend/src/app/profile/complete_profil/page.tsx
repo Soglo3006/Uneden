@@ -1392,7 +1392,7 @@ export default function OnboardingPage() {
                     <img 
                     src={data.avatar || "/default-avatar.png"}
                     alt="avatar"
-                    className="w-45 h-45 rounded-full object-cover"
+                    className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full object-cover"
                     />
                     <div>
                     <h3 className="text-lg font-semibold">{accountType === "person" ? data.fullName : data.companyName}</h3>

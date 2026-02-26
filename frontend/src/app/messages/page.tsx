@@ -270,11 +270,11 @@ export default function MessagesPage() {
       <CategoryNav />
       
       <div className="flex-1 max-w-[1600px] w-full mx-auto p-5">
-        <div className="border rounded-xl overflow-hidden bg-white shadow-sm" style={{ height: 'calc(100vh - 200px)' }}>
+        <div className="border rounded-xl overflow-hidden bg-white shadow-sm h-[calc(100vh_-_200px)]">
           <Chat client={client} theme="str-chat__theme-light">
-            <div className="flex h-full">
+            <div className="flex h-full flex-col md:flex-row">
               {/* Liste des conversations */}
-              <div className="w-96 border-r bg-white flex flex-col">
+              <div className="w-full md:w-96 border-r bg-white flex flex-col">
                 <div className="p-4 border-b bg-white">
                   <div className="relative mb-4">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -319,7 +319,9 @@ export default function MessagesPage() {
                         <Thread />
                       </Channel>
                     </div>
-                    <AboutPanel channel={activeChannel} />
+                    <div className="hidden lg:block">
+                      <AboutPanel channel={activeChannel} />
+                    </div>
                   </>
                 ) : (
                   <EmptyState />

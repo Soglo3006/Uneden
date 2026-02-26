@@ -34,3 +34,20 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Admin Access (Support Page)
+
+- The admin support page (`/admin/support`) is restricted to admin users.
+- Admins are determined by either:
+	- Email allowlist via `NEXT_PUBLIC_ADMIN_EMAILS` (comma-separated)
+	- User ID allowlist via `NEXT_PUBLIC_ADMIN_USER_IDS` (comma-separated)
+	- Supabase `user_metadata.role` or `app_metadata.role` equal to `admin`
+
+Example `.env.local` values:
+
+```bash
+NEXT_PUBLIC_ADMIN_EMAILS=admin@example.com,owner@example.com
+NEXT_PUBLIC_ADMIN_USER_IDS=00000000-0000-0000-0000-000000000000
+```
+
+If a logged-in user does not meet any admin criteria, they are redirected away from the page.

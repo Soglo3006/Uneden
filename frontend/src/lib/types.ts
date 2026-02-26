@@ -7,6 +7,7 @@ export type Listing = {
   location: string;
   image: string;
   imageUrl?: string; // alias pour image
+  completedCount?: number;
   postedTime?: string; // alias pour created_at
   created_at?: string;
 };
