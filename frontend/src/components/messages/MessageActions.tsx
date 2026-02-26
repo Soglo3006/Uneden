@@ -53,7 +53,6 @@ export function MessageActions({
                 if (open) setOpenMenuKey(null);
                 onEmojiOpenChange?.(open);
               }}
-              onOpenChange={onEmojiOpenChange}
             />
           </div>
         </TooltipTrigger>

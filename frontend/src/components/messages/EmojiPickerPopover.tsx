@@ -80,9 +80,10 @@ export function EmojiPickerPopover({ onEmojiSelect, onOpenChange }: EmojiPickerP
         onInteractOutside={(e) => {
           e.preventDefault(); // ← empêche la fermeture au clic extérieur
           setOpen(false);
+          onOpenChange?.(false);
           setShowFullPicker(false);
         }}
-        onPointerDownOutside={(e) => {
+        onEscapeKeyDown={() => {
           setOpen(false);
 >>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
           setShowFullPicker(false);
