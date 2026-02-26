@@ -54,6 +54,7 @@ export default function MessagesPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [isBlockedByOther, setIsBlockedByOther] = useState(false);
 
   const [replyingTo, setReplyingTo] = useState<{
     id: string;
@@ -226,6 +227,7 @@ export default function MessagesPage() {
     setActiveChatId(chatId);
     setShowMobileChat(true);
     setIsBlocked(false); 
+    setIsBlockedByOther(false);
     setShowSettings(false); 
     router.push(`/messages?chat=${chatId}`);
   };
@@ -270,17 +272,26 @@ export default function MessagesPage() {
     const checkBlocked = async () => {
       if (!user?.id || !activeChat?.other_user?.id) return;
       
-      // Attendre que la session soit prête
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const { data } = await supabase
+      // Est-ce que MOI j'ai bloqué l'autre
+      const { data: iBlockedThem } = await supabase
         .from('blocked_users')
         .select('id')
         .eq('blocker_id', user.id)
         .eq('blocked_user_id', activeChat.other_user.id)
         .maybeSingle();
-      setIsBlocked(!!data);
+      setIsBlocked(!!iBlockedThem);
+
+      // Est-ce que L'AUTRE m'a bloqué
+      const { data: theyBlockedMe } = await supabase
+        .from('blocked_users')
+        .select('id')
+        .eq('blocker_id', activeChat.other_user.id)
+        .eq('blocked_user_id', user.id)
+        .maybeSingle();
+      setIsBlockedByOther(!!theyBlockedMe);
     };
     checkBlocked();
   }, [user?.id, activeChat?.other_user?.id]);
@@ -313,12 +324,12 @@ export default function MessagesPage() {
         <Header />
         <CategoryNav />
 
-        <div className="flex-1 max-w-[1600px] w-full mx-auto p-5 min-h-0">
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[480px]  min-h-0">
+        <div className="flex-1 max-w-[1600px] w-full mx-auto p-2 sm:p-5 min-h-0">
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[calc(100vh-180px)] min-h-[500px] min-h-0">
             <div className="flex h-full min-h-0">
               
               {/* COLONNE 1 : Liste des conversations */}
-              <div className={`${showMobileChat ? 'hidden' : 'flex'} md:flex w-full md:w-80 border-r flex-col bg-white min-h-0`}>
+              <div className={`${showMobileChat ? 'hidden' : 'flex'} md:flex w-full md:w-64 lg:w-80 border-r flex-col bg-white min-h-0`}>
                 <ConversationList
                   chats={chats}
                   activeChatId={activeChatId}
@@ -336,7 +347,7 @@ export default function MessagesPage() {
                     {/* Header personnalisé avec bouton retour */}
                     <div className="shrink-0 p-4 border-b flex items-center justify-between bg-white shadow-sm h-[73px]">
                       <div className="flex items-center gap-3">
-                        <Button variant="ghost" size="icon" className="md:hidden shrink-0" onClick={handleBackToList}>
+                        <Button variant="ghost" size="icon" className="md:hidden shrink-0 cursor-pointer" onClick={handleBackToList}>
                           <ArrowLeft className="h-5 w-5" />
                         </Button>
                         <Link href={`/profile/${activeChat.other_user?.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -461,14 +472,12 @@ export default function MessagesPage() {
                       
                       {isBlocked ? (
                         <div className="border-t bg-white">
-                          {/* Bannière */}
                           <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border-b border-red-100">
                             <Ban className="h-4 w-4 text-red-500 shrink-0" />
                             <p className="text-sm text-red-600">
                               Vous avez bloqué cette personne. Elle ne peut plus vous envoyer de messages.
                             </p>
                           </div>
-                          {/* Bouton débloquer */}
                           <div className="p-4 flex justify-center">
                             <Button
                               variant="outline"
@@ -479,7 +488,16 @@ export default function MessagesPage() {
                             </Button>
                           </div>
                         </div>
-                      ) : (
+                        ) : isBlockedByOther ? (
+                        <div className="border-t bg-white">
+                          <div className="flex items-center gap-2 px-4 py-3 bg-gray-50">
+                            <Ban className="h-4 w-4 text-gray-400 shrink-0" />
+                            <p className="text-sm text-gray-500">
+                              Vous ne pouvez plus envoyer de messages à cette personne.
+                            </p>
+                          </div>
+                        </div>
+                      ): (
                         <MessageInput
                           value={messageInput}
                           onChange={(val) => { setMessageInput(val); if (val) sendTyping(); }}
@@ -511,7 +529,7 @@ export default function MessagesPage() {
               </div>
 
               {/* COLONNE 3 : Panneau About */}
-              <div className="hidden xl:flex w-80 shrink-0 border-l bg-white min-h-0">
+              <div className="hidden lg:flex w-72 shrink-0 border-l bg-white min-h-0">
                 {showSettings
                   ? <ConversationSettings
                       messages={messages}
@@ -543,7 +561,19 @@ export default function MessagesPage() {
                           .eq('user_id', user.id);
                         if (memberError) throw memberError;
 
-                        router.push('/messages');
+                        // Trouver la prochaine convo
+                        const remainingChats = chats.filter(c => c.id !== activeChatId);
+                        
+                        if (remainingChats.length > 0) {
+                          const nextChatId = remainingChats[0].id;
+                          setActiveChatId(nextChatId);
+                          router.replace(`/messages?chat=${nextChatId}`);
+                        } else {
+                          setActiveChatId(null);
+                          router.replace('/messages');
+                        }
+
+                        setShowSettings(false);
                       }}
                       onBlockUser={async () => {
                         if (!activeChat?.other_user?.id) return;

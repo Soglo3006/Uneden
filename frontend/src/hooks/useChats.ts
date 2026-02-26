@@ -197,6 +197,20 @@ export function useChats() {
           );
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'chat_room_member',
+        },
+        (payload) => {
+          const deleted = payload.old as any;
+          if (deleted.user_id === user.id) {
+            setChats((prev) => prev.filter(c => c.id !== deleted.chat_room_id));
+          }
+        }
+      )
       .subscribe();
 
     return () => {

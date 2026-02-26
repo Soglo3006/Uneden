@@ -60,6 +60,7 @@ export default function UserProfilePage() {
   const [favoritesLoading, setFavoritesLoading] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockLoading, setBlockLoading] = useState(false);
+  const [isBlockedByOther, setIsBlockedByOther] = useState(false);
 
   const isOwner = user?.id === profileId;
   const settingsScrollRef = useRef(null);
@@ -143,16 +144,22 @@ export default function UserProfilePage() {
       if (!user || isOwner || !profileId) return;
       
       try {
-        const { data, error } = await supabase
+        const { data: iBlockedThem } = await supabase
           .from('blocked_users')
           .select('id')
           .eq('blocker_id', user.id)
           .eq('blocked_user_id', profileId)
           .maybeSingle();
+        setIsBlocked(!!iBlockedThem);
 
-        if (!error && data) {
-          setIsBlocked(true);
-        }
+        const { data: theyBlockedMe } = await supabase
+          .from('blocked_users')
+          .select('id')
+          .eq('blocker_id', profileId)
+          .eq('blocked_user_id', user.id)
+          .maybeSingle();
+        setIsBlockedByOther(!!theyBlockedMe);
+
       } catch (err) {
         console.error('Error checking blocked status:', err);
       }
@@ -480,14 +487,16 @@ export default function UserProfilePage() {
                         </>
                       ) : (
                         <>
-                          <Button 
-                            onClick={handleSendMessage}
-                            disabled={sendMessageLoading}
-                            className="bg-green-700 hover:bg-green-800 text-white gap-2 cursor-pointer"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                            {sendMessageLoading ? 'Loading...' : 'Send Message'}
-                          </Button>
+                          {!isBlockedByOther && (
+                            <Button 
+                              onClick={handleSendMessage}
+                              disabled={sendMessageLoading}
+                              className="bg-green-700 hover:bg-green-800 text-white gap-2 cursor-pointer"
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                              {sendMessageLoading ? 'Loading...' : 'Send Message'}
+                            </Button>
+                          )}
                           <Button 
                             variant="outline" 
                             className="gap-2 cursor-pointer"
@@ -537,7 +546,7 @@ export default function UserProfilePage() {
           </Card>
 
           {/* About Section - Adapté selon le type */}
-          {!isBlocked && profileUser.bio && (
+          {!isBlocked && !isBlockedByOther && profileUser.bio && (
             <Card className="p-6 mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 {isPerson ? "About Me" : "About Our Company"}
@@ -627,7 +636,7 @@ export default function UserProfilePage() {
           )}
 
           {/* Portfolio */}
-          {!isBlocked && portfolio.length > 0 && (
+          {!isBlocked && !isBlockedByOther && portfolio.length > 0 && (
             <Card className="p-6 mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 {isPerson ? "My Portfolio" : "Our Projects"}
@@ -659,7 +668,7 @@ export default function UserProfilePage() {
           )}
 
           {/* Listings */}
-          {!isBlocked && (
+          {!isBlocked && !isBlockedByOther && (
             <Card className="p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">
@@ -798,6 +807,20 @@ export default function UserProfilePage() {
                 >
                   {blockLoading ? "Unblocking..." : "Unblock User"}
                 </Button>
+              </div>
+            </Card>
+          )}
+
+          {isBlockedByOther && (
+            <Card className="p-12">
+              <div className="text-center">
+                <Ban className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Contenu non disponible
+                </h3>
+                <p className="text-gray-500">
+                  Vous ne pouvez pas voir le contenu de ce profil.
+                </p>
               </div>
             </Card>
           )}

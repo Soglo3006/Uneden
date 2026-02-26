@@ -42,7 +42,7 @@ export function useMessages(chatRoomId: string | null) {
     // show cache instantly (Messenger feel)
     const cached = messagesCacheRef.current.get(chatRoomId);
     if (cached) {
-      setMessages(cached.map(m => ({ ...m, pinned_at: null })));
+      setMessages(cached);
       setLoading(false);
     } else {
       setMessages([]);
@@ -64,6 +64,7 @@ export function useMessages(chatRoomId: string | null) {
           `)
           .eq('chat_room_id', chatRoomId)
           .order('created_at', { ascending: true });
+          
 
         if (error) throw error;
 
@@ -224,7 +225,7 @@ export function useMessages(chatRoomId: string | null) {
                   ...msg,
                   content: updated.content,
                   edited_at: updated.edited_at,
-                  pinned_at: updated.pinned_at,
+                  pinned_at: updated.pinned_at ?? msg.pinned_at,
                   reactions: updated.reactions,
                   read_at: updated.read_at,
                 };

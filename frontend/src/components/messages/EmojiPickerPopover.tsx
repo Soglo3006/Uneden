@@ -35,6 +35,7 @@ export function EmojiPickerPopover({ onEmojiSelect, onOpenChange }: EmojiPickerP
       open={open}
       onOpenChange={(newOpen) => {
         setOpen(newOpen);
+        onOpenChange?.(newOpen);
         if (!newOpen) setShowFullPicker(false);
       }}
     >
@@ -43,13 +44,7 @@ export function EmojiPickerPopover({ onEmojiSelect, onOpenChange }: EmojiPickerP
           variant="ghost"
           size="icon"
           className="h-7 w-7 bg-white border border-gray-200 hover:bg-gray-50 rounded-full shadow-sm cursor-pointer"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            const newOpen = !open;
-            setOpen(newOpen);
-            onOpenChange?.(newOpen);
-          }}
+          onClick={(e) => e.stopPropagation()}
         >
           <Smile className="h-3 w-3 text-gray-600" />
         </Button>
@@ -59,13 +54,14 @@ export function EmojiPickerPopover({ onEmojiSelect, onOpenChange }: EmojiPickerP
         side="top"
         sideOffset={8}
         className="w-auto p-0 border-0 bg-transparent shadow-none rounded-none"
-        onInteractOutside={(e) => {
-          e.preventDefault(); // ← empêche la fermeture au clic extérieur
+        onPointerDownOutside={() => {
           setOpen(false);
+          onOpenChange?.(false);
           setShowFullPicker(false);
         }}
-        onPointerDownOutside={(e) => {
+        onEscapeKeyDown={() => {
           setOpen(false);
+          onOpenChange?.(false);
           setShowFullPicker(false);
         }}
       >

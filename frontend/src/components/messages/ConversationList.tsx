@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -21,6 +21,7 @@ interface Chat {
   last_message?: {
     content: string;
     created_at: string;
+    user_id?: string;
   };
   other_user?: {
     full_name?: string;
@@ -45,13 +46,16 @@ function ConversationItem({
   chat, 
   isActive, 
   currentUserId, 
-  onSelect 
+  onSelect,
+  now,
 }: { 
   chat: Chat; 
   isActive: boolean; 
   currentUserId: string | null; 
   onSelect: () => void;
+  now: number;
 }) {
+
   const unreadCount = useUnreadCount(chat.id, currentUserId);
 
   const isPerson = chat.other_user?.account_type === 'person';
@@ -87,27 +91,27 @@ function ConversationItem({
 })();
 
   const timeDisplay = (() => {
-  if (!chat.last_message?.created_at) return '';
-  
-  const messageDate = new Date(chat.last_message.created_at);
-  const now = new Date();
-  
-  const diffMs = now.getTime() - messageDate.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffWeeks = Math.floor(diffDays / 7);
-  const diffMonths = Math.floor(diffDays / 30);
-  const diffYears = Math.floor(diffDays / 365);
+    if (!chat.last_message?.created_at) return '';
 
-  if (diffMins < 1) return "À l'instant";
-  if (diffMins < 60) return `${diffMins} min`;
-  if (diffHours < 24) return `${diffHours} h`;
-  if (diffDays < 7) return `${diffDays} j`;
-  if (diffWeeks < 4) return `${diffWeeks} sem`;
-  if (diffMonths < 12) return `${diffMonths} mois`;
-  return `${diffYears} an${diffYears > 1 ? 's' : ''}`;
-})();
+    const messageDate = new Date(chat.last_message.created_at).getTime();
+    const diffMs = now - messageDate;
+
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30);
+    const diffYears = Math.floor(diffDays / 365);
+
+    if (diffMins < 1) return diffMs < 30_000 ? "À l'instant" : "1 min";
+    if (diffMins < 60) return `${diffMins} min`;
+    if (diffHours < 24) return `${diffHours} h`;
+    if (diffDays < 7) return `${diffDays} j`;
+    if (diffWeeks < 4) return `${diffWeeks} sem`;
+    if (diffMonths < 12) return `${diffMonths} mois`;
+    return `${diffYears} an${diffYears > 1 ? 's' : ''}`;
+  })();
+
 
   return (
     <div
@@ -168,6 +172,12 @@ export function ConversationList({
   currentUserId,
 }: ConversationListProps) {
   const [filter, setFilter] = useState<string>('all');
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   const filteredChats = chats.filter(chat => {
     // Filtre par recherche
@@ -199,16 +209,16 @@ export function ConversationList({
   });
 
   return (
-    <div className="w-full md:w-80 border-r flex flex-col bg-white h-full min-h-0">
+    <div className="w-full md:w-64 lg:w-80 border-r flex flex-col bg-white h-full min-h-0">
       {/* Search bar sticky */}
       <div className="sticky top-0 z-10 p-4 border-b bg-white h-[73px] flex items-center">
-        <div className="relative">
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10"
+            className="pl-10 w-full"
           />
         </div>
       </div>
@@ -218,7 +228,7 @@ export function ConversationList({
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-semibold text-gray-900 whitespace-nowrap">Messages</h2>
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-[140px] h-9">
+            <SelectTrigger className="w-[140px] h-9 cursor-pointer">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -250,6 +260,7 @@ export function ConversationList({
               isActive={chat.id === activeChatId}
               currentUserId={currentUserId}
               onSelect={() => onChatSelect(chat.id)}
+              now={now}
             />
           ))
         )}

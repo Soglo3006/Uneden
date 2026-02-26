@@ -89,6 +89,8 @@ export function MessageBubble({
   const showActions = isHovered || isMenuOpen || isSelected || isEmojiOpen;
   const isSending = status === 'sending';
   const isFailed = status === 'failed';
+  const rootRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
 
 
   useEffect(() => {
@@ -130,18 +132,25 @@ export function MessageBubble({
     }
   };
 
-  return (
-    <div
-  onPointerDown={(e) => e.stopPropagation()}
-  onMouseEnter={() => !isSending && setHoveredMessageId(messageId)}
-  onMouseLeave={() => {
-    if (openMenuKey !== messageId && !isSelected) {
+  const handleMouseLeave = (e: React.MouseEvent) => {
+    const next = e.relatedTarget as Node | null;
+
+    if (next && actionsRef.current?.contains(next)) return;
+
+    if (openMenuKey !== messageId && !isSelected && !isEmojiOpen) {
       setHoveredMessageId(null);
     }
-  }}
-  onClick={() => !isSending && setSelectedMessageKey(prev => (prev === messageId ? null : messageId))}
-  className={`flex gap-2 items-start ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}
->
+  };
+
+  return (
+    <div
+      ref={rootRef}
+      onPointerDown={(e) => e.stopPropagation()}
+      onMouseEnter={() => !isSending && setHoveredMessageId(messageId)}
+      onMouseLeave={handleMouseLeave}
+      onClick={() => !isSending && setSelectedMessageKey(prev => (prev === messageId ? null : messageId))}
+      className={`flex gap-2 items-start ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}
+    >
   {/* Avatar + Message */}
   <div className="flex items-end gap-2">
     {/* Avatar pour les messages de l'autre personne */}
@@ -252,12 +261,7 @@ export function MessageBubble({
                   </div>
                 )}
 
-                {/* Indicateur sending */}
-                {isSending && isOwn && (
-                  <div className="absolute -bottom-1 -right-1">
-                    <Loader2 className="h-4 w-4 text-green-600 animate-spin" />
-                  </div>
-                )}
+            
 
               </>
             )}
@@ -277,14 +281,24 @@ export function MessageBubble({
 
           {/* Boutons d'action - alignés avec la bulle */}
         {showActions && !isSending && !isFailed && content !== 'Message supprimé' && !isEditing && (
-          <div className={`absolute ${isOwn ? 'right-full mr-2' : 'left-full ml-2'} top-0 bottom-0 flex items-center`}>
+          <div
+            ref={actionsRef}
+            className={`absolute ${isOwn ? 'right-full mr-2' : 'left-full ml-2'} top-0 bottom-0 flex items-center`}
+            onMouseEnter={() => !isSending && setHoveredMessageId(messageId)}
+          >
             <MessageActions
               messageKey={messageId}
               openMenuKey={openMenuKey}
               onEmojiOpenChange={setIsEmojiOpen}
               setOpenMenuKey={setOpenMenuKey}
               isPinned={isPinned}
-              onReact={onReact}
+              onReact={(emoji) => {
+                onReact?.(emoji);
+                setIsEmojiOpen(false);
+                setOpenMenuKey(null);
+                setSelectedMessageKey(null);
+                setHoveredMessageId(null);
+              }}
               onReply={onReply}
               onEdit={isOwn ? handleStartEdit : undefined}
               onPin={onPin}

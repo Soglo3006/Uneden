@@ -5,6 +5,8 @@ import { MessageActions } from './MessageActions';
 import { RepliedMessage } from './RepliedMessage';
 import { MessageReactions } from './MessageReactions';
 import { sanitizeAndFormatMessage } from '@/lib/sanitize';
+import { ImageLightbox } from './ImageLightbox';
+import { useState } from 'react';
 
 interface Reaction {
   emoji: string;
@@ -75,6 +77,8 @@ export function FileMessage({
 
   const isSending = status === 'sending';
   const isFailed = status === 'failed';
+
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   return (
     <>
@@ -219,16 +223,19 @@ export function FileMessage({
               <img
                 src={fileUrl}
                 alt="Attachment"
-                className="max-w-xs max-h-64 rounded-xl cursor-pointer object-cover shadow-md"
+                className="max-w-xs max-h-64 rounded-xl cursor-pointer object-cover shadow-md hover:opacity-90 transition-opacity"
                 onClick={(e) => {
-                  if (openMenuKey === keyImage || selectedMessageKey === keyImage) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return;
-                  }
-                  window.open(fileUrl, '_blank');
+                  e.stopPropagation();
+                  if (openMenuKey === keyImage || selectedMessageKey === keyImage) return;
+                  setLightboxOpen(true);
                 }}
               />
+              {lightboxOpen && (
+                <ImageLightbox
+                  imageUrl={fileUrl}
+                  onClose={() => setLightboxOpen(false)}
+                />
+              )}
 
               {/* Réactions en position absolue */}
               {reactions && reactions.length > 0 && (

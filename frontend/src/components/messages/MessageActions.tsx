@@ -47,11 +47,12 @@ export function MessageActions({
       <Tooltip>
         <TooltipTrigger asChild>
           <div>
-            <EmojiPickerPopover 
-              onEmojiSelect={(emoji) => {
-                onReact?.(emoji);
+            <EmojiPickerPopover
+              onEmojiSelect={(emoji) => onReact?.(emoji)}
+              onOpenChange={(open) => {
+                if (open) setOpenMenuKey(null);
+                onEmojiOpenChange?.(open);
               }}
-              onOpenChange={onEmojiOpenChange}
             />
           </div>
         </TooltipTrigger>
@@ -84,7 +85,10 @@ export function MessageActions({
       {/* Bouton Plus (Dropdown) */}
       <DropdownMenu
         open={openMenuKey === messageKey}
-        onOpenChange={(open) => setOpenMenuKey(open ? messageKey : null)}
+        onOpenChange={(open) => {
+          if (open) onEmojiOpenChange?.(false);
+          setOpenMenuKey(open ? messageKey : null);
+        }}
       >
         <Tooltip>
           <TooltipTrigger asChild>

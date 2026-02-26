@@ -203,7 +203,7 @@ export function MessageThread({
                 return (
                   <div key={message.id} id={`message-${message.id}`}>
                     {showDate && (
-                      <div className="sticky top-0 z-10 text-center text-sm text-gray-500 my-4 py-2 bg-gray-50/80 backdrop-blur-sm rounded-full">
+                      <div className=" text-center text-sm text-gray-500 my-4 py-2">
                         {new Date(message.created_at).toLocaleDateString('fr-FR', {
                           weekday: 'long',
                           year: 'numeric',
@@ -386,7 +386,7 @@ export function MessageThread({
       {showScrollToBottom && !loading && messages.length > 0 && (
       <button
           onClick={() => scrollToBottom('smooth')}
-          className="absolute -bottom-24 left-1/2 z-50 -translate-x-1/2 h-11 w-11 rounded-full bg-green-700 cursor-pointer text-white shadow-lg flex items-center justify-center transition-all duration-300 animate-in fade-in zoom-in-95"  >
+          className="absolute bottom-2 left-1/2 z-50 -translate-x-1/2 h-11 w-11 rounded-full bg-green-700 cursor-pointer text-white shadow-lg flex items-center justify-center transition-all duration-300 animate-in fade-in zoom-in-95"  >
           <ArrowDown className="h-5 w-5" />
       </button>
       )}
