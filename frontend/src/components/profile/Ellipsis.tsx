@@ -25,10 +25,12 @@ interface EllipsisPageProps {
   onClose: () => void;
   profileId: string;
   displayName: string;
+  userListings: any[];
 }
 
-export default function EllipsisPage({ onClose, profileId, displayName }: EllipsisPageProps) {
+export default function EllipsisPage({ onClose, profileId, displayName, userListings }: EllipsisPageProps) {
   const [screen, setScreen] = useState("default");
+  
 
   return (
     <div className="w-full bg-gray-50">
@@ -71,7 +73,14 @@ export default function EllipsisPage({ onClose, profileId, displayName }: Ellips
             onClose={onClose}
           />
         )}
-        {screen === "reportListing" && <ReportListingPage setScreen={setScreen} />}
+        {screen === "reportListing" && 
+        <ReportListingPage
+          setScreen={setScreen}
+          profileId={profileId}
+          displayName={displayName}
+          userListings={userListings}
+          onClose={onClose}
+        />}
         {screen === "blockUser" && (
           <BlockUserPage 
             setScreen={setScreen}
@@ -161,6 +170,8 @@ function ReportUserPage({ setScreen, profileId, displayName, onClose }) {
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
 
   const handleSubmit = async () => {
     if (!user || !reason || !details.trim()) {
@@ -183,8 +194,7 @@ function ReportUserPage({ setScreen, profileId, displayName, onClose }) {
 
       if (error) throw error;
 
-      alert(`Report submitted successfully. Thank you for helping keep FieldHearts safe.`);
-      onClose();
+      setSuccess(true);
     } catch (err) {
       console.error('Error submitting report:', err);
       alert('Failed to submit report. Please try again.');
@@ -192,6 +202,24 @@ function ReportUserPage({ setScreen, profileId, displayName, onClose }) {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <Card className="p-8 text-center space-y-4">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+          <Check className="h-8 w-8 text-green-700" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900">Report Received</h3>
+        <p className="text-gray-600">
+          Thank you for reporting {displayName}. We've received your report and will review 
+          the account carefully. If it violates our policies, we'll take the appropriate action.
+        </p>
+        <Button className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer" onClick={onClose}>
+          Close
+        </Button>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 space-y-4">
@@ -249,16 +277,98 @@ function ReportUserPage({ setScreen, profileId, displayName, onClose }) {
   );
 }
 
-function ReportListingPage() {
+function ReportListingPage({ setScreen, profileId, displayName, userListings, onClose }) {
+  const { user } = useAuth();
+  const [selectedListingId, setSelectedListingId] = useState("");
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!user || !selectedListingId || !reason || !details.trim()) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reports/listing`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          listing_id: selectedListingId,
+          reported_user_id: profileId,
+          reason,
+          description: details,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to submit');
+
+      setSuccess(true);
+    } catch (err) {
+      alert('Failed to submit report. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <Card className="p-8 text-center space-y-4">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+          <Check className="h-8 w-8 text-green-700" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900">Report Received</h3>
+        <p className="text-gray-600">
+          Thank you for your report. We've received it and will review the listing carefully. 
+          If it violates our policies, we'll take the appropriate action.
+        </p>
+        <Button className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer" onClick={onClose}>
+          Close
+        </Button>
+      </Card>
+    );
+  }
 
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="p-6">
       <p className="text-gray-600">
-        Tell us what is wrong with this listing.
+        Select the listing from {displayName} you want to report.
       </p>
 
+      {/* Sélection du listing */}
+      <div>
+        <label className="text-sm font-medium text-gray-700 block mb-2">Listing</label>
+        {userListings.length === 0 ? (
+          <p className="text-sm text-gray-500 italic">This user has no listings.</p>
+        ) : (
+          <Select value={selectedListingId} onValueChange={setSelectedListingId}>
+            <SelectTrigger className="w-full cursor-pointer">
+              <SelectValue placeholder="Select a listing" />
+            </SelectTrigger>
+            <SelectContent>
+              {userListings.map((listing) => (
+                <SelectItem key={listing.id} value={listing.id} className="cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    {listing.image_url && (
+                      <img src={listing.image_url} className="w-6 h-6 rounded object-cover" />
+                    )}
+                    <span className="truncate max-w-[250px]">{listing.title}</span>
+                    <span className="text-gray-400 text-xs">${listing.price}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      {/* Raison */}
       <div>
         <label className="text-sm font-medium text-gray-700 block mb-2">Reason</label>
         <Select value={reason} onValueChange={setReason}>
@@ -266,28 +376,17 @@ function ReportListingPage() {
             <SelectValue placeholder="Select a reason" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="misleading" className="cursor-pointer">
-              Misleading Information
-            </SelectItem>
-            <SelectItem value="price" className="cursor-pointer">
-              Wrong Price
-            </SelectItem>
-            <SelectItem value="illegal" className="cursor-pointer">
-              Illegal Service
-            </SelectItem>
-            <SelectItem value="offensive" className="cursor-pointer">
-              Offensive Content
-            </SelectItem>
-            <SelectItem value="scam" className="cursor-pointer">
-              Scam
-            </SelectItem>
-            <SelectItem value="other" className="cursor-pointer">
-              Other
-            </SelectItem>
+            <SelectItem value="misleading" className="cursor-pointer">Misleading Information</SelectItem>
+            <SelectItem value="price" className="cursor-pointer">Wrong Price</SelectItem>
+            <SelectItem value="illegal" className="cursor-pointer">Illegal Service</SelectItem>
+            <SelectItem value="offensive" className="cursor-pointer">Offensive Content</SelectItem>
+            <SelectItem value="scam" className="cursor-pointer">Scam</SelectItem>
+            <SelectItem value="other" className="cursor-pointer">Other</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
+      {/* Détails */}
       <div>
         <label className="text-sm font-medium text-gray-700 block mb-2">Details</label>
         <Textarea
@@ -298,8 +397,12 @@ function ReportListingPage() {
         />
       </div>
 
-      <Button className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer">
-        Submit Report
+      <Button
+        className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer"
+        onClick={handleSubmit}
+        disabled={loading || !selectedListingId || !reason || !details.trim()}
+      >
+        {loading ? "Submitting..." : "Submit Report"}
       </Button>
     </Card>
   );
@@ -308,41 +411,53 @@ function ReportListingPage() {
 function BlockUserPage({ setScreen, profileId, displayName, onClose }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleBlock = async () => {
-  if (!user) return;
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('blocked_users')
+        .insert({
+          blocker_id: user.id,
+          blocked_user_id: profileId,
+        });
+      if (error) throw error;
+      setSuccess(true);
+    } catch (err) {
+      console.error('Error blocking user:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  setLoading(true);
-
-  try {
-    const { error } = await supabase
-      .from('blocked_users')
-      .insert({
-        blocker_id: user.id,
-        blocked_user_id: profileId,
-      });
-
-    if (error) throw error;
-
-    alert(`${displayName} has been blocked successfully.`);
-    onClose();
-    
-    window.location.reload();
-  } catch (err) {
-    console.error('Error blocking user:', err);
-    alert('Failed to block user. Please try again.');
-  } finally {
-    setLoading(false);
+  if (success) {
+    return (
+      <Card className="p-8 text-center space-y-4">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+          <Check className="h-8 w-8 text-red-600" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900">User Blocked</h3>
+        <p className="text-gray-600">
+          {displayName} has been blocked. They will no longer be able to contact you or see your profile.
+        </p>
+        <Button
+          className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer"
+          onClick={() => { onClose(); window.location.reload(); }}
+        >
+          Close
+        </Button>
+      </Card>
+    );
   }
-};
 
   return (
-    <Card className="p-6">
+    <Card className="p-6 space-y-4">
       <p className="text-gray-900 font-bold text-2xl text-center">
         Are you sure you want to block {displayName}?
       </p>
-
-      <div className="bg-gray-50 px-4 rounded-lg space-y-2">
+      <div className="bg-gray-50 px-4 py-3 rounded-lg space-y-2">
         <p className="text-gray-700 text-sm">When you block this user:</p>
         <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
           <li>They won't be able to contact you</li>
@@ -351,7 +466,6 @@ function BlockUserPage({ setScreen, profileId, displayName, onClose }) {
           <li>You can unblock them later in settings</li>
         </ul>
       </div>
-
       <div className="flex gap-3">
         <Button
           variant="outline"

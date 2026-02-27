@@ -43,7 +43,7 @@ export const completeProfile = async (req, res) => {
 
         console.log("Completing profile for user:", userId);
 
-        // 1️⃣ Préparer les métadonnées pour auth.users
+        //Préparer les métadonnées pour auth.users
         const metaData = account_type === 'person' 
             ? {
                 account_type: 'person',
@@ -72,7 +72,7 @@ export const completeProfile = async (req, res) => {
                 profile_completed: true,
             };
 
-        // 2️⃣ Mettre à jour auth.users.raw_user_meta_data
+        // Mettre à jour auth.users.raw_user_meta_data
         console.log("Updating auth.users metadata...");
         const { error: metaError } = await supabaseAdmin.auth.admin.updateUserById(
             userId,
@@ -87,9 +87,7 @@ export const completeProfile = async (req, res) => {
             });
         }
 
-        console.log("✅ Metadata updated in auth.users");
-
-        // 3️⃣ Mettre à jour public.users (comme avant)
+        // Mettre à jour public.users (comme avant)
         console.log("Updating public.users table...");
         const result = await pool.query(
             `UPDATE users 
@@ -136,9 +134,6 @@ export const completeProfile = async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ message: "User not found" });
         }
-
-        console.log("✅ Data saved in public.users");
-        console.log("✅ Trigger will sync to profiles table automatically");
 
         res.json({ 
             message: "Profile completed successfully",
@@ -321,4 +316,57 @@ export const getUserProfile = async (req, res) => {
         console.error(err);
         res.status(500).json({ message: "Server error while fetching profile" });
     }
+};
+
+export const getSettings = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT settings FROM users WHERE id = $1`,
+      [req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(result.rows[0].settings || {});
+  } catch (err) {
+    console.error("Error fetching settings:", err);
+    res.status(500).json({ message: "Server error while fetching settings" });
+  }
+};
+
+export const updateSettings = async (req, res) => {
+  try {
+    const { notifications, language, region } = req.body;
+
+    const current = await pool.query(
+      `SELECT settings FROM users WHERE id = $1`,
+      [req.user.id]
+    );
+
+    if (current.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Merger les settings existants avec les nouveaux
+    const existingSettings = current.rows[0].settings || {};
+
+    const updatedSettings = {
+    ...existingSettings,
+    ...(notifications && { notifications: { ...existingSettings.notifications, ...notifications } }),
+    ...(language && { language }),
+    ...(region && { region }),
+    };
+
+    const result = await pool.query(
+      `UPDATE users SET settings = $1, updated_at = NOW() WHERE id = $2 RETURNING settings`,
+      [JSON.stringify(updatedSettings), req.user.id]
+    );
+
+    res.json(result.rows[0].settings);
+  } catch (err) {
+    console.error("Error updating settings:", err);
+    res.status(500).json({ message: "Server error while updating settings" });
+  }
 };
