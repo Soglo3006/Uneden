@@ -35,6 +35,7 @@ export default function Header() {
   const router = useRouter();
 
   const [showSettings, setShowSettings] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const settingsScrollRef = useRef(null);
 
@@ -201,12 +202,12 @@ export default function Header() {
             <div className="flex items-center gap-2 shrink-0">
               {user && (
                 <>
-                  <MessageNotifications />
                   <Link href="/favorites">
                     <Button variant="ghost" size="icon" className="cursor-pointer hover:bg-gray-100">
                       <Heart className="h-5 w-5 text-gray-700" />
                     </Button>
                   </Link>
+                  <MessageNotifications />
                 </>
               )}
 

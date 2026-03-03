@@ -7,6 +7,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from "@/components/ui/select";
 import { categories } from "@/lib/categories";
 import { ChevronLeft, ChevronRight } from "lucide-react";

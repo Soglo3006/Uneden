@@ -7,9 +7,12 @@ import ListingCard from "@/components/listings/ListingCard";
 import { sampleListings } from "@/lib/listings";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { MapPin, Star, Clock, CheckCircle } from "lucide-react";
+import { MapPin, Star, Clock, CheckCircle, Bookmark, Share2 } from "lucide-react";
 import CategoryNav from "@/components/home/Category";
 import Link from "next/link";
+import StartConversationButton from "@/components/messages/StartConversationButton";
+import { useEffect, useState } from "react";
+import SupportButton from "@/components/support/SupportButton";
 
 export default function ServiceDetailPage() {
   const params = useParams();
@@ -40,6 +43,7 @@ export default function ServiceDetailPage() {
   }
 
   const provider = {
+    id: "mock-provider-id-1",
     name: "Sarah Thompson",
     avatar: "/demo/provider.jpg",
     rating: 4.8,
@@ -50,6 +54,14 @@ export default function ServiceDetailPage() {
     verified: true,
   };
 
+  const [providerListingCount, setProviderListingCount] = useState<number>(0);
+
+  useEffect(() => {
+    // TODO: Replace with real provider ID and fetch actual count
+    // Keeping 0 for now since ServiceDetail uses mock data
+    setProviderListingCount(0);
+  }, []);
+
   const description =
     "I provide professional house cleaning services. Fully insured and experienced. I bring my own supplies and equipment and can handle deep cleans, regular maintenance, move-in / move-out. Flexible scheduling and competitive rates.";
 
@@ -59,6 +71,39 @@ export default function ServiceDetailPage() {
     .slice(0, 2);
 
   const formattedPrice = `$${listing.price}`;
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  // Placeholder until listing schema supports precise sharing toggle
+  const shareExactLocation = false;
+  const mapQuery = encodeURIComponent(listing.location);
+  const [favoritesCount, setFavoritesCount] = useState<number>(0);
+  const [faqs, setFaqs] = useState<Array<{ question: string; answer: string }>>([]);
+
+  useEffect(() => {
+    const fetchService = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services/${serviceId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const fav = (data.favorites_count ?? data.favoritesCount ?? 0) as number;
+        setFavoritesCount(typeof fav === "number" ? fav : 0);
+
+        const rawFaq = (data.faq ?? data.faqs) as any;
+        if (Array.isArray(rawFaq)) {
+          setFaqs(rawFaq.filter((x) => x && x.question && x.answer));
+        } else if (typeof rawFaq === "string") {
+          try {
+            const parsed = JSON.parse(rawFaq);
+            if (Array.isArray(parsed)) {
+              setFaqs(parsed.filter((x) => x && x.question && x.answer));
+            }
+          } catch {}
+        }
+      } catch (e) {
+        // Ignore for MVP; page works with sample data
+      }
+    };
+    fetchService();
+  }, [serviceId]);
 
   return (
     <div className="min-h-screen bg-white text-black">
@@ -72,30 +117,43 @@ export default function ServiceDetailPage() {
               <img
                 src={listing.image}
                 alt={listing.title}
-                className="w-full h-80 object-cover"
+                className="w-full h-56 sm:h-80 object-cover"
               />
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-              <div className="flex items-start justify-between gap-6">
+              <div className="flex flex-col md:flex-row items-start justify-between gap-6">
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold text-gray-900">{listing.title}</h1>
 
                   <div className="flex items-center space-x-3 mt-4 text-sm text-gray-600">
-                    <div className="flex items-center space-x-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsMapOpen(true)}
+                      className="flex items-center space-x-1 hover:text-green-700"
+                    >
                       <MapPin className="h-4 w-4" />
-                      <span>{listing.location}</span>
-                    </div>
+                      <span className="underline cursor-pointer">{listing.location}</span>
+                    </button>
                     <span>·</span>
                     <span>{listing.created_at}</span>
                   </div>
+
+                  {/* Save & Share actions */}
+                  <SaveShareActions serviceId={serviceId} title={listing.title} />
+
+                  {favoritesCount > 0 && (
+                    <div className="text-sm text-gray-600 mt-2">
+                      Favorited by <span className="font-semibold text-gray-900">{favoritesCount >= 1000 ? "1k+" : favoritesCount}</span> users
+                    </div>
+                  )}
 
                   <p className="text-3xl font-extrabold text-green-700 mt-4">
                     {formattedPrice}
                   </p>
                 </div>
 
-                <div className="w-48 flex-shrink-0">
+                <div className="md:w-48 w-full flex-shrink-0 md:mt-0 mt-4">
                   <Link href={`/profile/${provider.name.toLowerCase().replace(/\s+/g, '-')}`}>
                     <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-green-200 transition-colors cursor-pointer">
                       <Avatar className="w-16 h-16 mx-auto mb-3">
@@ -110,6 +168,12 @@ export default function ServiceDetailPage() {
                         <span className="font-semibold text-gray-900">{provider.rating}</span>
                         <span className="text-xs text-gray-500">({provider.reviews})</span>
                       </div>
+
+                      <div className="mt-2">
+                        <Link href={`/profile/${provider.name.toLowerCase().replace(/\s+/g, '-') }#listings`}>
+                          <span className="underline text-green-700 hover:text-green-800 text-sm">View all listings ({providerListingCount})</span>
+                        </Link>
+                      </div>
                     </div>
                   </Link>
                 </div>
@@ -122,6 +186,19 @@ export default function ServiceDetailPage() {
             </div>
 
             <div className="rounded-2xl border border-gray-200 shadow-sm p-6">
+              {faqs.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">FAQ</h2>
+                  <div className="space-y-3">
+                    {faqs.map((f, idx) => (
+                      <div key={idx} className="border border-gray-100 rounded-lg p-4">
+                        <div className="font-semibold text-gray-900 mb-1">{f.question}</div>
+                        <p className="text-gray-700 text-sm leading-relaxed">{f.answer}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Reviews</h2>
               <div className="space-y-4">
                 <div className="border border-gray-100 rounded-xl p-4">
@@ -194,14 +271,6 @@ export default function ServiceDetailPage() {
               <h3 className="font-semibold text-gray-900 mb-4">Ready to book?</h3>
 
               <div className="space-y-4 mb-6">
-                <div>
-                  <label className="text-sm text-gray-600 block mb-2">Select date</label>
-                  <input
-                    type="date"
-                    className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                </div>
-
                 <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Service Price</span>
@@ -272,6 +341,119 @@ export default function ServiceDetailPage() {
       </main>
 
       <Footer />
+      <SupportButton floating />
+
+      {/* Location Map Modal */}
+      {isMapOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsMapOpen(false)} />
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden z-10">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <h3 className="font-semibold text-gray-900">Approximate Location</h3>
+              <button
+                onClick={() => setIsMapOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close map"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="relative w-full" style={{ aspectRatio: "16/9" }}>
+              <iframe
+                title="Location Map"
+                className="w-full h-full"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                src={`https://www.google.com/maps?q=${mapQuery}&output=embed&z=${shareExactLocation ? 14 : 12}`}
+              />
+              {!shareExactLocation && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="w-56 h-56 md:w-64 md:h-64 rounded-full border-2 border-green-600 bg-green-500/10 shadow-lg" />
+                </div>
+              )}
+            </div>
+            <div className="px-4 py-3 text-xs text-gray-600 flex items-center justify-between border-t">
+              <span>
+                This shows an approximate area to protect privacy.
+              </span>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline text-green-700 hover:text-green-800"
+              >
+                Open in Google Maps
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Local component for Save/Share actions
+function SaveShareActions({ serviceId, title }: { serviceId: number; title: string }) {
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("savedListings");
+      const arr: number[] = raw ? JSON.parse(raw) : [];
+      setIsSaved(arr.includes(serviceId));
+    } catch {}
+  }, [serviceId]);
+
+  const persist = (arr: number[]) => {
+    try {
+      localStorage.setItem("savedListings", JSON.stringify(arr));
+    } catch {}
+  };
+
+  const toggleSave = () => {
+    try {
+      const raw = localStorage.getItem("savedListings");
+      const arr: number[] = raw ? JSON.parse(raw) : [];
+      const exists = arr.includes(serviceId);
+      const next = exists ? arr.filter((id) => id !== serviceId) : [...arr, serviceId];
+      persist(next);
+      setIsSaved(!exists);
+    } catch {
+      setIsSaved((v) => !v);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text: title, url });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        alert("Link copied to clipboard");
+      } else {
+        alert(url);
+      }
+    } catch (e) {
+      try {
+        await navigator.clipboard.writeText(url);
+        alert("Link copied to clipboard");
+      } catch {
+        alert(url);
+      }
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2 mt-3">
+      <Button variant="outline" className="gap-2" onClick={toggleSave}>
+        <Bookmark className={`h-4 w-4 ${isSaved ? "fill-green-700 text-green-700" : ""}`} />
+        {isSaved ? "Saved" : "Save"}
+      </Button>
+      <Button variant="outline" className="gap-2" onClick={handleShare}>
+        <Share2 className="h-4 w-4" />
+        Share
+      </Button>
     </div>
   );
 }

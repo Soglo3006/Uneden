@@ -44,6 +44,8 @@ export default function UserProfilePage() {
 
   const [userListings, setUserListings] = useState<any[]>([]);
   const [listingsLoading, setListingsLoading] = useState(true);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   
   const [showSettings, setShowSettings] = useState(false);
   const [showEllipsis, setShowEllipsis] = useState(false);
@@ -175,7 +177,15 @@ export default function UserProfilePage() {
 
         const data = await response.json();
         console.log("User listings loaded:", data);
-        setUserListings(data);
+        // Sort by latest if created_at exists
+        const sorted = Array.isArray(data)
+          ? [...data].sort((a, b) => {
+              const aTime = a?.created_at ? new Date(a.created_at).getTime() : 0;
+              const bTime = b?.created_at ? new Date(b.created_at).getTime() : 0;
+              return bTime - aTime;
+            })
+          : [];
+        setUserListings(sorted);
       } catch (err) {
         console.error("Error fetching listings:", err);
         setUserListings([]);
@@ -185,6 +195,35 @@ export default function UserProfilePage() {
     };
 
     fetchUserListings();
+  }, [profileId]);
+
+  // Fetch user reviews (latest)
+  useEffect(() => {
+    const fetchUserReviews = async () => {
+      if (!profileId) return;
+
+      try {
+        setReviewsLoading(true);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/reviews/${profileId}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch reviews");
+        }
+
+        const data = await response.json();
+        console.log("User reviews loaded:", data);
+        setReviews(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Error fetching reviews:", err);
+        setReviews([]);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    fetchUserReviews();
   }, [profileId]);
 
 
@@ -312,6 +351,13 @@ export default function UserProfilePage() {
                 </AvatarFallback>
               </Avatar>
 
+              {/* View all listings link under avatar */}
+              <div className="mt-2 w-32 text-center">
+                <a href="#listings" className="underline text-green-700 hover:text-green-800">
+                  View all listings{!listingsLoading ? ` (${userListings.length})` : ""}
+                </a>
+              </div>
+
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="text-3xl font-bold text-gray-900">
@@ -362,16 +408,6 @@ export default function UserProfilePage() {
                         <Button className="bg-green-700 hover:bg-green-800 text-white gap-2 cursor-pointer">
                           <MessageCircle className="h-4 w-4" />
                           View Messages
-                        </Button>
-                      </Link>
-                      <Link 
-                        href={`/listings/${(displayName || "user")
-                          .toLowerCase()
-                          .replace(/\s+/g, "-")}`}
-                      >
-                        <Button variant="outline" className="gap-2">
-                          <Grid3x3 className="h-4 w-4" />
-                          View all my listings
                         </Button>
                       </Link>
                       <Button 
@@ -677,7 +713,7 @@ export default function UserProfilePage() {
                         .replace(/\s+/g, "-")}`}
                     >
                       <Button variant="outline" className="w-full cursor-pointer">
-                        View All Listings
+                        View All My Listings
                       </Button>
                     </Link>
                   </div>
@@ -702,6 +738,80 @@ export default function UserProfilePage() {
                   )}
                 </div>
               )}
+            </Card>
+          )}
+
+          {/* Latest Ratings Preview */}
+          {!isBlocked && (
+            <Card className="p-6 mt-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900">Latest Ratings</h2>
+              </div>
+
+              {reviewsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-700" />
+                </div>
+              ) : reviews.length > 0 ? (
+                <div className="space-y-4">
+                  {reviews.slice(0, 3).map((r: any, idx: number) => (
+                    <div key={r.id || idx} className="border rounded-lg p-4 bg-white">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="font-semibold text-gray-900 line-clamp-1">{r.reviewer_name || "Anonymous"}</div>
+                        <div className="text-sm text-gray-500">
+                          {r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "Recently"}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 mb-2">
+                        {[1,2,3,4,5].map((i) => (
+                          <Star key={i} className={`h-4 w-4 ${i <= (r.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
+                        ))}
+                      </div>
+                      {r.comment && (
+                        <p className="text-gray-700 text-sm line-clamp-3">{r.comment}</p>
+                      )}
+                    </div>
+                  ))}
+
+                  <div>
+                    <a href="#all-ratings">
+                      <Button variant="outline" className="w-full cursor-pointer">View All Ratings</Button>
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <UserStar className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                  <p className="text-gray-600">No ratings yet</p>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* All Ratings Section */}
+          {!isBlocked && reviews.length > 0 && (
+            <Card id="all-ratings" className="p-6 mt-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">All Ratings</h2>
+              <div className="space-y-4">
+                {reviews.map((r: any, idx: number) => (
+                  <div key={r.id || idx} className="border rounded-lg p-4 bg-white">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-semibold text-gray-900 line-clamp-1">{r.reviewer_name || "Anonymous"}</div>
+                      <div className="text-sm text-gray-500">
+                        {r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "Recently"}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 mb-2">
+                      {[1,2,3,4,5].map((i) => (
+                        <Star key={i} className={`h-4 w-4 ${i <= (r.rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
+                      ))}
+                    </div>
+                    {r.comment && (
+                      <p className="text-gray-700 text-sm">{r.comment}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
             </Card>
           )}
 
