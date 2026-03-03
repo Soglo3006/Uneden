@@ -134,7 +134,7 @@ export default function LoginPage() {
           <CardDescription>
             Don't have an account?{" "}
             <Link href="/register" className="text-green-600 hover:underline cursor-pointer">
-              Sign up
+              Sign in
             </Link>
           </CardDescription>
         </CardFooter>

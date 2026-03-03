@@ -41,14 +41,27 @@ export default function HomePage() {
       <Header/>
       <CategoryNav/>
 
-      <div className=" bg-gradient-to-br from-green-500 to-blue-150 py-20 ">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-md p-10 text-center max-w-2xl mx-auto">
-            <h1 className="text-3xl font-semibold mb-2 ">Find the help you need. <br/>
-            Offer the skills you have.</h1>
-            <p className="text-gray-600">
-              Connect with your local community for services and opportunities
-            </p>
-          </div>
+      <div
+        className="relative py-16 sm:py-32 md:py-40 px-4 overflow-hidden"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=1600&q=80')`,
+          backgroundPosition: "center 20%",
+          backgroundSize: "100%",
+        }}
+      >
+        {/* Overlay vert */}
+        <div className="absolute inset-0 bg-green-800/60" />
+
+        {/* Contenu centré */}
+        <div className="relative z-10 text-center max-w-2xl mx-auto">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 drop-shadow-md">
+            Find the help you need. <br />
+            Offer the skills you have.
+          </h1>
+          <p className="text-green-100 text-sm sm:text-base">
+            Connect with your local community for services and opportunities
+          </p>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto p-5">
@@ -79,7 +92,7 @@ export default function HomePage() {
                   />
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <h2 className="text-white text-lg font-semibold drop-shadow-lg">
+                    <h2 className="text-white text-xs sm:text-sm font-semibold drop-shadow-lg leading-tight text-left px-1">
                       {category.name}
                     </h2>
                   </div>

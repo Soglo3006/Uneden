@@ -317,7 +317,7 @@ export default function OnboardingPage() {
         data.province.trim() !== "";
 
     const isStep2Valid = accountType === "person" ? data.bio.length >= 80 && data.profession.trim() !== "" : (data.companyBio?.length ?? 0) >= 80 && data.industry.trim() !== "";
-    const isStep3Valid = accountType === "person" ? data.skills.length > 0 && data.languages.length > 0 : data.skills.length > 0;
+    const isStep3Valid = data.skills.length > 0;
     const isStep4Valid = true; // Experience is optional and for the summary
     const isStep5Valid = true; // Portfolio is optional
 
@@ -597,9 +597,9 @@ export default function OnboardingPage() {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="bg-white border-b border-gray-200 top-0 z-10">
-            <div className="max-w-3xl mx-auto px-4 py-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">Complete Your Profile</h1>
-            <p className="text-gray-600">Step {currentStep} of {totalSteps}</p>
+            <div className="max-w-3xl mx-auto px-4 py-4 sm:py-6">
+            <h1 className="text-lg sm:text-2xl font-bold text-gray-900 mb-1">Complete Your Profile</h1>
+            <p className="text-gray-600 text-sm">Step {currentStep} of {totalSteps}</p>
 
             <div className="relative">
                 <div className="flex justify-between mt-4">
@@ -612,7 +612,7 @@ export default function OnboardingPage() {
                     return (
                     <div key={index} className="flex flex-col items-center">
                         <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${
                             isCompleted
                             ? "bg-green-700 text-white"
                             : isCurrent
@@ -620,7 +620,7 @@ export default function OnboardingPage() {
                             : "bg-gray-200 text-gray-500"
                         }`}
                         >
-                        {isCompleted ? ( <Check className="h-5 w-5" /> ) : ( StepIcon && <StepIcon className="h-6 w-6 text-green-600" />)}
+                        {isCompleted ? ( <Check className="h-4 w-4 sm:h-5 sm:w-5" /> ) : ( StepIcon && <StepIcon className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />)}
                         </div>
                         <span
                         className={`text-xs mt-2 hidden sm:block ${
@@ -636,7 +636,7 @@ export default function OnboardingPage() {
             </div>
             </div>
         </div>
-        <main className="flex-1 py-8 px-4">
+        <main className="flex-1 py-4 sm:py-8 px-3 sm:px-4">
             <div className="max-w-2xl mx-auto">
             {currentStep === 1 && (
                 <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
@@ -1022,13 +1022,15 @@ export default function OnboardingPage() {
                     {/* LANGUAGES */}
                     <div>
                         <Label className="text-base font-medium text-gray-900 mb-3 block">
-                        Languages <span className="text-red-500">*</span>
+                        Languages
                         </Label>
 
                         <div className="space-y-3">
                         {data.languages.map((lang) => (
-                            <div key={lang.id} className="flex gap-3 items-center">
+                            <div key={lang.id} className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center">
+                            <div className="flex gap-2 w-full sm:flex-1">
                             <Select
+                                className="flex-1"
                                 value={lang.language}
                                 onValueChange={(value) =>
                                 handleUpdateLanguage(lang.id, "language", value)
@@ -1047,6 +1049,7 @@ export default function OnboardingPage() {
                             </Select>
 
                             <Select
+                                className="flex-1"
                                 value={lang.proficiency}
                                 onValueChange={(value) =>
                                 handleUpdateLanguage(lang.id, "proficiency", value)
@@ -1063,6 +1066,7 @@ export default function OnboardingPage() {
                                 ))}
                                 </SelectContent>
                             </Select>
+                            </div>
 
                             <Button
                                 variant="ghost"
@@ -1392,7 +1396,7 @@ export default function OnboardingPage() {
                     <img 
                     src={data.avatar || "/default-avatar.png"}
                     alt="avatar"
-                    className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full object-cover"
+                    className="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover"
                     />
                     <div>
                     <h3 className="text-lg font-semibold">{accountType === "person" ? data.fullName : data.companyName}</h3>
@@ -1494,12 +1498,12 @@ export default function OnboardingPage() {
             )}
 
 
-            <div className="flex justify-between mt-8">
+            <div className="flex justify-between mt-6 sm:mt-8 gap-3">
                 <Button
                 variant="outline"
                 onClick={handleBack}
                 disabled={currentStep === 1}
-                className="gap-2 h-12 px-6"
+                className="gap-2 h-10 sm:h-12 px-4 sm:px-6 text-sm sm:text-base"
                 >
                 <ChevronLeft className="h-4 w-4" />
                 Back
@@ -1508,7 +1512,7 @@ export default function OnboardingPage() {
                 <Button
                 onClick={handleNext}
                 disabled={!canProceed() || loading}
-                className="bg-green-600 hover:bg-green-700 text-white gap-2 h-12 px-6"
+                className="bg-green-600 hover:bg-green-700 text-white gap-2 h-10 sm:h-12 px-4 sm:px-6 text-sm sm:text-base"
                 >
                 {loading ? "Saving..." : currentStep === totalSteps ? "Finish Profile" : "Next Step"}
                 <ChevronRight className="h-4 w-4" />

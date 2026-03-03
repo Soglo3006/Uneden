@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabaseClient"; 
+import { useStartConversation } from '@/hooks/useStartConversation';
 import {
   Star,
   MapPin,
@@ -19,8 +20,6 @@ import {
   Settings,
   Ellipsis,
   UserStar,
-  HeartPlus,
-  Heart,
   Users,
   Ban,
 } from "lucide-react";
@@ -36,6 +35,7 @@ import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import SettingsPage from "@/components/profile/Settings";
 import EllipsisPage from "@/components/profile/Ellipsis";
+import RatingsPage from "@/components/profile/RatingsPage";
 
 export default function UserProfilePage() {
   const params = useParams();
@@ -51,19 +51,24 @@ export default function UserProfilePage() {
   const [showEllipsis, setShowEllipsis] = useState(false);
   const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
   const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false);
+  const [showRatings, setShowRatings] = useState(false);
 
   const [profileUser, setProfileUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const hasFetchedRef = useRef(false);
-
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [favoritesLoading, setFavoritesLoading] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockLoading, setBlockLoading] = useState(false);
+  const [isBlockedByOther, setIsBlockedByOther] = useState(false);
 
   const isOwner = user?.id === profileId;
   const settingsScrollRef = useRef(null);
+
+  const { startConversation, loading: sendMessageLoading } = useStartConversation();
+
+  const handleSendMessage = () => {
+    startConversation(profileId);
+  };
   
 
   // Fetch profile data
@@ -108,46 +113,28 @@ export default function UserProfilePage() {
     }
   }, [profileId]);
 
-  // Charger le statut favori
-  useEffect(() => {
-    const checkFavorite = async () => {
-      if (!user || isOwner || !profileId) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('favorites')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('favorited_user_id', profileId)
-          .maybeSingle(); // Utiliser maybeSingle au lieu de single pour éviter les erreurs
-
-        if (!error && data) {
-          setIsFavorited(true);
-        }
-      } catch (err) {
-        console.error('Error checking favorite:', err);
-      }
-    };
-    
-    checkFavorite();
-  }, [user, profileId, isOwner]);
-
   // Vérifier si l'utilisateur est bloqué
   useEffect(() => {
     const checkBlocked = async () => {
       if (!user || isOwner || !profileId) return;
       
       try {
-        const { data, error } = await supabase
+        const { data: iBlockedThem } = await supabase
           .from('blocked_users')
           .select('id')
           .eq('blocker_id', user.id)
           .eq('blocked_user_id', profileId)
           .maybeSingle();
+        setIsBlocked(!!iBlockedThem);
 
-        if (!error && data) {
-          setIsBlocked(true);
-        }
+        const { data: theyBlockedMe } = await supabase
+          .from('blocked_users')
+          .select('id')
+          .eq('blocker_id', profileId)
+          .eq('blocked_user_id', user.id)
+          .maybeSingle();
+        setIsBlockedByOther(!!theyBlockedMe);
+
       } catch (err) {
         console.error('Error checking blocked status:', err);
       }
@@ -305,45 +292,6 @@ export default function UserProfilePage() {
   const displayName = isPerson ? profileUser.full_name : profileUser.company_name;
   const displayTitle = isPerson ? profileUser.profession : profileUser.industry;
 
-  const toggleFavorite = async () => {
-    if (!user) {
-      // Optionnel: Rediriger vers login ou afficher un message
-      alert('Please login to add favorites');
-      return;
-    }
-
-    setFavoritesLoading(true);
-
-    try {
-      if (isFavorited) {
-        // Retirer des favoris
-        const { error } = await supabase
-          .from('favorites')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('favorited_user_id', profileId);
-
-        if (error) throw error;
-        setIsFavorited(false);
-      } else {
-        // Ajouter aux favoris
-        const { error } = await supabase
-          .from('favorites')
-          .insert({
-            user_id: user.id,
-            favorited_user_id: profileId
-          });
-
-        if (error) throw error;
-        setIsFavorited(true);
-      }
-    } catch (err) {
-      console.error('Error toggling favorite:', err);
-      alert('Failed to update favorites. Please try again.');
-    } finally {
-      setFavoritesLoading(false);
-    }
-  };
 
   const handleUnblock = async () => {
   if (!user) return;
@@ -399,7 +347,7 @@ export default function UserProfilePage() {
               <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
                 <AvatarImage src={profileUser.avatar} alt={displayName} />
                 <AvatarFallback className="text-2xl">
-                  {(displayName || "U").charAt(0)}
+                  {(displayName).charAt(0)}
                 </AvatarFallback>
               </Avatar>
 
@@ -509,31 +457,17 @@ export default function UserProfilePage() {
                         </>
                       ) : (
                         <>
-                          <Link href={`/messages?userId=${profileId}`}>
-                            <Button className="bg-green-700 hover:bg-green-800 text-white gap-2 cursor-pointer">
+                          {!isBlockedByOther && (
+                            <Button 
+                              onClick={handleSendMessage}
+                              disabled={sendMessageLoading}
+                              className="bg-green-700 hover:bg-green-800 text-white gap-2 cursor-pointer"
+                            >
                               <MessageCircle className="h-4 w-4" />
-                              Send Message
+                              {sendMessageLoading ? 'Loading...' : 'Send Message'}
                             </Button>
-                          </Link>
-                          <Button 
-                            variant="outline" 
-                            className="gap-2 cursor-pointer"
-                            onClick={toggleFavorite}
-                            disabled={favoritesLoading}
-                          >
-                            {isFavorited ? (
-                              <>
-                                <Heart className="h-4 w-4 fill-red-500 text-red-500" />
-                                Remove from Favorites
-                              </>
-                            ) : (
-                              <>
-                                <HeartPlus className="h-4 w-4" />
-                                Add To Favorites
-                              </>
-                            )}
-                          </Button>
-                          <Button variant="outline" className="gap-2">
+                          )}
+                          <Button variant="outline" className="gap-2 cursor-pointer" onClick={() => setShowRatings(true)}>
                             <UserStar className="h-4 w-4" />
                             View Ratings
                           </Button>
@@ -542,14 +476,14 @@ export default function UserProfilePage() {
                               .toLowerCase()
                               .replace(/\s+/g, "-")}`}
                           >
-                            <Button variant="outline" className="gap-2">
+                            <Button variant="outline" className="gap-2 cursor-pointer">
                               <Grid3x3 className="h-4 w-4" />
                               View Listings
                             </Button>
                           </Link>
                           <Button 
                             variant="outline" 
-                            className="gap-2" 
+                            className="gap-2 cursor-pointer" 
                             onClick={() => setShowEllipsis(true)}
                           >
                             <Ellipsis className="h-4 w-4" />
@@ -564,7 +498,7 @@ export default function UserProfilePage() {
           </Card>
 
           {/* About Section - Adapté selon le type */}
-          {!isBlocked && profileUser.bio && (
+          {!isBlocked && !isBlockedByOther && profileUser.bio && (
             <Card className="p-6 mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 {isPerson ? "About Me" : "About Our Company"}
@@ -654,7 +588,7 @@ export default function UserProfilePage() {
           )}
 
           {/* Portfolio */}
-          {!isBlocked && portfolio.length > 0 && (
+          {!isBlocked && !isBlockedByOther && portfolio.length > 0 && (
             <Card className="p-6 mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 {isPerson ? "My Portfolio" : "Our Projects"}
@@ -686,8 +620,8 @@ export default function UserProfilePage() {
           )}
 
           {/* Listings */}
-          {!isBlocked && (
-            <Card id="listings" className="p-6">
+          {!isBlocked && !isBlockedByOther && (
+            <Card className="p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">
                   {isPerson ? "My Listings" : "Our Services"}
@@ -765,8 +699,8 @@ export default function UserProfilePage() {
                     
                     {userListings.length > 3 && (
                       <>
-                        <CarouselPrevious className="hidden md:flex -left-4" />
-                        <CarouselNext className="hidden md:flex -right-4" />
+                        <CarouselPrevious className="hidden md:flex -left-4 cursor-pointer" />
+                        <CarouselNext className="hidden md:flex -right-4 cursor-pointer" />
                       </>
                     )}
                   </Carousel>
@@ -903,6 +837,20 @@ export default function UserProfilePage() {
             </Card>
           )}
 
+          {isBlockedByOther && (
+            <Card className="p-12">
+              <div className="text-center">
+                <Ban className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Contenu non disponible
+                </h3>
+                <p className="text-gray-500">
+                  Vous ne pouvez pas voir le contenu de ce profil.
+                </p>
+              </div>
+            </Card>
+          )}
+
         </div>
       </main>
 
@@ -926,6 +874,19 @@ export default function UserProfilePage() {
           <div className="w-full max-w-3xl p-6 bg-white rounded-xl shadow-xl overflow-hidden">
             <EllipsisPage 
               onClose={() => setShowEllipsis(false)}
+              profileId={profileId}
+              displayName={displayName}
+              userListings={userListings} 
+            />
+          </div>
+        </div>
+      )}
+
+      {showRatings && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50">
+          <div className="w-full max-w-3xl max-h-[90vh] bg-white rounded-xl shadow-xl overflow-y-auto">
+            <RatingsPage
+              onClose={() => setShowRatings(false)}
               profileId={profileId}
               displayName={displayName}
             />

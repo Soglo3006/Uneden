@@ -1,338 +1,701 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useProtectedRoute } from "@/hooks/useProtectedRoute";
-import { useStreamChat } from "@/contexts/StreamChatContext";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
-import { 
-  Chat, 
-  Channel, 
-  MessageList, 
-  MessageInput, 
-  Window,
-  ChannelList,
-  Thread,
-} from "stream-chat-react";
-import "stream-chat-react/dist/css/v2/index.css";
-import Header from "@/components/home/Header";
-import CategoryNav from "@/components/home/Category";
-import Footer from "@/components/home/Footer";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, Search, MoreVertical, Star } from "lucide-react";
-
-// Composant personnalisé pour la preview des conversations
-const CustomChannelPreview = ({ channel, latestMessage, unread, setActiveChannel, activeChannel }) => {
-  const otherMembers = Object.values(channel.state.members).filter(
-    (member) => member.user.id !== channel._client.userID
-  );
-  
-  const otherUser = otherMembers[0]?.user;
-  const isActive = activeChannel?.id === channel.id;
-  
-  const formatDate = (date) => {
-    if (!date) return '';
-    const messageDate = new Date(date);
-    const today = new Date();
-    
-    if (messageDate.toDateString() === today.toDateString()) {
-      return messageDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    }
-    return messageDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
-  
-  return (
-    <div
-      onClick={() => setActiveChannel(channel)}
-      className={`flex items-start gap-3 p-4 cursor-pointer transition-colors border-l-4 ${
-        isActive 
-          ? "bg-green-50 border-l-green-700" 
-          : "bg-white border-l-transparent hover:bg-gray-50"
-      }`}
-    >
-      <Avatar className="h-12 w-12 mt-1">
-        <AvatarImage src={otherUser?.image} alt={otherUser?.name} />
-        <AvatarFallback className="bg-gray-200 text-gray-700 text-lg font-semibold">
-          {otherUser?.name?.charAt(0) || "A"}
-        </AvatarFallback>
-      </Avatar>
-      
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between mb-1">
-          <h3 className="font-semibold text-gray-900 text-base">
-            {otherUser?.name || "User"}
-          </h3>
-          <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
-            {formatDate(channel.state.last_message_at)}
-          </span>
-        </div>
-        
-        <p className="text-sm text-gray-500 mb-1">
-          Direct message
-        </p>
-        
-        <p className="text-sm text-gray-700 truncate">
-          {latestMessage?.text || "No messages yet"}
-        </p>
-      </div>
-    </div>
-  );
-};
-
-// Composant pour l'en-tête personnalisé du canal
-const CustomChannelHeader = ({ channel }) => {
-  const otherMembers = Object.values(channel.state.members).filter(
-    (member) => member.user.id !== channel._client.userID
-  );
-  
-  const otherUser = otherMembers[0]?.user;
-  
-  return (
-    <div className="flex items-center justify-between p-4 border-b bg-white">
-      <div className="flex items-center gap-3">
-        <Avatar className="h-12 w-12">
-          <AvatarImage src={otherUser?.image} alt={otherUser?.name} />
-          <AvatarFallback className="bg-gray-200 text-gray-700 text-lg font-semibold">
-            {otherUser?.name?.charAt(0) || "A"}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <h2 className="font-semibold text-gray-900 text-lg">
-            {otherUser?.name || "User"}
-          </h2>
-          <p className="text-sm text-gray-500">Direct message</p>
-        </div>
-      </div>
-      <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-        <MoreVertical className="h-5 w-5 text-gray-600" />
-      </button>
-    </div>
-  );
-};
-
-// Panneau latéral "About"
-const AboutPanel = ({ channel }) => {
-  const otherMembers = Object.values(channel?.state?.members || {}).filter(
-    (member) => member.user.id !== channel?._client?.userID
-  );
-  
-  const otherUser = otherMembers[0]?.user;
-  
-  if (!channel) return null;
-  
-  return (
-    <div className="w-80 border-l bg-white p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">About</h2>
-      
-      <div className="flex flex-col items-center mb-6">
-        <Avatar className="h-24 w-24 mb-4">
-          <AvatarImage src={otherUser?.image} alt={otherUser?.name} />
-          <AvatarFallback className="bg-gray-200 text-gray-700 text-3xl font-semibold">
-            {otherUser?.name?.charAt(0) || "A"}
-          </AvatarFallback>
-        </Avatar>
-        
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
-          {otherUser?.name || "User"}
-        </h3>
-        
-        <div className="flex items-center gap-1 mb-4">
-          <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-          <span className="font-semibold">N/A</span>
-          <span className="text-sm text-gray-500">(0 reviews)</span>
-        </div>
-      </div>
-      
-      <div className="space-y-4 mb-6">
-        <div className="flex justify-between items-center">
-          <span className="text-gray-600">Member since</span>
-          <span className="font-semibold text-gray-900">January 2026</span>
-        </div>
-        
-        <div className="flex justify-between items-center">
-          <span className="text-gray-600">Completed jobs</span>
-          <span className="font-semibold text-gray-900">0</span>
-        </div>
-      </div>
-      
-      <div className="mb-6">
-        <p className="text-sm text-gray-600 leading-relaxed">
-          {otherUser?.bio || "No bio available"}
-        </p>
-      </div>
-      
-      <button className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
-        View Full Profile
-      </button>
-    </div>
-  );
-};
-
-// Composant vide pour quand aucune conversation n'est sélectionnée
-const EmptyState = () => (
-  <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-8">
-    <MessageCircle className="h-24 w-24 text-gray-300 mb-4" />
-    <h2 className="text-2xl font-bold text-gray-900 mb-2">No conversation selected</h2>
-    <p className="text-gray-600 text-center max-w-md">
-      Choose a conversation from the list to start messaging, or create a new booking to start a conversation.
-    </p>
-  </div>
-);
+import { useState, useRef, useEffect } from 'react';
+import { useProtectedRoute } from '@/hooks/useProtectedRoute';
+import { useChats } from '@/hooks/useChats';
+import { useMessages } from '@/hooks/useMessages';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Header from '@/components/home/Header';
+import CategoryNav from '@/components/home/Category';
+import { supabase } from '@/lib/supabaseClient';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { ConversationList } from '@/components/messages/ConversationList';
+import { MessageThread } from '@/components/messages/MessageThread';
+import { MessageInput } from '@/components/messages/MessageInput';
+import { ProfileSidebar } from '@/components/messages/ProfileSidebar';
+import { ArrowLeft, Info, Ban, WifiOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ReplyPreview } from '@/components/messages/ReplyPreview';
+import { useMessageReactions } from '@/hooks/useMessageReactions';
+import { useDeleteMessage } from '@/hooks/useDeleteMessage';
+import { useMarkAsRead } from '@/hooks/useMarkAsRead';
+import { useEditMessage } from '@/hooks/useEditMessage';
+import { usePinMessage } from '@/hooks/usePinMessage';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { useIsTyping } from '@/hooks/useIsTyping';
+import { usePresence } from '@/hooks/usePresence';
+import { useUserPresence } from '@/hooks/useUserPresence';
+import { ConversationSettings } from '@/components/messages/ConversationSettings';
+import { Phone, Video } from 'lucide-react';
+import Link from 'next/link';
 
 export default function MessagesPage() {
-  const { user, session, loading: authLoading } = useAuth();
-  const { loading: routeLoading } = useProtectedRoute({
+  const { user } = useProtectedRoute({
     requireAuth: true,
     requireProfileCompleted: true,
   });
 
-  const { client, isReady } = useStreamChat();
-  const [activeChannel, setActiveChannel] = useState(null);
   const searchParams = useSearchParams();
+  const chatIdFromUrl = searchParams.get('chat');
   const router = useRouter();
-  const targetUserId = searchParams.get("userId");
 
-  const filters = { 
-    type: 'messaging', 
-    members: { $in: [user?.id || ''] } 
-  };
+  const { chats, loading: chatsLoading, clearUnreadCount, archiveChat } = useChats();
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [messageInput, setMessageInput] = useState('');
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
+  const [selectedMessageKey, setSelectedMessageKey] = useState<string | null>(null);
+  const [showMobileChat, setShowMobileChat] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [isBlockedByOther, setIsBlockedByOther] = useState(false);
+  const [blockCheckLoading, setBlockCheckLoading] = useState(false);
+
+  const [replyingTo, setReplyingTo] = useState<{
+    id: string;
+    content: string;
+    user_id: string;
+    sender_name?: string;
+  } | null>(null);
   
-  const sort = { last_message_at: -1 };
-  const options = { limit: 20 };
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isMobile, setIsMobile] = useState(false);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
-    const createAndOpenChannel = async () => {
-      if (!client || !isReady || !user || !targetUserId || !session?.access_token) return;
-      
-      try {
-        console.log('🔄 Creating channel with user:', targetUserId);
+    const check = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+  
+  const { messages, loading: messagesLoading, sending, sendMessage, retryMessage, loadedChatId, hasMore, loadingMore, loadMore } = useMessages(activeChatId);
+  const isMessagesLoading = messagesLoading || loadedChatId !== activeChatId;
+  const { toggleReaction } = useMessageReactions();
+  const { deleteMessage } = useDeleteMessage();
+  const { markChatAsRead } = useMarkAsRead();
+  const { editMessage } = useEditMessage();
+  const { togglePin, checkPinLimit } = usePinMessage();
+
+  useEffect(() => {
+    if (activeChatId && user?.id && !messagesLoading) {
+      const timer = setTimeout(() => {
+        markChatAsRead(activeChatId, user.id);
+        clearUnreadCount(activeChatId);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [activeChatId, user?.id, messagesLoading, markChatAsRead, clearUnreadCount]);
+
+  useEffect(() => {
+    if (!chats.length) return;
+
+    if (chatIdFromUrl) {
+      setActiveChatId(chatIdFromUrl);
+      if (isMobile) setShowMobileChat(true);
+      return;
+    }
+
+    // Si pas de chat dans l’URL, on prend le 1er et on met aussi l’URL
+    if (!activeChatId) {
+      const firstId = chats[0].id;
+      setActiveChatId(firstId);
+      router.replace(`/messages?chat=${firstId}`); // replace pour éviter l’historique inutile
+      if (isMobile) setShowMobileChat(true);
+    }
+  }, [chats, chatIdFromUrl, activeChatId, isMobile, router]);
+
+  useEffect(() => {
+    if (activeChatId) {
+      setShowMobileChat(true);
+    }
+  }, [activeChatId]);
+
+
+  const activeChat = chats.find(c => c.id === activeChatId);
+  usePresence(user?.id || null);
+
+  const { sendTyping } = useTypingIndicator(activeChatId, user?.id);
+  const isTyping = useIsTyping(activeChatId, activeChat?.other_user?.id);
+  const isOtherOnline = useUserPresence(activeChat?.other_user?.id);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = [
+      'image/jpeg',
+      'image/jpg', 
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/pdf'
+    ];
+    
+    if (!validTypes.includes(file.type)) {
+      alert('Type de fichier non autorisé. Formats acceptés : JPEG, PNG, GIF, WebP, PDF');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const MAX_SIZE = 5 * 1024 * 1024; 
+    if (file.size > MAX_SIZE) {
+      alert(`Fichier trop volumineux. Taille maximum : 5MB (votre fichier : ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setAttachedFile(file);
+
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAttachmentPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setAttachmentPreview(null);
+    }
+  };
+
+  const removeAttachment = () => {
+    setAttachedFile(null);
+    setAttachmentPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() && !attachedFile) return;
+
+    try {
+      let fileUrl = null;
+
+      if (attachedFile) {
+        const fileExt = attachedFile.name.split('.').pop();
+        const fileName = `${user?.id}/${Date.now()}.${fileExt}`;  
         
-        // Créer le canal via le backend
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/stream/channel/direct`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`
-            },
-            body: JSON.stringify({ recipient_id: targetUserId })
-          }
-        );
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to create channel');
+        const { error: uploadError } = await supabase.storage
+          .from('chat-attachments')
+          .upload(fileName, attachedFile);  
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          alert('Failed to upload file');
+          return;
         }
-        
-        const { channelId } = await response.json();
-        console.log('Channel created:', channelId);
-        
-        // Ouvrir le canal créé
-        const channel = client.channel('messaging', channelId);
-        await channel.watch();
-        setActiveChannel(channel);
-        
-        console.log('Channel opened');
-        
-        // Nettoyer l'URL
-        router.replace('/messages');
-      } catch (error) {
-        console.error('Error:', error);
-        // Ne pas afficher d'alerte si le canal existe déjà
-        if (!error.message.includes('already exists')) {
-          alert('Failed to start conversation. Please try again.');
-        }
-        // Nettoyer l'URL même en cas d'erreur
-        router.replace('/messages');
+
+        const { data } = supabase.storage
+          .from('chat-attachments')
+          .getPublicUrl(fileName);  
+
+        fileUrl = data.publicUrl;
       }
+
+      if (messageInput.trim() && fileUrl) {
+        await sendMessage(messageInput.trim(), replyingTo?.id || null);
+        await sendMessage(`[FILE:${fileUrl}]`, null);
+      } 
+      else if (fileUrl) {
+        await sendMessage(`[FILE:${fileUrl}]`, replyingTo?.id || null);
+      } else {
+        await sendMessage(messageInput.trim(), replyingTo?.id || null);
+      }
+
+      setMessageInput('');
+      removeAttachment();
+      setReplyingTo(null);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message');
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const handleChatSelect = (chatId: string) => {
+    if (chatId === activeChatId) return;
+    setActiveChatId(chatId);
+    clearUnreadCount(chatId);
+    setShowMobileChat(true);
+    setIsBlocked(false);
+    setIsBlockedByOther(false);
+    setBlockCheckLoading(true);
+    setShowSettings(false);
+    setReplyingTo(null);
+    router.push(`/messages?chat=${chatId}`);
+  };
+
+  const handleVoiceMessage = async (audioBlob: Blob, duration: number) => {
+    try {
+      const fileName = `${user?.id}/${Date.now()}.webm`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('chat-attachments')
+        .upload(fileName, audioBlob, { contentType: 'audio/webm' });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('chat-attachments')
+        .getPublicUrl(fileName);
+
+      await sendMessage(`[AUDIO:${data.publicUrl}:${duration}]`, null);
+    } catch (error) {
+      console.error('Error sending voice message:', error);
+      alert('Échec de l\'envoi du message vocal');
+    }
+  };
+
+  const handleBackToList = () => {
+    setShowMobileChat(false);
+  };
+
+  const scrollToMessage = (messageId: string) => {
+    const element = document.getElementById(`message-${messageId}`);
+    if (!element) return;
+
+    const viewport = element.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+    if (viewport) {
+      const top =
+        viewport.scrollTop +
+        element.getBoundingClientRect().top -
+        viewport.getBoundingClientRect().top -
+        viewport.clientHeight / 2 +
+        element.clientHeight / 2;
+      viewport.scrollTo({ top, behavior: 'smooth' });
+    } else {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    element.classList.add('bg-yellow-100');
+    setTimeout(() => {
+      element.classList.remove('bg-yellow-100');
+    }, 2000);
+  };
+
+    useEffect(() => {
+    const checkBlocked = async () => {
+      if (!user?.id || !activeChat?.other_user?.id) {
+        setIsBlocked(false);
+        setIsBlockedByOther(false);
+        setBlockCheckLoading(false);
+        return;
+      }
+
+      setBlockCheckLoading(true);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setBlockCheckLoading(false);
+        return;
+      }
+
+      const [{ data: iBlockedThem }, { data: theyBlockedMe }] = await Promise.all([
+        supabase.from('blocked_users').select('id')
+          .eq('blocker_id', user.id)
+          .eq('blocked_user_id', activeChat.other_user.id)
+          .maybeSingle(),
+        supabase.from('blocked_users').select('id')
+          .eq('blocker_id', activeChat.other_user.id)
+          .eq('blocked_user_id', user.id)
+          .maybeSingle(),
+      ]);
+
+      setIsBlocked(!!iBlockedThem);
+      setIsBlockedByOther(!!theyBlockedMe);
+      setBlockCheckLoading(false);
     };
 
-    createAndOpenChannel();
-  }, [client, isReady, user, targetUserId, session, router]);
+    checkBlocked();
+  }, [user?.id, activeChat?.other_user?.id]);
 
-  if (authLoading || routeLoading || !isReady || !client) {
+  const handleUnblock = async () => {
+    if (!user?.id || !activeChat?.other_user?.id) return;
+    await supabase
+      .from('blocked_users')
+      .delete()
+      .eq('blocker_id', user.id)
+      .eq('blocked_user_id', activeChat.other_user.id);
+    setIsBlocked(false);
+  };
+
+  if (chatsLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gray-50">
         <Header />
         <CategoryNav />
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700" />
         </div>
-        <Footer />
       </div>
     );
   }
 
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <Header />
-      <CategoryNav />
-      
-      <div className="flex-1 max-w-[1600px] w-full mx-auto p-5">
-        <div className="border rounded-xl overflow-hidden bg-white shadow-sm h-[calc(100vh_-_200px)]">
-          <Chat client={client} theme="str-chat__theme-light">
-            <div className="flex h-full flex-col md:flex-row">
-              {/* Liste des conversations */}
-              <div className="w-full md:w-96 border-r bg-white flex flex-col">
-                <div className="p-4 border-b bg-white">
-                  <div className="relative mb-4">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search conversations..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                  </div>
-                  <h2 className="font-semibold text-gray-900 text-lg">
-                    All Messages
-                  </h2>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto">
-                  <ChannelList 
-                    filters={filters} 
-                    sort={sort}
-                    options={options}
-                    setActiveChannel={setActiveChannel}
-                    Preview={(previewProps) => (
-                      <CustomChannelPreview 
-                        {...previewProps} 
-                        activeChannel={activeChannel}
-                      />
-                    )}
-                  />
-                </div>
-              </div>
+    <TooltipProvider>
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Header />
+        <CategoryNav />
+
+        {/* Bannière hors-ligne */}
+        {!isOnline && (
+          <div className="flex items-center justify-center gap-2 bg-amber-50 border-b border-amber-200 px-4 py-2">
+            <WifiOff className="h-4 w-4 text-amber-600 shrink-0" />
+            <p className="text-sm text-amber-700 font-medium">
+              Connexion perdue — Reconnexion en cours...
+            </p>
+          </div>
+        )}
+
+        <div className="flex-1 max-w-[1600px] w-full mx-auto p-2 sm:p-5 min-h-0">
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[calc(100vh-180px)] min-h-[500px] min-h-0">
+            <div className="flex h-full min-h-0">
               
-              {/* Zone de chat */}
-              <div className="flex-1 flex">
-                {activeChannel ? (
+              {/* COLONNE 1 : Liste des conversations */}
+              <div className={`${showMobileChat ? 'hidden' : 'flex'} md:flex w-full md:w-64 lg:w-80 border-r flex-col bg-white min-h-0`}>
+                <ConversationList
+                  chats={chats}
+                  activeChatId={activeChatId}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  onChatSelect={handleChatSelect}
+                  currentUserId={user?.id || null} 
+                />
+              </div>
+
+              {/* COLONNE 2 : Zone de messages */}
+              <div className={`${(isLargeScreen || (isMobile ? showMobileChat : true)) && (!showSettings || isLargeScreen) ? 'flex' : 'hidden'} flex-1 min-w-0 flex-col bg-white min-h-0 overflow-hidden`}>
+                {activeChat ? (
                   <>
-                    <div className="flex-1 flex flex-col">
-                      <Channel channel={activeChannel}>
-                        <Window>
-                          <CustomChannelHeader channel={activeChannel} />
-                          <MessageList />
-                          <MessageInput />
-                        </Window>
-                        <Thread />
-                      </Channel>
+                    {/* Header personnalisé avec bouton retour */}
+                    <div className="shrink-0 p-4 border-b flex items-center justify-between bg-white shadow-sm h-[73px]">
+                      <div className="flex items-center gap-3">
+                        <Button variant="ghost" size="icon" className="md:hidden shrink-0 cursor-pointer" onClick={handleBackToList}>
+                          <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                        <Link href={`/profile/${activeChat.other_user?.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                          <div className="relative">
+                            <Avatar className="h-10 w-10 shrink-0">
+                              {activeChat.other_user?.avatar_url ? (
+                                <AvatarImage src={activeChat.other_user.avatar_url} />
+                              ) : null}
+                              <AvatarFallback>
+                                {(activeChat.other_user?.account_type === 'company'
+                                  ? activeChat.other_user?.company_name
+                                  : activeChat.other_user?.full_name || 'U'
+                                ).charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            {isOtherOnline && (
+                              <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <h2 className="font-semibold text-gray-900 truncate">
+                              {activeChat.other_user?.account_type === 'company'
+                                ? activeChat.other_user.company_name
+                                : activeChat.other_user?.full_name || 'Unknown'}
+                            </h2>
+                            <p className="text-xs">
+                              {isOtherOnline
+                                ? <span className="flex items-center gap-1">
+                                    <span className="w-2 h-2 bg-green-500 rounded-full inline-block" />
+                                    <span className="text-green-500 font-medium">En ligne</span>
+                                  </span>
+                                : <span className="text-gray-400">Hors ligne</span>
+                              }
+                            </p>
+                          </div>
+                        </Link>
+                      </div>
+
+                      {/* Boutons droite */}
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" disabled className="opacity-40 cursor-not-allowed">
+                          <Phone className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" disabled className="opacity-40 cursor-not-allowed">
+                          <Video className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowSettings(!showSettings)}
+                          className={`cursor-pointer ${showSettings ? 'bg-gray-100' : ''}`}
+                        >
+                          <Info className="h-5 w-5" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="hidden lg:block">
-                      <AboutPanel channel={activeChannel} />
+
+                    <MessageThread
+                      messages={messages}
+                      loading={isMessagesLoading}
+                      currentUserId={user?.id || ''}
+                      otherUser={activeChat?.other_user}
+                      hoveredMessageId={hoveredMessageId}
+                      setHoveredMessageId={setHoveredMessageId}
+                      openMenuKey={openMenuKey}
+                      setOpenMenuKey={setOpenMenuKey}
+                      selectedMessageKey={selectedMessageKey}
+                      setSelectedMessageKey={setSelectedMessageKey}
+                      retryMessage={retryMessage}
+                      isTyping={isTyping}
+                      hasMore={hasMore}
+                      loadingMore={loadingMore}
+                      loadMore={loadMore}
+                      onReply={(message) => {  
+                        setReplyingTo({
+                          id: message.id,
+                          content: message.content,
+                          user_id: message.user_id,
+                          sender_name: message.sender?.account_type === 'company'
+                            ? message.sender.company_name
+                            : message.sender?.full_name,
+                        });
+                      }}
+                      onReplyClick={scrollToMessage}
+                      onReactionToggle={async (messageId, emoji, currentReactions) => { 
+                        if (!user?.id) return;
+                        try {
+                          await toggleReaction(messageId, emoji, user.id, currentReactions);
+                        } catch (error) {
+                          console.error('Failed to toggle reaction:', error);
+                        }
+                      }}
+                      onEdit={async (messageId, newContent) => { 
+                        try {
+                          await editMessage(messageId, newContent);
+                        } catch (error) {
+                          console.error('Failed to edit message:', error);
+                          alert('Échec de la modification');
+                        }
+                      }}
+                      onPin={async (messageId, isPinned) => {  
+                        try {
+                          await togglePin(messageId, isPinned);
+                        } catch (error) {
+                          console.error('Failed to pin message:', error);
+                          alert('Échec de l\'épinglage');
+                        }
+                      }}
+                      onDelete={async (messageId) => { 
+                        try {
+                          await deleteMessage(messageId);
+                        } catch (error) {
+                          console.error('Failed to delete message:', error);
+                          alert('Échec de la suppression');
+                        }
+                      }}
+                    />
+
+                    <div className="shrink-0">
+                      <ReplyPreview
+                        repliedMessage={replyingTo}
+                        onCancel={() => setReplyingTo(null)}
+                      />
+                      
+                      {blockCheckLoading ? (
+                        <div className="border-t bg-white px-4 py-3">
+                          <div className="h-10 rounded-xl bg-gray-100 animate-pulse" />
+                        </div>
+                      ) : isBlocked ? (
+                        <div className="border-t bg-white">
+                          {/* Bannière */}
+                          <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border-b border-red-100">
+                            <Ban className="h-4 w-4 text-red-500 shrink-0" />
+                            <p className="text-sm text-red-600">
+                              Vous avez bloqué ce compte. Ce compte ne peut plus vous envoyer de messages.
+                            </p>
+                          </div>
+                          {/* Bouton débloquer */}
+                          <div className="p-4 flex justify-center">
+                            <Button
+                              variant="outline"
+                              className="border-green-700 cursor-pointer text-green-700 hover:bg-green-50"
+                              onClick={handleUnblock}
+                            >
+                              Débloquer {activeChat.other_user?.full_name || activeChat.other_user?.company_name}
+                            </Button>
+                          </div>
+                        </div>
+                        ) : isBlockedByOther ? (
+                        <div className="border-t bg-white">
+                          <div className="flex items-center gap-2 px-4 py-3 bg-gray-50">
+                            <Ban className="h-4 w-4 text-gray-400 shrink-0" />
+                            <p className="text-sm text-gray-500">
+                              Vous ne pouvez plus envoyer de messages à cette personne.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <MessageInput
+                          value={messageInput}
+                          onChange={(val) => { setMessageInput(val); if (val) sendTyping(); }}
+                          onSend={handleSendMessage}
+                          onKeyPress={handleKeyPress}
+                          onVoiceMessage={handleVoiceMessage}
+                          disabled={sending}
+                          attachedFile={attachedFile}
+                          attachmentPreview={attachmentPreview}
+                          onFileSelect={handleFileSelect}
+                          onRemoveAttachment={removeAttachment}
+                          fileInputRef={fileInputRef}
+                        />
+                      )}
                     </div>
                   </>
                 ) : (
-                  <EmptyState />
+                  <div className="flex-1 flex items-center justify-center bg-gray-50">
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Select a conversation
+                      </h3>
+                      <p className="text-gray-600">
+                        Choose a conversation from the left to start messaging
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
+
+              {/* COLONNE 3 : Panneau About */}
+              <div className={`${isLargeScreen || (showSettings && showMobileChat) ? 'flex' : 'hidden'} ${isLargeScreen ? 'w-72 shrink-0' : 'flex-1'} border-l bg-white min-h-0`}>
+                {showSettings
+                  ? <ConversationSettings
+                      messages={messages}
+                      onMessageClick={scrollToMessage}
+                      isBlocked={isBlocked}
+                      onUnblockUser={async () => {
+                        await handleUnblock();
+                        setShowSettings(false);
+                      }}
+                      otherUser={activeChat?.other_user}
+                      onClose={() => setShowSettings(false)}
+                      isMuted={isMuted}
+                      onToggleMute={() => setIsMuted(!isMuted)}
+                      onDeleteConversation={async () => {
+                        if (!activeChatId || !user?.id) return;
+                        
+                        // Supprimer tous les messages
+                        const { error: msgError } = await supabase
+                          .from('messages')
+                          .delete()
+                          .eq('chat_room_id', activeChatId);
+                        if (msgError) throw msgError;
+
+                        // Retirer l'utilisateur de la conv
+                        const { error: memberError } = await supabase
+                          .from('chat_room_member')
+                          .delete()
+                          .eq('chat_room_id', activeChatId)
+                          .eq('user_id', user.id);
+                        if (memberError) throw memberError;
+
+                        // Trouver la prochaine convo
+                        const remainingChats = chats.filter(c => c.id !== activeChatId);
+                        
+                        if (remainingChats.length > 0) {
+                          const nextChatId = remainingChats[0].id;
+                          setActiveChatId(nextChatId);
+                          router.replace(`/messages?chat=${nextChatId}`);
+                        } else {
+                          setActiveChatId(null);
+                          router.replace('/messages');
+                        }
+
+                        setShowSettings(false);
+                        router.push('/messages');
+                      }}
+                      onBlockUser={async () => {
+                        if (!activeChat?.other_user?.id) return;
+                        const { error } = await supabase
+                          .from('blocked_users')
+                          .insert({
+                            blocker_id: user?.id,
+                            blocked_user_id: activeChat.other_user.id,
+                          });
+                        if (error && error.code !== '23505') throw error;
+                        setIsBlocked(true);
+                        setShowSettings(false);
+                      }}
+                      onReportUser={async (reason: string, details: string) => {
+                        if (!activeChat?.other_user?.id) return;
+                        const { error } = await supabase
+                          .from('user_reports')
+                          .insert({
+                            reporter_id: user?.id,
+                            reported_user_id: activeChat.other_user.id,
+                            reason,
+                            description: details,
+                            status: 'pending',
+                          });
+                        if (error) throw error;
+                      }}
+                      isArchived={activeChat?.is_archived || false}
+                      onArchive={async () => {
+                        if (!activeChatId || !user?.id) return;
+                        const newIsArchived = !activeChat?.is_archived;
+                        const { error } = await supabase
+                          .from('chat_room_member')
+                          .update({ is_archived: newIsArchived })
+                          .eq('chat_room_id', activeChatId)
+                          .eq('user_id', user.id);
+                        if (error) throw error;
+                        archiveChat(activeChatId, newIsArchived);
+                        if (newIsArchived) {
+                          const next = chats.find(c => c.id !== activeChatId && !c.is_archived);
+                          if (next) {
+                            setActiveChatId(next.id);
+                            router.replace(`/messages?chat=${next.id}`);
+                          } else {
+                            setActiveChatId(null);
+                            router.replace('/messages');
+                          }
+                          setShowSettings(false);
+                        }
+                      }}
+                    />
+                  : <ProfileSidebar otherUser={activeChat?.other_user} />
+                }
+              </div>
+
             </div>
-          </Chat>
+          </div>
         </div>
       </div>
-      
-      <Footer />
-    </div>
+    </TooltipProvider>
   );
 }

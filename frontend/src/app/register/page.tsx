@@ -145,15 +145,15 @@ export default function RegisterPage() {
                   className="h-5 w-5"
                 />
               </svg>
-              Login with Apple
+              Sign in with Apple
             </Button>
             <Button variant="outline" type="button" className="cursor-pointer" onClick={() => signInWithGoogle()}>
               <FcGoogle />
-              Login with Gooogle
+              Sign in with Google
             </Button>
             <Button variant="outline" type="button" className="cursor-pointer" onClick={() => signInWithFacebook()}>
               <FaFacebookF className="text-blue-600 h-5 w-5"/>
-              Login with Facebook
+              Sign in with Facebook
             </Button>
             </div>
         </CardContent>
@@ -166,7 +166,7 @@ export default function RegisterPage() {
       <p className="mt-4">
         Already have an account?{" "}
         <Link href="/login" className="text-green-600 hover:underline">
-          Sign in
+          Sign up
         </Link>
       </p>
     </div>

@@ -291,13 +291,6 @@ export default function ServiceDetailPage() {
                 <Button className="w-full bg-green-700 text-white hover:bg-green-800 h-12">
                   Request Booking
                 </Button>
-                <StartConversationButton
-                  recipientId={provider.id}
-                  recipientName={provider.name}
-                  recipientImage={provider.avatar}
-                  variant="outline"
-                  className="w-full h-12"
-                />
               </div>
             </div>
 
