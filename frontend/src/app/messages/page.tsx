@@ -13,7 +13,7 @@ import { ConversationList } from '@/components/messages/ConversationList';
 import { MessageThread } from '@/components/messages/MessageThread';
 import { MessageInput } from '@/components/messages/MessageInput';
 import { ProfileSidebar } from '@/components/messages/ProfileSidebar';
-import { ArrowLeft, Info, Ban } from 'lucide-react';
+import { ArrowLeft, Info, Ban, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ReplyPreview } from '@/components/messages/ReplyPreview';
@@ -40,7 +40,7 @@ export default function MessagesPage() {
   const chatIdFromUrl = searchParams.get('chat');
   const router = useRouter();
 
-  const { chats, loading: chatsLoading } = useChats();
+  const { chats, loading: chatsLoading, clearUnreadCount, archiveChat } = useChats();
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [messageInput, setMessageInput] = useState('');
@@ -50,14 +50,11 @@ export default function MessagesPage() {
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
   const [selectedMessageKey, setSelectedMessageKey] = useState<string | null>(null);
   const [showMobileChat, setShowMobileChat] = useState(false);
-  const [showProfileSidebar, setShowProfileSidebar] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
-<<<<<<< HEAD
   const [isBlockedByOther, setIsBlockedByOther] = useState(false);
-=======
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
+  const [blockCheckLoading, setBlockCheckLoading] = useState(false);
 
   const [replyingTo, setReplyingTo] = useState<{
     id: string;
@@ -69,15 +66,33 @@ export default function MessagesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isMobile, setIsMobile] = useState(false);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768); 
+    const check = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
   
-  const { messages, loading: messagesLoading, sending, sendMessage, retryMessage } = useMessages(activeChatId);
+  const { messages, loading: messagesLoading, sending, sendMessage, retryMessage, loadedChatId, hasMore, loadingMore, loadMore } = useMessages(activeChatId);
+  const isMessagesLoading = messagesLoading || loadedChatId !== activeChatId;
   const { toggleReaction } = useMessageReactions();
   const { deleteMessage } = useDeleteMessage();
   const { markChatAsRead } = useMarkAsRead();
@@ -88,11 +103,12 @@ export default function MessagesPage() {
     if (activeChatId && user?.id && !messagesLoading) {
       const timer = setTimeout(() => {
         markChatAsRead(activeChatId, user.id);
+        clearUnreadCount(activeChatId);
       }, 1000);
 
       return () => clearTimeout(timer);
     }
-  }, [activeChatId, user?.id, messagesLoading, markChatAsRead]);
+  }, [activeChatId, user?.id, messagesLoading, markChatAsRead, clearUnreadCount]);
 
   useEffect(() => {
     if (!chats.length) return;
@@ -227,14 +243,15 @@ export default function MessagesPage() {
   };
 
   const handleChatSelect = (chatId: string) => {
+    if (chatId === activeChatId) return;
     setActiveChatId(chatId);
+    clearUnreadCount(chatId);
     setShowMobileChat(true);
-    setIsBlocked(false); 
-<<<<<<< HEAD
+    setIsBlocked(false);
     setIsBlockedByOther(false);
-=======
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
-    setShowSettings(false); 
+    setBlockCheckLoading(true);
+    setShowSettings(false);
+    setReplyingTo(null);
     router.push(`/messages?chat=${chatId}`);
   };
 
@@ -264,53 +281,61 @@ export default function MessagesPage() {
   };
 
   const scrollToMessage = (messageId: string) => {
-  const element = document.getElementById(`message-${messageId}`);
-  if (element) {
-    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const element = document.getElementById(`message-${messageId}`);
+    if (!element) return;
+
+    const viewport = element.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+    if (viewport) {
+      const top =
+        viewport.scrollTop +
+        element.getBoundingClientRect().top -
+        viewport.getBoundingClientRect().top -
+        viewport.clientHeight / 2 +
+        element.clientHeight / 2;
+      viewport.scrollTo({ top, behavior: 'smooth' });
+    } else {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     element.classList.add('bg-yellow-100');
     setTimeout(() => {
       element.classList.remove('bg-yellow-100');
     }, 2000);
-  }
-};
+  };
 
-  useEffect(() => {
+    useEffect(() => {
     const checkBlocked = async () => {
-      if (!user?.id || !activeChat?.other_user?.id) return;
-      
-<<<<<<< HEAD
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!user?.id || !activeChat?.other_user?.id) {
+        setIsBlocked(false);
+        setIsBlockedByOther(false);
+        setBlockCheckLoading(false);
+        return;
+      }
 
-      // Est-ce que MOI j'ai bloqué l'autre
-      const { data: iBlockedThem } = await supabase
-=======
-      // Attendre que la session soit prête
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      setBlockCheckLoading(true);
 
-      const { data } = await supabase
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
-        .from('blocked_users')
-        .select('id')
-        .eq('blocker_id', user.id)
-        .eq('blocked_user_id', activeChat.other_user.id)
-        .maybeSingle();
-<<<<<<< HEAD
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setBlockCheckLoading(false);
+        return;
+      }
+
+      const [{ data: iBlockedThem }, { data: theyBlockedMe }] = await Promise.all([
+        supabase.from('blocked_users').select('id')
+          .eq('blocker_id', user.id)
+          .eq('blocked_user_id', activeChat.other_user.id)
+          .maybeSingle(),
+        supabase.from('blocked_users').select('id')
+          .eq('blocker_id', activeChat.other_user.id)
+          .eq('blocked_user_id', user.id)
+          .maybeSingle(),
+      ]);
+
       setIsBlocked(!!iBlockedThem);
-
-      // Est-ce que L'AUTRE m'a bloqué
-      const { data: theyBlockedMe } = await supabase
-        .from('blocked_users')
-        .select('id')
-        .eq('blocker_id', activeChat.other_user.id)
-        .eq('blocked_user_id', user.id)
-        .maybeSingle();
       setIsBlockedByOther(!!theyBlockedMe);
-=======
-      setIsBlocked(!!data);
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
+      setBlockCheckLoading(false);
     };
+
     checkBlocked();
   }, [user?.id, activeChat?.other_user?.id]);
 
@@ -336,11 +361,22 @@ export default function MessagesPage() {
     );
   }
 
+
   return (
     <TooltipProvider>
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header />
         <CategoryNav />
+
+        {/* Bannière hors-ligne */}
+        {!isOnline && (
+          <div className="flex items-center justify-center gap-2 bg-amber-50 border-b border-amber-200 px-4 py-2">
+            <WifiOff className="h-4 w-4 text-amber-600 shrink-0" />
+            <p className="text-sm text-amber-700 font-medium">
+              Connexion perdue — Reconnexion en cours...
+            </p>
+          </div>
+        )}
 
         <div className="flex-1 max-w-[1600px] w-full mx-auto p-2 sm:p-5 min-h-0">
           <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[calc(100vh-180px)] min-h-[500px] min-h-0">
@@ -359,17 +395,13 @@ export default function MessagesPage() {
               </div>
 
               {/* COLONNE 2 : Zone de messages */}
-              <div className={`${!showMobileChat ? 'hidden' : 'flex'} md:flex flex-1 flex-col bg-white min-h-0`}>
+              <div className={`${(isLargeScreen || (isMobile ? showMobileChat : true)) && (!showSettings || isLargeScreen) ? 'flex' : 'hidden'} flex-1 min-w-0 flex-col bg-white min-h-0 overflow-hidden`}>
                 {activeChat ? (
                   <>
                     {/* Header personnalisé avec bouton retour */}
                     <div className="shrink-0 p-4 border-b flex items-center justify-between bg-white shadow-sm h-[73px]">
                       <div className="flex items-center gap-3">
-<<<<<<< HEAD
                         <Button variant="ghost" size="icon" className="md:hidden shrink-0 cursor-pointer" onClick={handleBackToList}>
-=======
-                        <Button variant="ghost" size="icon" className="md:hidden shrink-0" onClick={handleBackToList}>
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
                           <ArrowLeft className="h-5 w-5" />
                         </Button>
                         <Link href={`/profile/${activeChat.other_user?.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -430,7 +462,7 @@ export default function MessagesPage() {
 
                     <MessageThread
                       messages={messages}
-                      loading={messagesLoading}
+                      loading={isMessagesLoading}
                       currentUserId={user?.id || ''}
                       otherUser={activeChat?.other_user}
                       hoveredMessageId={hoveredMessageId}
@@ -441,6 +473,9 @@ export default function MessagesPage() {
                       setSelectedMessageKey={setSelectedMessageKey}
                       retryMessage={retryMessage}
                       isTyping={isTyping}
+                      hasMore={hasMore}
+                      loadingMore={loadingMore}
+                      loadMore={loadMore}
                       onReply={(message) => {  
                         setReplyingTo({
                           id: message.id,
@@ -492,33 +527,30 @@ export default function MessagesPage() {
                         onCancel={() => setReplyingTo(null)}
                       />
                       
-                      {isBlocked ? (
+                      {blockCheckLoading ? (
+                        <div className="border-t bg-white px-4 py-3">
+                          <div className="h-10 rounded-xl bg-gray-100 animate-pulse" />
+                        </div>
+                      ) : isBlocked ? (
                         <div className="border-t bg-white">
-<<<<<<< HEAD
-=======
                           {/* Bannière */}
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
                           <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border-b border-red-100">
                             <Ban className="h-4 w-4 text-red-500 shrink-0" />
                             <p className="text-sm text-red-600">
-                              Vous avez bloqué cette personne. Elle ne peut plus vous envoyer de messages.
+                              Vous avez bloqué ce compte. Ce compte ne peut plus vous envoyer de messages.
                             </p>
                           </div>
-<<<<<<< HEAD
-=======
                           {/* Bouton débloquer */}
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
                           <div className="p-4 flex justify-center">
                             <Button
                               variant="outline"
-                              className="border-green-700 text-green-700 hover:bg-green-50"
+                              className="border-green-700 cursor-pointer text-green-700 hover:bg-green-50"
                               onClick={handleUnblock}
                             >
                               Débloquer {activeChat.other_user?.full_name || activeChat.other_user?.company_name}
                             </Button>
                           </div>
                         </div>
-<<<<<<< HEAD
                         ) : isBlockedByOther ? (
                         <div className="border-t bg-white">
                           <div className="flex items-center gap-2 px-4 py-3 bg-gray-50">
@@ -528,10 +560,7 @@ export default function MessagesPage() {
                             </p>
                           </div>
                         </div>
-                      ): (
-=======
                       ) : (
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
                         <MessageInput
                           value={messageInput}
                           onChange={(val) => { setMessageInput(val); if (val) sendTyping(); }}
@@ -563,11 +592,7 @@ export default function MessagesPage() {
               </div>
 
               {/* COLONNE 3 : Panneau About */}
-<<<<<<< HEAD
-              <div className="hidden lg:flex w-72 shrink-0 border-l bg-white min-h-0">
-=======
-              <div className="hidden xl:flex w-80 shrink-0 border-l bg-white min-h-0">
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
+              <div className={`${isLargeScreen || (showSettings && showMobileChat) ? 'flex' : 'hidden'} ${isLargeScreen ? 'w-72 shrink-0' : 'flex-1'} border-l bg-white min-h-0`}>
                 {showSettings
                   ? <ConversationSettings
                       messages={messages}
@@ -599,7 +624,6 @@ export default function MessagesPage() {
                           .eq('user_id', user.id);
                         if (memberError) throw memberError;
 
-<<<<<<< HEAD
                         // Trouver la prochaine convo
                         const remainingChats = chats.filter(c => c.id !== activeChatId);
                         
@@ -613,9 +637,7 @@ export default function MessagesPage() {
                         }
 
                         setShowSettings(false);
-=======
                         router.push('/messages');
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
                       }}
                       onBlockUser={async () => {
                         if (!activeChat?.other_user?.id) return;
@@ -641,6 +663,29 @@ export default function MessagesPage() {
                             status: 'pending',
                           });
                         if (error) throw error;
+                      }}
+                      isArchived={activeChat?.is_archived || false}
+                      onArchive={async () => {
+                        if (!activeChatId || !user?.id) return;
+                        const newIsArchived = !activeChat?.is_archived;
+                        const { error } = await supabase
+                          .from('chat_room_member')
+                          .update({ is_archived: newIsArchived })
+                          .eq('chat_room_id', activeChatId)
+                          .eq('user_id', user.id);
+                        if (error) throw error;
+                        archiveChat(activeChatId, newIsArchived);
+                        if (newIsArchived) {
+                          const next = chats.find(c => c.id !== activeChatId && !c.is_archived);
+                          if (next) {
+                            setActiveChatId(next.id);
+                            router.replace(`/messages?chat=${next.id}`);
+                          } else {
+                            setActiveChatId(null);
+                            router.replace('/messages');
+                          }
+                          setShowSettings(false);
+                        }
                       }}
                     />
                   : <ProfileSidebar otherUser={activeChat?.other_user} />

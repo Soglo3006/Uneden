@@ -35,10 +35,7 @@ export function EmojiPickerPopover({ onEmojiSelect, onOpenChange }: EmojiPickerP
       open={open}
       onOpenChange={(newOpen) => {
         setOpen(newOpen);
-<<<<<<< HEAD
         onOpenChange?.(newOpen);
-=======
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
         if (!newOpen) setShowFullPicker(false);
       }}
     >
@@ -47,17 +44,7 @@ export function EmojiPickerPopover({ onEmojiSelect, onOpenChange }: EmojiPickerP
           variant="ghost"
           size="icon"
           className="h-7 w-7 bg-white border border-gray-200 hover:bg-gray-50 rounded-full shadow-sm cursor-pointer"
-<<<<<<< HEAD
           onClick={(e) => e.stopPropagation()}
-=======
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            const newOpen = !open;
-            setOpen(newOpen);
-            onOpenChange?.(newOpen);
-          }}
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
         >
           <Smile className="h-3 w-3 text-gray-600" />
         </Button>
@@ -67,7 +54,6 @@ export function EmojiPickerPopover({ onEmojiSelect, onOpenChange }: EmojiPickerP
         side="top"
         sideOffset={8}
         className="w-auto p-0 border-0 bg-transparent shadow-none rounded-none"
-<<<<<<< HEAD
         onPointerDownOutside={() => {
           setOpen(false);
           onOpenChange?.(false);
@@ -76,16 +62,6 @@ export function EmojiPickerPopover({ onEmojiSelect, onOpenChange }: EmojiPickerP
         onEscapeKeyDown={() => {
           setOpen(false);
           onOpenChange?.(false);
-=======
-        onInteractOutside={(e) => {
-          e.preventDefault(); // ← empêche la fermeture au clic extérieur
-          setOpen(false);
-          onOpenChange?.(false);
-          setShowFullPicker(false);
-        }}
-        onEscapeKeyDown={() => {
-          setOpen(false);
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
           setShowFullPicker(false);
         }}
       >

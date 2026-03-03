@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Search, BellOff, Bell, Trash2, Ban, Flag, X } from 'lucide-react';
+import { Search, BellOff, Bell, Trash2, Ban, Flag, X, Archive, ArchiveRestore } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,6 +27,8 @@ interface ConversationSettingsProps {
   isBlocked?: boolean;
   onUnblockUser?: () => Promise<void>;
   onMessageClick?: (messageId: string) => void;
+  isArchived?: boolean;
+  onArchive?: () => Promise<void>;
 }
 
 export function ConversationSettings({
@@ -41,6 +43,8 @@ export function ConversationSettings({
   onToggleMute,
   isBlocked,
   onMessageClick,
+  isArchived,
+  onArchive,
 }: ConversationSettingsProps) {
   const [confirmAction, setConfirmAction] = useState<'delete' | 'block' | 'unblock' | 'report' | null>(null);
   const [loading, setLoading] = useState(false);
@@ -219,7 +223,7 @@ export function ConversationSettings({
           </div>
         </div>
 
-        {/* Notifications */}
+        {/* Notifications + Archive */}
         <div className="bg-white rounded-xl border divide-y overflow-hidden">
           <button
             onClick={onToggleMute}
@@ -233,6 +237,21 @@ export function ConversationSettings({
               {isMuted ? 'Réactiver les notifications' : 'Désactiver les notifications'}
             </span>
           </button>
+
+          {onArchive && (
+            <button
+              onClick={onArchive}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left cursor-pointer"
+            >
+              {isArchived
+                ? <ArchiveRestore className="h-5 w-5 text-gray-500" />
+                : <Archive className="h-5 w-5 text-gray-500" />
+              }
+              <span className="text-sm text-gray-700">
+                {isArchived ? 'Désarchiver la conversation' : 'Archiver la conversation'}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Actions dangereuses */}
@@ -285,11 +304,7 @@ export function ConversationSettings({
           <DialogFooter className="gap-2">
             <Button className='cursor-pointer' variant="outline" onClick={() => setConfirmAction(null)}>Annuler</Button>
             <Button
-<<<<<<< HEAD
               className={`text-white cursor-pointer ${confirmAction && confirmTexts[confirmAction].color}`}
-=======
-              className={`text-white ${confirmAction && confirmTexts[confirmAction].color}`}
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
               onClick={handleConfirm}
               disabled={loading}
             >
@@ -356,7 +371,7 @@ export function ConversationSettings({
             <DialogHeader>
               <DialogTitle className="text-center">Signalement envoyé</DialogTitle>
               <DialogDescription className="text-center">
-                Merci de nous aider à garder FieldHearts sûr. Notre équipe va examiner votre signalement.
+                Merci de nous aider à garder Uneden sûr. Notre équipe va examiner votre signalement.
               </DialogDescription>
             </DialogHeader>
             <Button

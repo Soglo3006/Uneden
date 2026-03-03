@@ -501,8 +501,8 @@ function ShareProfilePage({ setScreen, profileId, displayName }) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${displayName}'s Profile - FieldHearts`,
-          text: `Check out ${displayName} on FieldHearts`,
+          title: `${displayName}'s Profile - Uneden`,
+          text: `Check out ${displayName} on Uneden`,
           url: profileUrl,
         });
       } catch (err) {

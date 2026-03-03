@@ -1,5 +1,6 @@
 "use client";
 
+import { Mic, FileText, Image } from 'lucide-react';
 import { sanitizeMessage } from '@/lib/sanitize';
 
 interface RepliedMessageProps {
@@ -11,42 +12,50 @@ interface RepliedMessageProps {
   onMessageClick: (messageId: string) => void;
 }
 
+function getReplyPreview(content: string) {
+  if (content.includes('[AUDIO:')) return { type: 'audio' as const };
+  const fileMatch = content.match(/\[FILE:(.*?)\]/);
+  if (fileMatch) {
+    const url = fileMatch[1];
+    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+    return { type: isImage ? 'image' as const : 'file' as const, url };
+  }
+  return { type: 'text' as const, text: content };
+}
+
 export function RepliedMessage({ repliedTo, onMessageClick }: RepliedMessageProps) {
-  // Extraire le texte et le fichier
-  const fileMatch = repliedTo.content.match(/\[FILE:(.*?)\]/);
-  const fileUrl = fileMatch ? fileMatch[1] : null;
-  const messageText = repliedTo.content.replace(/\[FILE:.*?\]/g, '').trim();
-  const isImage = fileUrl ? /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl) : false;
+  const preview = getReplyPreview(repliedTo.content);
 
   return (
     <div
       onClick={() => onMessageClick(repliedTo.id)}
       className="border-l-4 border-green-700 bg-green-50/50 pl-3 py-2 mb-2 rounded cursor-pointer hover:bg-green-50 transition-colors"
     >
-      <p className="text-xs font-semibold text-green-700 mb-2">
+      <p className="text-xs font-semibold text-green-700 mb-1">
         {repliedTo.sender_name || 'Utilisateur'}
       </p>
-      
+
       <div className="flex items-center gap-2">
-        {/* Miniature image si applicable */}
-        {isImage && fileUrl && (
-          <img 
-            src={fileUrl} 
-            alt="Preview" 
-            className="w-10 h-10 rounded object-cover flex-shrink-0"
-          />
+        {preview.type === 'image' && (
+          <img src={preview.url} alt="Preview" className="w-10 h-10 rounded object-cover flex-shrink-0" />
         )}
-        
-        {/* Texte du message */}
-        <div className="text-sm text-gray-600 truncate flex-1">
-          {isImage}
-          {!isImage && fileUrl}
-          {messageText && (isImage || fileUrl ? ' • ' : '')}
-          <span 
-            dangerouslySetInnerHTML={{ 
-              __html: sanitizeMessage(messageText) 
-            }} 
-          />
+
+        <div className="flex-1 min-w-0 flex items-center gap-1 overflow-hidden">
+          {preview.type === 'audio' && (
+            <><Mic className="h-3.5 w-3.5 shrink-0 text-gray-400" /><span className="text-sm text-gray-600">Message vocal</span></>
+          )}
+          {preview.type === 'image' && (
+            <><Image className="h-3.5 w-3.5 shrink-0 text-gray-400" /><span className="text-sm text-gray-600">Photo</span></>
+          )}
+          {preview.type === 'file' && (
+            <><FileText className="h-3.5 w-3.5 shrink-0 text-gray-400" /><span className="text-sm text-gray-600">Fichier</span></>
+          )}
+          {preview.type === 'text' && (
+            <span
+              className="text-sm text-gray-600 truncate block min-w-0"
+              dangerouslySetInnerHTML={{ __html: sanitizeMessage(preview.text) }}
+            />
+          )}
         </div>
       </div>
     </div>

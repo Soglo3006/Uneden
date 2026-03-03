@@ -12,6 +12,7 @@ export interface UnreadChat {
   sender_avatar: string | null;
   sender_id: string;
   is_read: boolean;
+  account_type: string | null;
 }
 
 // Petit helper pour jouer le son de notification
@@ -93,7 +94,7 @@ export function useUnreadMessages() {
             // Récupérer le profil
             const { data: profile } = await supabase
               .from('profiles')
-              .select('id, full_name, avatar_url')
+              .select('id, full_name, company_name, account_type, avatar_url')
               .eq('id', displayUserId)
               .single();
 
@@ -107,7 +108,9 @@ export function useUnreadMessages() {
               chat_room_id: chatId,
               last_message: messagePreview,
               last_message_time: lastMsg.created_at,
-              sender_name: profile?.full_name || 'Inconnu',
+              sender_name: profile?.account_type === 'company'
+                ? profile?.company_name || profile?.full_name || 'Inconnu'
+                : profile?.full_name || 'Inconnu',
               sender_avatar: profile?.avatar_url || null,
               sender_id: displayUserId,
               is_read: !isUnread,

@@ -8,10 +8,7 @@ import reviewRoutes from "./routes/reviewRoutes.js";
 import disputeRoutes from "./routes/disputeRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import messageRoutes from './routes/messageRoutes.js';
-<<<<<<< HEAD
 import reportRoutes from './routes/reportRoutes.js';
-=======
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
 
 dotenv.config();
 
@@ -32,10 +29,7 @@ app.use("/api/disputes", disputeRoutes);
 app.use("/api/profiles", profileRoutes);
 app.use("/api/auth", authRoutes);
 app.use('/api/messages', messageRoutes);
-<<<<<<< HEAD
 app.use('/api/reports', reportRoutes);
-=======
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

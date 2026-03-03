@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageActions } from './MessageActions';
@@ -85,12 +85,27 @@ export function MessageBubble({
   const [editedContent, setEditedContent] = useState(content);
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showActions = isHovered || isMenuOpen || isSelected || isEmojiOpen;
   const isSending = status === 'sending';
   const isFailed = status === 'failed';
   const rootRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
+
+  const scheduleHide = useCallback(() => {
+    if (openMenuKey === messageId || isSelected || isEmojiOpen) return;
+    hideTimeoutRef.current = setTimeout(() => {
+      setHoveredMessageId(null);
+    }, 150);
+  }, [openMenuKey, messageId, isSelected, isEmojiOpen, setHoveredMessageId]);
+
+  const cancelHide = useCallback(() => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+  }, []);
 
 
   useEffect(() => {
@@ -132,21 +147,18 @@ export function MessageBubble({
     }
   };
 
-  const handleMouseLeave = (e: React.MouseEvent) => {
-    const next = e.relatedTarget as Node | null;
-
-    if (next && actionsRef.current?.contains(next)) return;
-
-    if (openMenuKey !== messageId && !isSelected && !isEmojiOpen) {
-      setHoveredMessageId(null);
-    }
+  const handleMouseLeave = () => {
+    scheduleHide();
   };
 
   return (
     <div
       ref={rootRef}
       onPointerDown={(e) => e.stopPropagation()}
-      onMouseEnter={() => !isSending && setHoveredMessageId(messageId)}
+      onMouseEnter={() => {
+        cancelHide();
+        if (!isSending) setHoveredMessageId(messageId);
+      }}
       onMouseLeave={handleMouseLeave}
       onClick={() => !isSending && setSelectedMessageKey(prev => (prev === messageId ? null : messageId))}
       className={`flex gap-2 items-start ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}
@@ -261,16 +273,7 @@ export function MessageBubble({
                   </div>
                 )}
 
-<<<<<<< HEAD
             
-=======
-                {/* Indicateur sending */}
-                {isSending && isOwn && (
-                  <div className="absolute -bottom-1 -right-1">
-                    <Loader2 className="h-4 w-4 text-green-600 animate-spin" />
-                  </div>
-                )}
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
 
               </>
             )}
@@ -290,22 +293,21 @@ export function MessageBubble({
 
           {/* Boutons d'action - alignés avec la bulle */}
         {showActions && !isSending && !isFailed && content !== 'Message supprimé' && !isEditing && (
-<<<<<<< HEAD
           <div
             ref={actionsRef}
             className={`absolute ${isOwn ? 'right-full mr-2' : 'left-full ml-2'} top-0 bottom-0 flex items-center`}
-            onMouseEnter={() => !isSending && setHoveredMessageId(messageId)}
+            onMouseEnter={() => {
+              cancelHide();
+              if (!isSending) setHoveredMessageId(messageId);
+            }}
+            onMouseLeave={scheduleHide}
           >
-=======
-          <div className={`absolute ${isOwn ? 'right-full mr-2' : 'left-full ml-2'} top-0 bottom-0 flex items-center`}>
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
             <MessageActions
               messageKey={messageId}
               openMenuKey={openMenuKey}
               onEmojiOpenChange={setIsEmojiOpen}
               setOpenMenuKey={setOpenMenuKey}
               isPinned={isPinned}
-<<<<<<< HEAD
               onReact={(emoji) => {
                 onReact?.(emoji);
                 setIsEmojiOpen(false);
@@ -313,9 +315,6 @@ export function MessageBubble({
                 setSelectedMessageKey(null);
                 setHoveredMessageId(null);
               }}
-=======
-              onReact={onReact}
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
               onReply={onReply}
               onEdit={isOwn ? handleStartEdit : undefined}
               onPin={onPin}

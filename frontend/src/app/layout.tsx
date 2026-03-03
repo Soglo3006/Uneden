@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FieldHearts",
+  title: "Uneden",
   description: "Find services near you",
 };
 

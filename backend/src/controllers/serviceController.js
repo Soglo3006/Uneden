@@ -6,6 +6,7 @@ export const createService = async (req, res) => {
       type, 
       title,
       description,
+      category,
       category_id,
       subcategory,
       price,
@@ -31,32 +32,29 @@ export const createService = async (req, res) => {
       return res.status(400).json({ message: "Price/Budget must be greater than 0" });
     }
 
-    if (type === 'looking' && !urgency) {
-      return res.status(400).json({ message: "Urgency is required for job requests" });
-    }
-
     // Créer le service
     const result = await pool.query(
       `INSERT INTO services (
-        user_id, type, title, description, category_id, subcategory,
+        user_id, type, title, description, category, category_id, subcategory,
         price, location, poster_type, availability, 
         language, mobility, duration, urgency, image_url
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *`,
       [
         req.user.id,
         type,
         title,
         description,
-        category_id,
-        subcategory,
+        category || null,
+        category_id || null,
+        subcategory || null,
         price,
         location,
-        poster_type,
-        availability,
-        language,
-        mobility,
-        duration,
+        poster_type || null,
+        availability || null,
+        language || null,
+        mobility || null,
+        duration || null,
         urgency || null,
         image_url || null,
       ]

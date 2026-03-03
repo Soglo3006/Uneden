@@ -1,11 +1,8 @@
 "use client";
 
 import { useState } from 'react';
-<<<<<<< HEAD
-import { Pin, ChevronDown } from 'lucide-react';
-=======
-import { Pin, X, ChevronDown, MessageSquare } from 'lucide-react';
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
+import { Pin, ChevronDown, Mic } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -40,9 +37,50 @@ export function PinnedMessages({
   const lastPinned = pinnedMessages[pinnedMessages.length - 1];
 
   const getPreview = (content: string) => {
-    if (content.includes('[AUDIO:')) return ' Message vocal';
-    if (content.includes('[FILE:')) return 'Fichier';
+    if (content.includes('[AUDIO:')) return 'Message vocal';
+    if (content.includes('[FILE:')) {
+      const match = content.match(/\[FILE:(.*?)\]/);
+      const url = match ? match[1] : '';
+      const isImage = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
+      return isImage ? 'Image' : 'Fichier';
+    }
     return content.replace(/\[FILE:.*?\]/g, '').trim();
+  };
+
+  const renderModalPreview = (content: string) => {
+    if (content.includes('[AUDIO:')) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Mic className="h-4 w-4 text-green-700 shrink-0" />
+          <span>Message vocal</span>
+        </div>
+      );
+    }
+    if (content.includes('[FILE:')) {
+      const match = content.match(/\[FILE:(.*?)\]/);
+      const url = match ? match[1] : '';
+      const text = content.replace(/\[FILE:.*?\]/, '').trim();
+      const isImage = /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
+      if (isImage) {
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="relative h-32 w-[200px] rounded-lg overflow-hidden">
+              <Image
+                src={url}
+                alt="Image épinglée"
+                fill
+                unoptimized
+                className="object-cover"
+                sizes="200px"
+              />
+            </div>
+            {text && <p className="text-sm text-gray-600">{text}</p>}
+          </div>
+        );
+      }
+      return <p className="text-sm text-gray-600 line-clamp-2">{text || 'Fichier'}</p>;
+    }
+    return <p className="text-sm text-gray-600 line-clamp-2">{content}</p>;
   };
 
   const formatDate = (dateStr: string) => {
@@ -111,15 +149,14 @@ export function PinnedMessages({
                           {formatDate(message.created_at)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 line-clamp-2">
-                        {getPreview(message.content)}
-                      </p>
+                      {renderModalPreview(message.content)}
                     </div>
                   </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
+                      type="button"
                       onClick={() => {
                         onMessageClick(message.id);
                         setModalOpen(false);
@@ -130,6 +167,7 @@ export function PinnedMessages({
                     </button>
                     <span className="text-gray-300">•</span>
                     <button
+                      type="button"
                       onClick={() => onUnpin(message.id)}
                       className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 cursor-pointer font-medium"
                     >

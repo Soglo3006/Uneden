@@ -663,8 +663,8 @@ export default function UserProfilePage() {
                     
                     {userListings.length > 3 && (
                       <>
-                        <CarouselPrevious className="hidden md:flex -left-4" />
-                        <CarouselNext className="hidden md:flex -right-4" />
+                        <CarouselPrevious className="hidden md:flex -left-4 cursor-pointer" />
+                        <CarouselNext className="hidden md:flex -right-4 cursor-pointer" />
                       </>
                     )}
                   </Carousel>

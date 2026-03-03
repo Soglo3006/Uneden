@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { sanitizeMessage } from '@/lib/sanitize';
 
 interface Chat {
@@ -56,7 +55,7 @@ function ConversationItem({
   now: number;
 }) {
 
-  const unreadCount = useUnreadCount(chat.id, currentUserId);
+  const unreadCount = chat.unread_count ?? 0;
 
   const isPerson = chat.other_user?.account_type === 'person';
   const isCompany = chat.other_user?.account_type === 'company';
@@ -89,7 +88,6 @@ function ConversationItem({
   
   return content;
 })();
-<<<<<<< HEAD
 
   const timeDisplay = (() => {
     if (!chat.last_message?.created_at) return '';
@@ -113,30 +111,6 @@ function ConversationItem({
     return `${diffYears} an${diffYears > 1 ? 's' : ''}`;
   })();
 
-=======
-
-  const timeDisplay = (() => {
-    if (!chat.last_message?.created_at) return '';
-
-    const messageDate = new Date(chat.last_message.created_at).getTime();
-    const diffMs = now - messageDate;
-
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const diffWeeks = Math.floor(diffDays / 7);
-    const diffMonths = Math.floor(diffDays / 30);
-    const diffYears = Math.floor(diffDays / 365);
-
-  if (diffMins < 1) return "À l'instant";
-  if (diffMins < 60) return `${diffMins} min`;
-  if (diffHours < 24) return `${diffHours} h`;
-  if (diffDays < 7) return `${diffDays} j`;
-  if (diffWeeks < 4) return `${diffWeeks} sem`;
-  if (diffMonths < 12) return `${diffMonths} mois`;
-  return `${diffYears} an${diffYears > 1 ? 's' : ''}`;
-})();
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
 
   return (
     <div
@@ -237,11 +211,7 @@ export function ConversationList({
     <div className="w-full md:w-64 lg:w-80 border-r flex flex-col bg-white h-full min-h-0">
       {/* Search bar sticky */}
       <div className="sticky top-0 z-10 p-4 border-b bg-white h-[73px] flex items-center">
-<<<<<<< HEAD
         <div className="relative w-full">
-=======
-        <div className="relative">
->>>>>>> 964e16e (add conversation settings, voice message component, and user presence hooks)
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search conversations..."

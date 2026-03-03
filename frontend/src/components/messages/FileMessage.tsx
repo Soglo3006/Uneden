@@ -6,7 +6,25 @@ import { RepliedMessage } from './RepliedMessage';
 import { MessageReactions } from './MessageReactions';
 import { sanitizeAndFormatMessage } from '@/lib/sanitize';
 import { ImageLightbox } from './ImageLightbox';
+import { Pin, FileText, FileIcon, FileSpreadsheet, Archive } from 'lucide-react';
 import { useState } from 'react';
+
+function getFileIcon(filename: string) {
+  const ext = filename.split('.').pop()?.toLowerCase() ?? '';
+  if (ext === 'pdf') return <FileText className="h-6 w-6 text-red-500 shrink-0" />;
+  if (['xls', 'xlsx', 'csv'].includes(ext)) return <FileSpreadsheet className="h-6 w-6 text-green-600 shrink-0" />;
+  if (['zip', 'rar', '7z'].includes(ext)) return <Archive className="h-6 w-6 text-yellow-600 shrink-0" />;
+  return <FileIcon className="h-6 w-6 text-blue-500 shrink-0" />;
+}
+
+function getFilename(url: string): string {
+  try {
+    const decoded = decodeURIComponent(url.split('?')[0]);
+    return decoded.split('/').pop() || 'Fichier';
+  } catch {
+    return 'Fichier';
+  }
+}
 
 interface Reaction {
   emoji: string;
@@ -40,9 +58,11 @@ interface FileMessageProps {
   setHoveredMessageId: (key: string | null) => void;
   setOpenMenuKey: (key: string | null) => void;
   setSelectedMessageKey: (key: string | null) => void;
-  onReact?: (emoji: string) => void;  
+  isPinned?: boolean;
+  onReact?: (emoji: string) => void;
   onReactionToggle?: (emoji: string) => void;
-  onReply?: () => void;  
+  onReply?: () => void;
+  onPin?: () => void;
   onDelete?: () => void;
 }
 
@@ -64,9 +84,11 @@ export function FileMessage({
   setHoveredMessageId,
   setOpenMenuKey,
   setSelectedMessageKey,
-  onReact, 
+  isPinned,
+  onReact,
   onReactionToggle,
-  onReply,  
+  onReply,
+  onPin,
   onDelete,
 }: FileMessageProps) {
   const keyText = `${messageId}-text`;
@@ -185,9 +207,11 @@ export function FileMessage({
               messageKey={keyImage}
               openMenuKey={openMenuKey}
               setOpenMenuKey={setOpenMenuKey}
-              onReact={onReact} 
+              isPinned={isPinned}
+              onReact={onReact}
               onReply={onReply}
-              onDelete={onDelete} 
+              onPin={onPin}
+              onDelete={onDelete}
             />
           )}
 
@@ -236,6 +260,11 @@ export function FileMessage({
                   onClose={() => setLightboxOpen(false)}
                 />
               )}
+              {isPinned && (
+                <div className={`absolute top-1 ${isOwn ? 'left-1' : 'right-1'} bg-white/80 rounded-full p-0.5`}>
+                  <Pin className="h-3 w-3 text-blue-600" />
+                </div>
+              )}
 
               {/* Réactions en position absolue */}
               {reactions && reactions.length > 0 && (
@@ -259,13 +288,19 @@ export function FileMessage({
           href={fileUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className={`flex items-center gap-2 p-3 rounded-xl shadow-sm ${
+          className={`flex items-center gap-3 p-3 rounded-xl shadow-sm max-w-[260px] ${
             isOwn
               ? 'bg-green-50 hover:bg-green-100 border border-green-200'
               : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
           }`}
         >
-          <span className="text-sm font-medium"> View file</span>
+          {getFileIcon(getFilename(fileUrl))}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium truncate">{getFilename(fileUrl)}</p>
+            <p className={`text-xs mt-0.5 ${isOwn ? 'text-green-700' : 'text-gray-400'}`}>
+              {(getFilename(fileUrl).split('.').pop() ?? '').toUpperCase()} · Ouvrir
+            </p>
+          </div>
         </a>
       )}
     </>
