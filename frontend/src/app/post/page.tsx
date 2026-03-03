@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import ImageUploader from "@/components/ui/ImageUploader";
+import LocationAutocomplete from "@/components/post/LocationAutocomplete";
 import {
 Select,
 SelectContent,
@@ -19,6 +20,8 @@ SelectValue,
 import {categories} from "@/lib/categories.ts";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { CheckCircle } from "lucide-react";
+
 
 
 const urgencyLevels = [
@@ -65,34 +68,27 @@ export default function PostServicePage() {
     const [jobDuration, setJobDuration] = useState("");
     const [jobImage, setJobImage] = useState<string | null>(null);
     const [jobSubcategory, setJobSubcategory] = useState("");
+    const [showServiceDetails, setShowServiceDetails] = useState(false);
+    const [showJobDetails, setShowJobDetails] = useState(false);
+    const [successPopup, setSuccessPopup] = useState<{ show: boolean; type: "offer" | "looking"; id: string } | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
 
     const isServiceValid =
     serviceTitle.trim() !== "" &&
     serviceDescription.trim() !== "" &&
     serviceCategory.trim() !== "" &&
-    serviceSubcategory.trim() !== "" &&
-    servicePosterType.trim() !== "" &&
-    serviceAvailability.trim() !== "" &&
-    serviceLanguage.trim() !== "" &&
-    serviceMobility.trim() !== "" &&
-    serviceDuration.trim() !== "" &&
     servicePrice.trim() !== "" &&
+    Number(servicePrice) > 0 &&
     serviceLocation.trim() !== ""
 
     const isJobValid =
     jobTitle.trim() !== "" &&
     jobDescription.trim() !== "" &&
     jobCategory.trim() !== "" &&
-    jobSubcategory.trim() !== "" &&
-    jobPosterType.trim() !== "" &&
-    jobAvailability.trim() !== "" &&
-    jobLanguage.trim() !== "" &&
-    jobMobility.trim() !== "" &&
-    jobDuration.trim() !== "" &&
     jobBudget.trim() !== "" &&
-    jobLocation.trim() !== "" &&
-    jobUrgency.trim() !== ""
-    Number(jobBudget) > 0;
+    Number(jobBudget) > 0 &&
+    jobLocation.trim() !== ""
 
     const handleServiceSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -103,12 +99,15 @@ export default function PostServicePage() {
             return;
         }
 
+
+        setIsSubmitting(true);
         try {
             const payload = {
             type: "offer",
             title: serviceTitle,
             description: serviceDescription,
-            category_id: null, 
+            category: serviceCategory,
+            category_id: null,
             subcategory: serviceSubcategory,
             price: parseFloat(servicePrice),
             location: serviceLocation,
@@ -135,13 +134,13 @@ export default function PostServicePage() {
             }
 
             const data = await response.json();
-            console.log("Service created:", data);
 
-            alert("Service posted successfully!");
-            router.push(`/serviceDetail/${data.id}`);
+            setSuccessPopup({ show: true, type: "offer", id: data.id });
         } catch (error: any) {
             console.error("Error creating service:", error);
             alert(`Failed to post service: ${error.message}`);
+        }  finally {
+            setIsSubmitting(false);
         }
         };
 
@@ -154,11 +153,13 @@ export default function PostServicePage() {
         return;
     }
 
+    setIsSubmitting(true);
     try {
         const payload = {
         type: "looking",
         title: jobTitle,
         description: jobDescription,
+        category: jobCategory,
         category_id: null,
         subcategory: jobSubcategory,
         price: parseFloat(jobBudget),
@@ -172,7 +173,6 @@ export default function PostServicePage() {
         image_url: jobImage,
         };
 
-        console.log("Sending payload:", payload);
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services`, {
         method: "POST",
@@ -189,13 +189,13 @@ export default function PostServicePage() {
         }
 
         const data = await response.json();
-        console.log("Job request created:", data);
 
-        alert("Job request posted successfully!");
-        router.push(`/serviceDetail/${data.id}`);
+        setSuccessPopup({ show: true, type: "looking", id: data.id });
     } catch (error: any) {
         console.error("Error creating job request:", error);
         alert(`Failed to post job request: ${error.message}`);
+    } finally {
+        setIsSubmitting(false);
     }
     };
 
@@ -212,9 +212,53 @@ export default function PostServicePage() {
     );
   }
 
+  
+
 
 return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+          {/* Success Popup */}
+            {successPopup?.show && (
+            <div
+                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4 overflow-hidden"
+                onClick={() => setSuccessPopup(null)}
+            >
+                <div
+                className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center"
+                onClick={(e) => e.stopPropagation()}
+                >
+                <div className="flex justify-center mb-4">
+                    <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle className="w-9 h-9 text-green-600" />
+                    </div>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {successPopup.type === "offer" ? "Service Posted!" : "Job Request Posted!"}
+                </h2>
+                <p className="text-gray-500 mb-6">
+                    {successPopup.type === "offer"
+                    ? "Your service is now live and visible to everyone."
+                    : "Your job request is now live and visible to everyone."}
+                </p>
+                <div className="flex flex-col gap-3">
+                    <Button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+                    onClick={() => router.push(`/serviceDetail/${successPopup.id}`)}
+                    >
+                    View My Post
+                    </Button>
+                    <Button
+                    variant="outline"
+                    className="w-full cursor-pointer"
+                    onClick={() => router.push("/")}
+                    >
+                    Back to Home
+                    </Button>
+                </div>
+                </div>
+            </div>
+            )}
+
     <Header />
     <CategoryNav/>
     <main className="flex-1 py-10 px-4 sm:px-6 lg:px-8">
@@ -316,14 +360,12 @@ return (
                 <Label htmlFor="serviceLocation" className="text-base font-medium text-gray-900">
                     Location <span className="text-red-500">*</span>
                 </Label>
-                <Input
+                <LocationAutocomplete
                     id="serviceLocation"
-                    type="text"
-                    placeholder="City, region (ex: Toronto, ON)"
                     value={serviceLocation}
-                    onChange={(e) => setServiceLocation(e.target.value)}
+                    onChange={setServiceLocation}
+                    placeholder="City, region (ex: Toronto, ON)"
                     required
-                    className="h-12"
                 />
                 </div>
 
@@ -349,7 +391,7 @@ return (
 
                     <div className="space-y-2">
                         <Label className="text-base font-medium text-gray-900">
-                            Subcategory <span className="text-red-500">*</span>
+                            Subcategory
                         </Label>
 
                         <Select
@@ -376,7 +418,7 @@ return (
 
                     <div className="space-y-2">
                     <Label className="text-base font-medium text-gray-900">
-                        Type of Poster <span className="text-red-500">*</span>
+                        Type of Poster 
                     </Label>
                     <Select value={servicePosterType} onValueChange={setServicePosterType}>
                         <SelectTrigger className="h-12 cursor-pointer">
@@ -395,7 +437,7 @@ return (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                     <Label className="text-base font-medium text-gray-900">
-                        Availability <span className="text-red-500">*</span>
+                        Availability
                     </Label>
                     <Select value={serviceAvailability} onValueChange={setServiceAvailability}>
                         <SelectTrigger className="h-12 cursor-pointer">
@@ -412,7 +454,7 @@ return (
 
                     <div className="space-y-2">
                         <Label className="text-base font-medium text-gray-900">
-                            Spoken Language <span className="text-red-500">*</span>
+                            Spoken Language 
                         </Label>
                         <Select value={serviceLanguage} onValueChange={setServiceLanguage}>
                             <SelectTrigger className="h-12 cursor-pointer">
@@ -428,7 +470,7 @@ return (
 
                     <div className="space-y-2">
                     <Label className="text-base font-medium text-gray-900">
-                        Mobility <span className="text-red-500">*</span>
+                        Mobility 
                     </Label>
                     <Select value={serviceMobility} onValueChange={setServiceMobility}>
                         <SelectTrigger className="h-12 cursor-pointer">
@@ -446,7 +488,7 @@ return (
 
                 <div className="space-y-2">
                 <Label className="text-base font-medium text-gray-900">
-                    Approx. Job Duration <span className="text-red-500">*</span>
+                    Approx. Job Duration 
                 </Label>
                 <Input
                     type="text"
@@ -474,9 +516,17 @@ return (
                 <Button
                     type="submit"
                     className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold rounded-xl h-14 cursor-pointer"
-                    disabled= {!isServiceValid}
+                    disabled={!isServiceValid || isSubmitting}
                 >
-                    Post Service
+                    {isSubmitting ? (
+                        <span className="flex items-center gap-2">
+                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                            </svg>
+                            Posting...
+                        </span>
+                    ) : "Post Service"}
                 </Button>
                 <p className="text-center text-gray-500 text-sm mt-3">
                     Your service will appear publicly after submission.
@@ -547,20 +597,18 @@ return (
                 <Label htmlFor="jobLocation" className="text-base font-medium text-gray-900">
                     Location <span className="text-red-500">*</span>
                 </Label>
-                <Input
+                <LocationAutocomplete
                     id="jobLocation"
-                    type="text"
-                    placeholder="City, region (ex: Toronto, ON)"
                     value={jobLocation}
-                    onChange={(e) => setJobLocation(e.target.value)}
+                    onChange={setJobLocation}
+                    placeholder="City, region (ex: Toronto, ON)"
                     required
-                    className="h-12"
                 />
                 </div>
 
                 <div className="space-y-2">
                 <Label htmlFor="jobUrgency" className="text-base font-medium text-gray-900">
-                    Urgency Level <span className="text-red-500">*</span>
+                    Urgency Level 
                 </Label>
                 <Select value={jobUrgency} onValueChange={setJobUrgency}>
                     <SelectTrigger className="h-12 cursor-pointer">
@@ -598,7 +646,7 @@ return (
 
                     <div className="space-y-2">
                     <Label className="text-base font-medium text-gray-900">
-                        Subcategory <span className="text-red-500">*</span>
+                        Subcategory 
                     </Label>
 
                     <Select
@@ -626,7 +674,7 @@ return (
 
                     <div className="space-y-2">
                     <Label className="text-base font-medium text-gray-900">
-                        Type of Poster <span className="text-red-500">*</span>
+                        Type of Poster 
                     </Label>
                     <Select value={jobPosterType} onValueChange={setJobPosterType}>
                         <SelectTrigger className="h-12 cursor-pointer">
@@ -645,7 +693,7 @@ return (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                     <Label className="text-base font-medium text-gray-900">
-                        Availability <span className="text-red-500">*</span>
+                        Availability
                     </Label>
                     <Select value={jobAvailability} onValueChange={setJobAvailability}>
                         <SelectTrigger className="h-12 cursor-pointer">
@@ -662,7 +710,7 @@ return (
 
                     <div className="space-y-2">
                         <Label className="text-base font-medium text-gray-900">
-                            Spoken Language <span className="text-red-500">*</span>
+                            Spoken Language
                         </Label>
                         <Select value={jobLanguage} onValueChange={setJobLanguage}>
                             <SelectTrigger className="h-12 cursor-pointer">
@@ -678,7 +726,7 @@ return (
 
                     <div className="space-y-2">
                     <Label className="text-base font-medium text-gray-900">
-                        Mobility <span className="text-red-500">*</span>
+                        Mobility
                     </Label>
                     <Select value={jobMobility} onValueChange={setJobMobility}>
                         <SelectTrigger className="h-12 cursor-pointer">
@@ -697,7 +745,7 @@ return (
 
                 <div className="space-y-2">
                 <Label className="text-base font-medium text-gray-900">
-                    Approx. Job Duration <span className="text-red-500">*</span>
+                    Approx. Job Duration
                 </Label>
                 <Input
                     type="text"
@@ -724,9 +772,17 @@ return (
                 <Button
                     type="submit"
                     className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold rounded-xl h-14 cursor-pointer"
-                    disabled= {!isJobValid }
+                    disabled={!isJobValid || isSubmitting}
                 >
-                    Post Job Request
+                    {isSubmitting ? (
+                        <span className="flex items-center gap-2">
+                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                            </svg>
+                            Posting...
+                        </span>
+                    ) : "Post Job Request"}
                 </Button>
                 <p className="text-center text-gray-500 text-sm mt-3">
                     Your job request will appear publicly after submission.

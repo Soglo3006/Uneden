@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip --version)",
+      "Bash(python -m pip --version)",
+      "Bash(pip install ggshield)",
+      "Bash(ggshield install -m local)"
+    ]
+  }
+}

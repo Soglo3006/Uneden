@@ -3,35 +3,40 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export default function Footer() {
   return (
-    <footer className="bg-white text-gray-700 py-10 mt-20 border-t border-gray-500">
-      <div className="max-w-7xl mx-auto px-5 py-8">
-        <div className="flex flex-row justify-between items-center">
-          <h1 className="justify-center">FieldHearts</h1>
-          
-          <nav className="flex flex-wrap space-x-5 justify-center">
-            <h1>About</h1>
-            <h1>Contact</h1>
-            <h1>Privacy Policy</h1>
-            <h1>Terms of use</h1>
-          </nav>
-          
-          <div>
-            <ToggleGroup type="single" variant="outline" size="lg">
-              <ToggleGroupItem value="EN">
-                <h1>EN</h1>
-              </ToggleGroupItem>
-              <ToggleGroupItem value="FR">
-                <h1>FR</h1>
-              </ToggleGroupItem>
-            </ToggleGroup>
+    <footer className="bg-green-900 text-gray-300 border-t border-green-800 mt-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+
+        {/* Rangée principale */}
+        <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-6">
+
+          {/* Logo */}
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl font-bold text-white">Uneden</h1>
           </div>
+
+          {/* Nav links */}
+          <nav className="flex flex-wrap justify-center sm:justify-start gap-x-6 gap-y-2 text-sm font-medium text-gray-400">
+            <a href="#" className="hover:text-white transition-colors cursor-pointer">About</a>
+            <a href="#" className="hover:text-white transition-colors cursor-pointer">Contact</a>
+            <a href="#" className="hover:text-white transition-colors cursor-pointer">Privacy Policy</a>
+            <a href="#" className="hover:text-white transition-colors cursor-pointer">Terms of Use</a>
+          </nav>
+
+          {/* Toggle langue */}
+          <ToggleGroup type="single" variant="outline" className="border-green-700">
+            <ToggleGroupItem value="EN" className="cursor-pointer text-sm px-3 h-8 text-white border-green-700 hover:bg-green-800">EN</ToggleGroupItem>
+            <ToggleGroupItem value="FR" className="cursor-pointer text-sm px-3 h-8 text-white border-green-700 hover:bg-green-800">FR</ToggleGroupItem>
+          </ToggleGroup>
+
         </div>
-      </div>
-      
-      <div className="border-t border-gray-400 max-w-7xl mx-auto"></div>
-      
-      <div className="mt-5 text-center">
-        <p>© {new Date().getFullYear()} FieldHearts. All rights reserved.</p>
+
+        {/* Séparateur */}
+        <div className="border-t border-green-800 mt-8 pt-5 text-center">
+          <p className="text-xs text-gray-500">
+            © {new Date().getFullYear()} FieldHearts. All rights reserved.
+          </p>
+        </div>
+
       </div>
     </footer>
   );
