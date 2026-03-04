@@ -17,7 +17,7 @@ SelectItem,
 SelectTrigger,
 SelectValue,
 } from "@/components/ui/select";
-import {categories} from "@/lib/categories.ts";
+import {categories} from "@/lib/categories";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { CheckCircle } from "lucide-react";
@@ -72,6 +72,7 @@ export default function PostServicePage() {
     const [showJobDetails, setShowJobDetails] = useState(false);
     const [successPopup, setSuccessPopup] = useState<{ show: boolean; type: "offer" | "looking"; id: string } | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isOneTime, setIsOneTime] = useState(false);
 
 
     const isServiceValid =
@@ -117,6 +118,7 @@ export default function PostServicePage() {
             mobility: serviceMobility,
             duration: serviceDuration,
             image_url: serviceImage,
+            is_one_time: isOneTime,
             };
 
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services`, {
@@ -171,6 +173,7 @@ export default function PostServicePage() {
         duration: jobDuration,
         urgency: jobUrgency,
         image_url: jobImage,
+        is_one_time: isOneTime,
         };
 
 
@@ -512,6 +515,22 @@ return (
                 </div>
 
 
+                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="serviceIsOneTime"
+                    checked={isOneTime}
+                    onChange={(e) => setIsOneTime(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 cursor-pointer"
+                  />
+                  <label htmlFor="serviceIsOneTime" className="cursor-pointer">
+                    <span className="text-sm font-medium text-amber-800">One-time listing</span>
+                    <p className="text-xs text-amber-700 mt-0.5">
+                      Once a request is accepted, this listing will be hidden and all other pending requests will be automatically declined.
+                    </p>
+                  </label>
+                </div>
+
                 <div className="pt-4">
                 <Button
                     type="submit"
@@ -766,6 +785,22 @@ return (
                     label="Upload Job Image"
                     aspectRatio={16 / 9}
                 />
+                </div>
+
+                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="jobIsOneTime"
+                    checked={isOneTime}
+                    onChange={(e) => setIsOneTime(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 cursor-pointer"
+                  />
+                  <label htmlFor="jobIsOneTime" className="cursor-pointer">
+                    <span className="text-sm font-medium text-amber-800">One-time listing</span>
+                    <p className="text-xs text-amber-700 mt-0.5">
+                      Once a request is accepted, this listing will be hidden and all other pending requests will be automatically declined.
+                    </p>
+                  </label>
                 </div>
 
                 <div className="pt-4">

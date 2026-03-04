@@ -266,9 +266,15 @@ export const UpdateMyProfile = async (req, res) => {
     }
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const getUserProfile = async (req, res) => {
     try {
         const { id } = req.params;
+
+        if (!UUID_REGEX.test(id)) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
         const userResult = await pool.query(
             `SELECT 

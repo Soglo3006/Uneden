@@ -7,8 +7,8 @@ const router = express.Router();
 router.get("/me", protect, GetMyProfile);
 router.put("/me", protect, UpdateMyProfile);
 router.put("/complete", protect, completeProfile);
-router.get("/:id", getUserProfile);
 router.get("/settings", protect, getSettings);
 router.put("/settings", protect, updateSettings);
+router.get("/:id", getUserProfile);
 
 export default router;

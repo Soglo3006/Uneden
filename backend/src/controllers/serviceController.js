@@ -3,7 +3,7 @@ import pool from "../config/db.js";
 export const createService = async (req, res) => {
   try {
     const {
-      type, 
+      type,
       title,
       description,
       category,
@@ -16,8 +16,9 @@ export const createService = async (req, res) => {
       language,
       mobility,
       duration,
-      urgency, 
+      urgency,
       image_url,
+      is_one_time,
     } = req.body;
 
     if (!title || !description) {
@@ -36,9 +37,9 @@ export const createService = async (req, res) => {
     const result = await pool.query(
       `INSERT INTO services (
         user_id, type, title, description, category, category_id, subcategory,
-        price, location, poster_type, availability, 
-        language, mobility, duration, urgency, image_url
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        price, location, poster_type, availability,
+        language, mobility, duration, urgency, image_url, is_one_time
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING *`,
       [
         req.user.id,
@@ -57,6 +58,7 @@ export const createService = async (req, res) => {
         duration || null,
         urgency || null,
         image_url || null,
+        is_one_time === true || is_one_time === "true" ? true : false,
       ]
     );
 
@@ -69,16 +71,16 @@ export const createService = async (req, res) => {
 
 export const getAllServices = async (req, res) => {
   try {
-    const { category, location, minPrice, maxPrice, search } = req.query;
+    const { category, location, minPrice, maxPrice, search, categoryName, subcategory, type } = req.query;
 
     let query = `
-      SELECT 
+      SELECT
         s.*,
         c.name AS category_name,
-        c.image_url
+        c.image_url AS category_image_url
       FROM services s
       LEFT JOIN categories c ON c.id = s.category_id
-      WHERE 1=1
+      WHERE s.is_active = true
     `;
 
     const params = [];
@@ -87,6 +89,24 @@ export const getAllServices = async (req, res) => {
     if (category) {
       query += ` AND s.category_id = $${paramCount}`;
       params.push(category);
+      paramCount++;
+    }
+
+    if (categoryName) {
+      query += ` AND c.name ILIKE $${paramCount}`;
+      params.push(`%${categoryName}%`);
+      paramCount++;
+    }
+
+    if (subcategory) {
+      query += ` AND s.subcategory ILIKE $${paramCount}`;
+      params.push(`%${subcategory}%`);
+      paramCount++;
+    }
+
+    if (type && (type === "offer" || type === "looking")) {
+      query += ` AND s.type = $${paramCount}`;
+      params.push(type);
       paramCount++;
     }
 
@@ -158,17 +178,23 @@ export const getMyServices = async (req, res) => {
   }
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const getServiceById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!UUID_REGEX.test(id)) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
     const result = await pool.query(
-      `SELECT 
-          s.*, 
-          u.full_name AS owner_name, 
+      `SELECT
+          s.*,
+          u.full_name AS owner_name,
           u.id AS owner_id,
           c.name AS category_name,
-          c.image_url
+          c.image_url AS category_image_url
        FROM services s
        JOIN users u ON s.user_id = u.id
        LEFT JOIN categories c ON c.id = s.category_id
@@ -190,7 +216,11 @@ export const getServiceById = async (req, res) => {
 export const updateService = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, category_id, price, location } = req.body;
+    const {
+      title, description, category, category_id, subcategory,
+      price, location, poster_type, availability, language,
+      mobility, duration, urgency, image_url, is_one_time,
+    } = req.body;
 
     const check = await pool.query(
       `SELECT * FROM services WHERE id = $1 AND user_id = $2`,
@@ -204,20 +234,40 @@ export const updateService = async (req, res) => {
     const existing = check.rows[0];
 
     const updated = await pool.query(
-      `UPDATE services 
-       SET title = $1, 
-           description = $2, 
-           category_id = $3, 
-           price = $4, 
-           location = $5
-       WHERE id = $6
+      `UPDATE services
+       SET title        = $1,
+           description  = $2,
+           category     = $3,
+           category_id  = $4,
+           subcategory  = $5,
+           price        = $6,
+           location     = $7,
+           poster_type  = $8,
+           availability = $9,
+           language     = $10,
+           mobility     = $11,
+           duration     = $12,
+           urgency      = $13,
+           image_url    = $14,
+           is_one_time  = $15
+       WHERE id = $16
        RETURNING *`,
       [
-        title || existing.title,
-        description || existing.description,
-        category_id || existing.category_id,
-        price || existing.price,
-        location || existing.location,
+        title        !== undefined ? title        : existing.title,
+        description  !== undefined ? description  : existing.description,
+        category     !== undefined ? category     : existing.category,
+        category_id  !== undefined ? category_id  : existing.category_id,
+        subcategory  !== undefined ? subcategory  : existing.subcategory,
+        price        !== undefined ? price        : existing.price,
+        location     !== undefined ? location     : existing.location,
+        poster_type  !== undefined ? poster_type  : existing.poster_type,
+        availability !== undefined ? availability : existing.availability,
+        language     !== undefined ? language     : existing.language,
+        mobility     !== undefined ? mobility     : existing.mobility,
+        duration     !== undefined ? duration     : existing.duration,
+        urgency      !== undefined ? urgency      : existing.urgency,
+        image_url    !== undefined ? image_url    : existing.image_url,
+        is_one_time  !== undefined ? (is_one_time === true || is_one_time === "true") : existing.is_one_time,
         id,
       ]
     );

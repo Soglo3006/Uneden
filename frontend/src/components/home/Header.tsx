@@ -1,5 +1,5 @@
 // frontend/src/components/home/Header.tsx
-import { Search, User, Settings, LogOut, Building2, List, Wallet } from "lucide-react";
+import { Search, User, Settings, LogOut, Building2, List, Wallet, X, CalendarDays } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -30,6 +30,16 @@ import { useRef, useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import MessageNotifications from "@/components/messages/MessageNotifications";
 
+interface SearchResult {
+  id: string;
+  title: string;
+  price: number;
+  location: string;
+  image_url: string | null;
+  category_name: string | null;
+  subcategory: string | null;
+}
+
 export default function Header() {
   const { user, signOut, session } = useAuth();
   const router = useRouter();
@@ -38,6 +48,13 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const settingsScrollRef = useRef(null);
+
+  // Live search
+  const [headerSearch, setHeaderSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [showSearchDrop, setShowSearchDrop] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -57,6 +74,46 @@ export default function Header() {
     };
     fetchProfile();
   }, [user, session]);
+
+  // Debounced live search
+  useEffect(() => {
+    const q = headerSearch.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      setShowSearchDrop(false);
+      setSearchLoading(false);
+      return;
+    }
+    setSearchLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/services?search=${encodeURIComponent(q)}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(Array.isArray(data) ? data.slice(0, 6) : []);
+          setShowSearchDrop(true);
+        }
+      } catch {
+        // ignore
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [headerSearch]);
+
+  // Click outside closes dropdown
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSearchDrop(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -106,16 +163,22 @@ export default function Header() {
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <div className="cursor-pointer flex items-center">
+          <Link href="/wallet" className="cursor-pointer flex items-center">
             <Wallet className="mr-2 h-4 w-4" />
             <span>{isPerson ? "My Wallet" : "Company's Wallet"}</span>
-          </div>
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <div className="cursor-pointer flex items-center">
+          <Link href="/my-listings" className="cursor-pointer flex items-center">
             <List className="mr-2 h-4 w-4" />
             <span>{isPerson ? "My Listings" : "Company's Listings"}</span>
-          </div>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/bookings" className="cursor-pointer flex items-center">
+            <CalendarDays className="mr-2 h-4 w-4" />
+            <span>My Bookings</span>
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href={`/profile/${user?.id}`} className="cursor-pointer flex items-center">
@@ -153,14 +216,82 @@ export default function Header() {
               </h1>
             </Link>
 
-            {/* Search — visible sur tous les écrans */}
-            <div className="flex items-center border border-gray-300 rounded-lg px-3 py-1.5 flex-1 max-w-xs sm:max-w-sm lg:max-w-md">
-              <Search className="shrink-0 text-gray-400 mr-2" size={16} />
-              <input
-                placeholder="Search a service..."
-                type="text"
-                className="w-full text-sm outline-none bg-transparent placeholder:text-gray-400"
-              />
+            {/* Search — live dropdown */}
+            <div ref={searchRef} className="relative flex-1 max-w-xs sm:max-w-sm lg:max-w-md">
+              <div className="flex items-center border border-gray-300 rounded-lg px-3 py-1.5">
+                <Search className="shrink-0 text-gray-400 mr-2" size={16} />
+                <input
+                  placeholder="Search a service..."
+                  type="text"
+                  value={headerSearch}
+                  onChange={(e) => setHeaderSearch(e.target.value)}
+                  onFocus={() => { if (searchResults.length > 0) setShowSearchDrop(true); }}
+                  className="w-full text-sm outline-none bg-transparent placeholder:text-gray-400"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const q = headerSearch.trim();
+                      setShowSearchDrop(false);
+                      router.push(q ? `/listings?search=${encodeURIComponent(q)}` : "/listings");
+                    }
+                    if (e.key === "Escape") setShowSearchDrop(false);
+                  }}
+                />
+                {searchLoading && (
+                  <div className="w-3.5 h-3.5 border-2 border-green-700 border-t-transparent rounded-full animate-spin ml-2 shrink-0" />
+                )}
+                {headerSearch && !searchLoading && (
+                  <button
+                    onClick={() => { setHeaderSearch(""); setSearchResults([]); setShowSearchDrop(false); }}
+                    className="text-gray-400 hover:text-gray-600 ml-1 shrink-0"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* Dropdown results */}
+              {showSearchDrop && searchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden max-h-96 overflow-y-auto">
+                  {searchResults.map((result) => (
+                    <button
+                      key={result.id}
+                      onClick={() => {
+                        setShowSearchDrop(false);
+                        setHeaderSearch("");
+                        router.push(`/serviceDetail/${result.id}`);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-b-0 transition-colors"
+                    >
+                      {result.image_url ? (
+                        <img src={result.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 text-base">🛠️</div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{result.title}</p>
+                        {(result.category_name || result.subcategory) && (
+                          <p className="text-xs text-gray-400">
+                            {[result.category_name, result.subcategory].filter(Boolean).join(" | ")}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0 ml-2">
+                        <p className="text-sm font-bold text-green-700">${Number(result.price)}</p>
+                        <p className="text-xs text-gray-400 truncate max-w-[80px]">{result.location}</p>
+                      </div>
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => {
+                      setShowSearchDrop(false);
+                      router.push(`/listings?search=${encodeURIComponent(headerSearch.trim())}`);
+                    }}
+                    className="w-full text-center py-3 text-sm text-green-700 font-semibold hover:bg-green-50 transition-colors"
+                  >
+                    See all results for &ldquo;{headerSearch}&rdquo; →
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Selects + Toggle — desktop seulement */}

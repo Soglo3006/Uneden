@@ -22,7 +22,10 @@ import {
   UserStar,
   Users,
   Ban,
+  Pencil,
+  Trash2,
 } from "lucide-react";
+import EditListingModal from "@/components/listings/EditListingModal";
 import {
   Carousel,
   CarouselContent,
@@ -63,6 +66,27 @@ export default function UserProfilePage() {
 
   const isOwner = user?.id === profileId;
   const settingsScrollRef = useRef(null);
+
+  // Listing edit/delete (owner only)
+  const [editingListing, setEditingListing] = useState<any>(null);
+  const [confirmDeleteListingId, setConfirmDeleteListingId] = useState<string | null>(null);
+  const [deletingListingId, setDeletingListingId] = useState<string | null>(null);
+
+  const deleteListing = async (id: string) => {
+    setDeletingListingId(id);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (res.ok) setUserListings((prev) => prev.filter((s) => s.id !== id));
+    } catch {
+      // silent
+    } finally {
+      setDeletingListingId(null);
+      setConfirmDeleteListingId(null);
+    }
+  };
 
   const { startConversation, loading: sendMessageLoading } = useStartConversation();
 
@@ -651,26 +675,31 @@ export default function UserProfilePage() {
                     <CarouselContent className="-ml-4">
                       {userListings.map((listing) => (
                         <CarouselItem key={listing.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                          <Link href={`/serviceDetail/${listing.id}`}>
-                            <div className="border rounded-xl shadow-sm p-4 hover:shadow-lg transition-all cursor-pointer h-full bg-white">
+                          <div className="border rounded-xl shadow-sm bg-white h-full flex flex-col overflow-hidden hover:shadow-lg transition-all">
+                            {/* Image */}
+                            <Link href={`/serviceDetail/${listing.id}`} className="block">
                               {listing.image_url ? (
                                 <img
                                   src={listing.image_url}
                                   alt={listing.title}
-                                  className="w-full h-48 object-cover rounded-lg mb-3"
+                                  className="w-full h-48 object-cover"
                                 />
                               ) : (
-                                <div className="w-full h-48 bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
+                                <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
                                   <Grid3x3 className="h-12 w-12 text-gray-300" />
                                 </div>
                               )}
-                              
+                            </Link>
+
+                            <div className="p-4 flex flex-col flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <h3 className="font-semibold text-gray-900 line-clamp-1 flex-1">
-                                  {listing.title}
-                                </h3>
+                                <Link href={`/serviceDetail/${listing.id}`} className="flex-1">
+                                  <h3 className="font-semibold text-gray-900 line-clamp-1 hover:text-green-700 transition-colors">
+                                    {listing.title}
+                                  </h3>
+                                </Link>
                                 {listing.type === "looking" && (
-                                  <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0">
+                                  <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0 border-0">
                                     Looking
                                   </Badge>
                                 )}
@@ -686,13 +715,51 @@ export default function UserProfilePage() {
                               </div>
 
                               {listing.category && (
-                                <p className="text-xs text-gray-500 line-clamp-1">
+                                <p className="text-xs text-gray-500 line-clamp-1 mb-3">
                                   {listing.category}
                                   {listing.subcategory && ` • ${listing.subcategory}`}
                                 </p>
                               )}
+
+                              {/* Owner edit/delete actions */}
+                              {isOwner && (
+                                <div className="mt-auto pt-3 border-t border-gray-100 flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-1.5 flex-1"
+                                    onClick={() => setEditingListing(listing)}
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                    Edit
+                                  </Button>
+                                  {confirmDeleteListingId === listing.id ? (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        className="bg-red-600 hover:bg-red-700 text-white flex-1"
+                                        onClick={() => deleteListing(listing.id)}
+                                        disabled={deletingListingId === listing.id}
+                                      >
+                                        {deletingListingId === listing.id ? "…" : "Confirm"}
+                                      </Button>
+                                      <Button size="sm" variant="outline" onClick={() => setConfirmDeleteListingId(null)}>✕</Button>
+                                    </>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-red-600 border-red-200 hover:bg-red-50 gap-1.5 flex-1"
+                                      onClick={() => setConfirmDeleteListingId(listing.id)}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                      Delete
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                          </Link>
+                          </div>
                         </CarouselItem>
                       ))}
                     </CarouselContent>
@@ -708,12 +775,12 @@ export default function UserProfilePage() {
                   {/* View All Button */}
                   <div className="mt-2">
                     <Link
-                      href={`/listings/${(displayName || "user")
+                      href={isOwner ? "/my-listings" : `/listings/${(displayName || "user")
                         .toLowerCase()
                         .replace(/\s+/g, "-")}`}
                     >
                       <Button variant="outline" className="w-full cursor-pointer">
-                        View All My Listings
+                        {isOwner ? "Manage My Listings" : "View All Listings"}
                       </Button>
                     </Link>
                   </div>
@@ -892,6 +959,19 @@ export default function UserProfilePage() {
             />
           </div>
         </div>
+      )}
+
+      {/* Listing Edit Modal */}
+      {editingListing && session?.access_token && (
+        <EditListingModal
+          service={editingListing}
+          accessToken={session.access_token}
+          onClose={() => setEditingListing(null)}
+          onSaved={(updated) => {
+            setUserListings((prev) => prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)));
+            setEditingListing(null);
+          }}
+        />
       )}
 
       {/* Portfolio Modal */}
