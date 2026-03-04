@@ -2,11 +2,9 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Header from "@/components/home/Header";
-import Footer from "@/components/home/Footer";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { ChevronDown, ChevronRight, MapPin, X } from "lucide-react";
+import { ChevronDown, ChevronRight, MapPin, X, SlidersHorizontal } from "lucide-react";
 import { categories } from "@/lib/categories";
 import ListingsGrid from "@/components/listings/ListingsGrid";
 
@@ -23,13 +21,21 @@ function ListingsContent() {
   const [expandedCategories, setExpandedCategories] = useState<string[]>(
     searchParams.get("category") ? [searchParams.get("category")!] : []
   );
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  // Sync search from header navigation (URL param changes)
+  // Sync all filters from URL when CategoryNav or header search navigates here
   const urlSearch = searchParams.get("search") ?? "";
+  const urlCategory = searchParams.get("category") ?? "";
+  const urlSubcategory = searchParams.get("subcategory") ?? "";
   useEffect(() => {
     setSearch(urlSearch);
     setDebouncedSearch(urlSearch);
   }, [urlSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setSelectedCategory(urlCategory);
+    setSelectedSubcategory(urlSubcategory);
+    if (urlCategory) setExpandedCategories([urlCategory]);
+  }, [urlCategory, urlSubcategory]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced values — prevent API call on every keystroke/drag
   const [debouncedSearch, setDebouncedSearch] = useState(search);
@@ -90,10 +96,48 @@ function ListingsContent() {
 
   return (
     <div className="max-w-7xl mx-auto p-5">
+      {/* ── Mobile filter toggle ── */}
+      <div className="flex items-center gap-2 mb-4 lg:hidden">
+        <button
+          onClick={() => setShowMobileFilters((v) => !v)}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          Filters
+          {activeChips.length > 0 && (
+            <span className="ml-1 bg-green-700 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">
+              {activeChips.length}
+            </span>
+          )}
+        </button>
+        {activeChips.length > 0 && (
+          <div className="flex flex-wrap gap-2 flex-1 min-w-0">
+            {activeChips.map(({ label, clear }) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1 bg-green-50 text-green-800 text-xs px-3 py-1 rounded-full border border-green-200"
+              >
+                {label}
+                <button onClick={clear} className="ml-1 hover:text-green-900">
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-col lg:flex-row gap-6">
         {/* ── Filter sidebar ── */}
-        <aside className="w-full lg:w-1/4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+        <aside className={`w-full lg:w-1/4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto ${showMobileFilters ? "block" : "hidden"} lg:block`}>
           <div className="border border-gray-200 rounded-xl p-4 space-y-5">
+            {/* Mobile close button */}
+            <div className="flex items-center justify-between lg:hidden">
+              <span className="text-sm font-semibold text-gray-900">Filters</span>
+              <button onClick={() => setShowMobileFilters(false)} className="p-1 rounded hover:bg-gray-100">
+                <X className="h-4 w-4 text-gray-500" />
+              </button>
+            </div>
 
             {/* Clear all */}
             {activeChips.length > 0 && (
@@ -165,7 +209,7 @@ function ListingsContent() {
                     </button>
                     {expandedCategories.includes(cat.name) && (
                       <div className="ml-3 pl-3 border-l-2 border-gray-100 space-y-0.5 mb-1">
-                        {cat.subcategories.map((sub) => (
+                        {cat.subcategories?.map((sub) => (
                           <button
                             key={sub}
                             onClick={() => selectSubcategory(cat.name, sub)}
@@ -264,8 +308,6 @@ function ListingsContent() {
 export default function ListingsPage() {
   return (
     <div className="bg-white min-h-screen text-black">
-      <Header />
-
       {/* Ad banner */}
       <div className="bg-gray-200 border-b border-gray-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -286,8 +328,6 @@ export default function ListingsPage() {
           <ListingsContent />
         </Suspense>
       </main>
-
-      <Footer />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 // frontend/src/components/home/Header.tsx
+"use client";
 import { Search, User, Settings, LogOut, Building2, List, Wallet, X, CalendarDays } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -165,25 +166,25 @@ export default function Header() {
         <DropdownMenuItem asChild>
           <Link href="/wallet" className="cursor-pointer flex items-center">
             <Wallet className="mr-2 h-4 w-4" />
-            <span>{isPerson ? "My Wallet" : "Company's Wallet"}</span>
+            <span>Wallet</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/my-listings" className="cursor-pointer flex items-center">
             <List className="mr-2 h-4 w-4" />
-            <span>{isPerson ? "My Listings" : "Company's Listings"}</span>
+            <span>Listings</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/bookings" className="cursor-pointer flex items-center">
             <CalendarDays className="mr-2 h-4 w-4" />
-            <span>My Bookings</span>
+            <span>Bookings</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href={`/profile/${user?.id}`} className="cursor-pointer flex items-center">
             {isPerson ? <User className="mr-2 h-4 w-4" /> : <Building2 className="mr-2 h-4 w-4" />}
-            <span>{isPerson ? "My Profile" : "Company Profile"}</span>
+            <span>Profile</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

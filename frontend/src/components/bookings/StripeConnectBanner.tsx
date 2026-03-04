@@ -81,12 +81,12 @@ export default function StripeConnectBanner({ accessToken }: Props) {
 
   // Not connected at all
   return (
-    <div className="flex items-center justify-between gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4">
+    <div className="flex items-center justify-between gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4">
       <div>
-        <p className="text-sm font-medium text-blue-800">Get paid for your services</p>
-        <p className="text-xs text-blue-700">Connect your Stripe account so clients can pay you securely.</p>
+        <p className="text-sm font-medium text-green-800">Get paid for your services</p>
+        <p className="text-xs text-green-700">Connect your Stripe account so clients can pay you securely.</p>
       </div>
-      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 flex-shrink-0"
+      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white gap-1.5 flex-shrink-0"
         onClick={handleConnect} disabled={connecting}>
         {connecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
         Connect Stripe

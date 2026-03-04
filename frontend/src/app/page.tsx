@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button";
 import { categories } from "@/lib/categories";
 import { sampleListings } from "@/lib/listings";
 import Link from "next/link"
-import Header  from "@/components/home/Header";
-import CategoryNav from "@/components/home/Category";
-import Footer from "@/components/home/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -38,9 +35,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white text-black">
-      <Header/>
-      <CategoryNav/>
 
+
+      <main className="flex-1">
       <div
         className="relative py-16 sm:py-32 md:py-40 px-4 overflow-hidden"
         style={{
@@ -148,8 +145,8 @@ export default function HomePage() {
         </div>
 
       </div>
+      </main>
 
-      <Footer/>
       <SupportButton floating />
       </div> 
   );

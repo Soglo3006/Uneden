@@ -7,7 +7,7 @@ export const createBooking = async (req, res) => {
     const { service_id, client_description } = req.body;
 
     const service = await pool.query(
-      "SELECT s.*, u.email as worker_email, u.full_name as worker_name FROM services s JOIN users u ON s.user_id = u.id WHERE s.id = $1",
+      "SELECT s.*, u.email as worker_email, CASE WHEN u.account_type = 'company' THEN u.company_name ELSE u.full_name END as worker_name FROM services s JOIN users u ON s.user_id = u.id WHERE s.id = $1",
       [service_id]
     );
 
@@ -36,8 +36,11 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({ message: "You already have a pending request for this listing" });
     }
 
-    const client = await pool.query("SELECT full_name FROM users WHERE id = $1", [req.user.id]);
-    const clientName = client.rows[0].full_name;
+    const client = await pool.query(
+      "SELECT CASE WHEN account_type = 'company' THEN company_name ELSE full_name END AS display_name FROM users WHERE id = $1",
+      [req.user.id]
+    );
+    const clientName = client.rows[0].display_name;
 
     const result = await pool.query(
       `INSERT INTO bookings (service_id, client_id, worker_id, status, client_description)
@@ -69,7 +72,8 @@ export const getMyBookings = async (req, res) => {
     const result = await pool.query(
       `SELECT b.*, s.title, s.price, s.image_url, s.category, s.location AS service_location,
               s.is_one_time,
-              u.full_name AS worker_name, w.full_name AS client_name,
+              CASE WHEN u.account_type = 'company' THEN u.company_name ELSE u.full_name END AS worker_name,
+              CASE WHEN w.account_type = 'company' THEN w.company_name ELSE w.full_name END AS client_name,
               EXISTS(SELECT 1 FROM reviews WHERE booking_id = b.id AND reviewer_id = $1) AS has_reviewed,
               EXISTS(SELECT 1 FROM disputes WHERE booking_id = b.id) AS has_dispute,
               b.payment_status, b.completed_by_worker, b.completed_by_client
@@ -93,7 +97,7 @@ export const getReceivedBookings = async (req, res) => {
     const result = await pool.query(
       `SELECT b.*, s.title, s.price, s.image_url, s.category, s.location AS service_location,
               s.is_one_time,
-              u.full_name AS client_name,
+              CASE WHEN u.account_type = 'company' THEN u.company_name ELSE u.full_name END AS client_name,
               EXISTS(SELECT 1 FROM reviews WHERE booking_id = b.id AND reviewer_id = $1) AS has_reviewed,
               EXISTS(SELECT 1 FROM disputes WHERE booking_id = b.id) AS has_dispute,
               b.payment_status, b.completed_by_worker, b.completed_by_client
@@ -123,7 +127,8 @@ export const updateBookingStatus = async (req, res) => {
 
     const booking = await pool.query(
       `SELECT b.*, s.title, s.is_one_time,
-              u.email as client_email, u.full_name as client_name
+              u.email as client_email,
+              CASE WHEN u.account_type = 'company' THEN u.company_name ELSE u.full_name END AS client_name
        FROM bookings b
        JOIN services s ON b.service_id = s.id
        JOIN users u ON b.client_id = u.id
@@ -181,7 +186,8 @@ export const markCompleted = async (req, res) => {
 
     const booking = await pool.query(
       `SELECT b.*, s.title, s.price,
-              cw.full_name AS worker_name, cc.full_name AS client_name,
+              CASE WHEN cw.account_type = 'company' THEN cw.company_name ELSE cw.full_name END AS worker_name,
+              CASE WHEN cc.account_type = 'company' THEN cc.company_name ELSE cc.full_name END AS client_name,
               cw.id AS worker_user_id, cc.id AS client_user_id
        FROM bookings b
        JOIN services s ON b.service_id = s.id
@@ -255,7 +261,7 @@ export const markCompleted = async (req, res) => {
 async function autoRejectOtherRequests(serviceId, acceptedBookingId) {
   // Get all other pending bookings for this service
   const others = await pool.query(
-    "SELECT b.*, u.email, u.full_name FROM bookings b JOIN users u ON b.client_id = u.id WHERE b.service_id = $1 AND b.status = 'pending' AND b.id != $2",
+    "SELECT b.*, u.email, CASE WHEN u.account_type = 'company' THEN u.company_name ELSE u.full_name END AS full_name FROM bookings b JOIN users u ON b.client_id = u.id WHERE b.service_id = $1 AND b.status = 'pending' AND b.id != $2",
     [serviceId, acceptedBookingId]
   );
 

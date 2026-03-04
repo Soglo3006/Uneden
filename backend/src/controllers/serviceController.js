@@ -76,7 +76,7 @@ export const getAllServices = async (req, res) => {
     let query = `
       SELECT
         s.*,
-        c.name AS category_name,
+        COALESCE(c.name, s.category) AS category_name,
         c.image_url AS category_image_url
       FROM services s
       LEFT JOIN categories c ON c.id = s.category_id
@@ -93,7 +93,7 @@ export const getAllServices = async (req, res) => {
     }
 
     if (categoryName) {
-      query += ` AND c.name ILIKE $${paramCount}`;
+      query += ` AND (c.name ILIKE $${paramCount} OR s.category ILIKE $${paramCount})`;
       params.push(`%${categoryName}%`);
       paramCount++;
     }
@@ -191,7 +191,7 @@ export const getServiceById = async (req, res) => {
     const result = await pool.query(
       `SELECT
           s.*,
-          u.full_name AS owner_name,
+          CASE WHEN u.account_type = 'company' THEN u.company_name ELSE u.full_name END AS owner_name,
           u.id AS owner_id,
           c.name AS category_name,
           c.image_url AS category_image_url
@@ -284,14 +284,16 @@ export const getUserServices = async (req, res) => {
     const { userId } = req.params;
 
     const result = await pool.query(
-      `SELECT 
+      `SELECT
         s.*,
-        u.full_name AS owner_name,
+        CASE WHEN u.account_type = 'company' THEN u.company_name ELSE u.full_name END AS owner_name,
         u.company_name,
-        u.account_type
+        u.account_type,
+        COALESCE(c.name, s.category) AS category_name
       FROM services s
       JOIN users u ON s.user_id = u.id
-      WHERE s.user_id = $1 
+      LEFT JOIN categories c ON c.id = s.category_id
+      WHERE s.user_id = $1
       ORDER BY s.created_at DESC`,
       [userId]
     );

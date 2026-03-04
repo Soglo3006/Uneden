@@ -1,8 +1,5 @@
 "use client";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
-import Header from "@/components/home/Header";
-import CategoryNav from "@/components/home/Category";
-import Footer from "@/components/home/Footer";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -261,9 +258,6 @@ return (
                 </div>
             </div>
             )}
-
-    <Header />
-    <CategoryNav/>
     <main className="flex-1 py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
         <div className="text-center mb-6">
@@ -828,7 +822,6 @@ return (
         </div>
         </div>
     </main>
-    <Footer />
     </div>
 );
 }

@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import { useChats } from '@/hooks/useChats';
 import { useMessages } from '@/hooks/useMessages';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Header from '@/components/home/Header';
-import CategoryNav from '@/components/home/Category';
 import { supabase } from '@/lib/supabaseClient';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ConversationList } from '@/components/messages/ConversationList';
@@ -30,7 +28,7 @@ import { ConversationSettings } from '@/components/messages/ConversationSettings
 import { Phone, Video } from 'lucide-react';
 import Link from 'next/link';
 
-export default function MessagesPage() {
+function MessagesContent() {
   const { user } = useProtectedRoute({
     requireAuth: true,
     requireProfileCompleted: true,
@@ -352,8 +350,6 @@ export default function MessagesPage() {
   if (chatsLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header />
-        <CategoryNav />
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700" />
         </div>
@@ -365,9 +361,6 @@ export default function MessagesPage() {
   return (
     <TooltipProvider>
       <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header />
-        <CategoryNav />
-
         {/* Bannière hors-ligne */}
         {!isOnline && (
           <div className="flex items-center justify-center gap-2 bg-amber-50 border-b border-amber-200 px-4 py-2">
@@ -697,5 +690,17 @@ export default function MessagesPage() {
         </div>
       </div>
     </TooltipProvider>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-8 h-8 border-4 border-green-700 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <MessagesContent />
+    </Suspense>
   );
 }

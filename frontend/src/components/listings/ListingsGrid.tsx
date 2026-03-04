@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import ListingCard from "./ListingCard";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { MapPin, Clock, Grid3x3 } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ApiService {
   id: string;
@@ -15,6 +17,7 @@ interface ApiService {
   image_url: string | null;
   category_name: string | null;
   subcategory: string | null;
+  type?: string;
 }
 
 export interface ListingsFilters {
@@ -41,6 +44,7 @@ function formatRelativeDate(dateStr: string): string {
 }
 
 const LISTINGS_PER_PAGE = 12;
+const AD_INTERVAL = 8; // insert ad every N cards
 
 export default function ListingsGrid({ filters }: { filters?: ListingsFilters }) {
   const [listings, setListings] = useState<ApiService[]>([]);
@@ -100,9 +104,15 @@ export default function ListingsGrid({ filters }: { filters?: ListingsFilters })
 
   if (loading) {
     return (
-      <div ref={gridTopRef} className="space-y-4">
+      <div ref={gridTopRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="h-32 bg-gray-100 rounded-xl animate-pulse" />
+          <div key={i} className="border rounded-xl shadow-sm bg-white animate-pulse overflow-hidden">
+            <div className="w-full aspect-video bg-gray-200" />
+            <div className="p-4 space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-3/4" />
+              <div className="h-4 bg-gray-100 rounded w-1/2" />
+            </div>
+          </div>
         ))}
       </div>
     );
@@ -111,39 +121,89 @@ export default function ListingsGrid({ filters }: { filters?: ListingsFilters })
   if (listings.length === 0) {
     return (
       <div ref={gridTopRef} className="text-center py-16 text-gray-500">
-        <p className="text-lg font-medium">No services found</p>
+        <Grid3x3 className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+        <p className="text-lg font-medium text-gray-700">No services found</p>
         <p className="text-sm mt-1">Try adjusting your filters</p>
       </div>
     );
   }
 
+  // Build rows interleaved with ad placeholders
+  const items: Array<{ type: "listing"; data: ApiService } | { type: "ad"; key: number }> = [];
+  currentListings.forEach((listing, index) => {
+    items.push({ type: "listing", data: listing });
+    if ((index + 1) % AD_INTERVAL === 0 && index !== currentListings.length - 1) {
+      items.push({ type: "ad", key: index });
+    }
+  });
+
   return (
-    <div className="space-y-5" ref={gridTopRef}>
-      <div className="space-y-4">
-        {currentListings.map((listing, index) => (
-          <div key={listing.id}>
-            <Link href={`/serviceDetail/${listing.id}`}>
-              <ListingCard
-                title={listing.title}
-                price={Number(listing.price)}
-                location={listing.location}
-                postedTime={formatRelativeDate(listing.created_at)}
-                imageUrl={listing.image_url ?? undefined}
-                category={listing.category_name ?? undefined}
-                subcategory={listing.subcategory ?? undefined}
-              />
-            </Link>
-            {(index + 1) % 8 === 0 && index !== currentListings.length - 1 && (
-              <div className="bg-gray-100 rounded-xl p-8 flex items-center justify-center border border-gray-200 h-32 mt-4">
-                <span className="text-gray-500 text-sm font-medium">Ad placeholder</span>
+    <div className="space-y-6" ref={gridTopRef}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {items.map((item) => {
+          if (item.type === "ad") {
+            return (
+              <div
+                key={`ad-${item.key}`}
+                className="sm:col-span-2 lg:col-span-3 bg-gray-100 rounded-xl p-6 flex items-center justify-center border border-gray-200 h-24"
+              >
+                <span className="text-gray-400 text-sm font-medium">Ad placeholder</span>
               </div>
-            )}
-          </div>
-        ))}
+            );
+          }
+
+          const s = item.data;
+          return (
+            <Link key={s.id} href={`/serviceDetail/${s.id}`} className="block group">
+              <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow flex flex-col">
+                <AspectRatio ratio={16 / 9}>
+                  {s.image_url ? (
+                    <img src={s.image_url} alt={s.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                      <Grid3x3 className="h-10 w-10 text-gray-300" />
+                    </div>
+                  )}
+                </AspectRatio>
+
+                <div className="p-3 flex flex-col flex-1">
+                  <div className="flex items-start gap-2 mb-1">
+                    <h3 className="font-semibold text-gray-900 line-clamp-1 flex-1 group-hover:text-green-700 transition-colors text-sm">
+                      {s.title}
+                    </h3>
+                    {s.type === "looking" && (
+                      <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0 border-0">Looking</Badge>
+                    )}
+                  </div>
+
+                  {(s.category_name || s.subcategory) && (
+                    <p className="text-xs text-gray-400 mb-1 line-clamp-1">
+                      {[s.category_name, s.subcategory].filter(Boolean).join(" | ")}
+                    </p>
+                  )}
+
+                  <p className="text-green-700 font-bold text-base mb-2">${Number(s.price).toLocaleString()}</p>
+
+                  <div className="flex items-center justify-between text-xs text-gray-500 mt-auto">
+                    <div className="flex items-center gap-1 min-w-0">
+                      <MapPin className="h-3 w-3 flex-shrink-0" />
+                      <span className="line-clamp-1">{s.location}</span>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                      <Clock className="h-3 w-3" />
+                      <span>{formatRelativeDate(s.created_at)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-6">
+        <div className="flex items-center justify-center gap-2 pt-4">
           <Button variant="outline" size="sm" onClick={() => handlePageChange(1)} disabled={currentPage === 1} className="px-3">
             <ChevronLeft className="h-4 w-4" /><ChevronLeft className="h-4 w-4 -ml-3" />
           </Button>
@@ -151,17 +211,21 @@ export default function ListingsGrid({ filters }: { filters?: ListingsFilters })
             <ChevronLeft className="h-4 w-4" />
           </Button>
 
-          {[...Array(totalPages)].map((_, i) => (
-            <Button
-              key={i + 1}
-              variant={currentPage === i + 1 ? "default" : "outline"}
-              size="sm"
-              onClick={() => handlePageChange(i + 1)}
-              className={`px-4 ${currentPage === i + 1 ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
-            >
-              {i + 1}
-            </Button>
-          ))}
+          {[...Array(Math.min(totalPages, 7))].map((_, i) => {
+            const page = totalPages <= 7 ? i + 1 : currentPage <= 4 ? i + 1 : currentPage + i - 3;
+            if (page < 1 || page > totalPages) return null;
+            return (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePageChange(page)}
+                className={`px-4 ${currentPage === page ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
+              >
+                {page}
+              </Button>
+            );
+          })}
 
           <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-3">
             <ChevronRight className="h-4 w-4" />

@@ -7,9 +7,10 @@ import { CreditCard, Loader2 } from "lucide-react";
 interface Props {
   bookingId: string;
   accessToken: string;
+  fullWidth?: boolean;
 }
 
-export default function PayNowButton({ bookingId, accessToken }: Props) {
+export default function PayNowButton({ bookingId, accessToken, fullWidth }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -43,8 +44,8 @@ export default function PayNowButton({ bookingId, accessToken }: Props) {
   return (
     <div className="flex flex-col gap-1">
       <Button
-        size="sm"
-        className="bg-green-700 hover:bg-green-800 text-white gap-1.5 flex-1"
+        size={fullWidth ? "default" : "sm"}
+        className={`bg-green-700 hover:bg-green-800 text-white gap-1.5 ${fullWidth ? "w-full h-11" : "flex-1"}`}
         onClick={handlePay}
         disabled={loading}
       >

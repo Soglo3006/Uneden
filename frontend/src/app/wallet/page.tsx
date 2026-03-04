@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import Header from "@/components/home/Header";
-import Footer from "@/components/home/Footer";
 import Link from "next/link";
 import { Wallet, ArrowDownCircle, ArrowUpCircle, Clock, ChevronRight } from "lucide-react";
 
@@ -44,7 +42,7 @@ function formatAmount(amount: number) {
 }
 
 export default function WalletPage() {
-  const { user, session } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [wallet, setWallet] = useState<WalletData | null>(null);
@@ -52,6 +50,7 @@ export default function WalletPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       router.push("/login");
       return;
@@ -70,12 +69,11 @@ export default function WalletPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user, session, router]);
+  }, [user, session, router, authLoading]);
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
         <main className="max-w-3xl mx-auto px-4 py-10">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 rounded w-40" />
@@ -83,14 +81,12 @@ export default function WalletPage() {
             <div className="h-64 bg-gray-100 rounded-2xl" />
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
 
       <main className="max-w-3xl mx-auto px-4 py-10 space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">Wallet</h1>
@@ -108,8 +104,8 @@ export default function WalletPage() {
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <ArrowDownCircle className="h-5 w-5 text-blue-600" />
+            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+              <ArrowDownCircle className="h-5 w-5 text-green-600" />
             </div>
             <div>
               <p className="text-xs text-gray-500">Total Earned</p>
@@ -118,8 +114,8 @@ export default function WalletPage() {
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-              <ArrowUpCircle className="h-5 w-5 text-orange-600" />
+            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+              <ArrowUpCircle className="h-5 w-5 text-red-600" />
             </div>
             <div>
               <p className="text-xs text-gray-500">Total Spent</p>
@@ -192,8 +188,6 @@ export default function WalletPage() {
           )}
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

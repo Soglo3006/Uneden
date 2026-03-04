@@ -1,13 +1,10 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import Header from "@/components/home/Header";
-import Footer from "@/components/home/Footer";
-import ListingCard from "@/components/listings/ListingCard";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MapPin, Bookmark, Share2, Clock, Globe, CheckCircle, Calendar, Zap, Truck, X, Pencil, Trash2, Tag } from "lucide-react";
-import CategoryNav from "@/components/home/Category";
+import { MapPin, Bookmark, Share2, Clock, Globe, CheckCircle, Calendar, Zap, Truck, X, Tag, Grid3x3 } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import SupportButton from "@/components/support/SupportButton";
@@ -168,14 +165,34 @@ export default function ServiceDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white text-black">
-        <Header />
-        <CategoryNav />
         <main className="max-w-7xl mx-auto p-5">
-          <div className="flex justify-center py-24">
-            <div className="w-8 h-8 border-4 border-green-700 border-t-transparent rounded-full animate-spin" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start animate-pulse">
+            {/* Main content skeleton */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="rounded-2xl bg-gray-200 aspect-video w-full" />
+              <div className="bg-gray-100 rounded-2xl p-6 space-y-3">
+                <div className="h-6 bg-gray-200 rounded w-2/3" />
+                <div className="h-4 bg-gray-200 rounded w-1/3" />
+                <div className="h-4 bg-gray-200 rounded w-1/2" />
+              </div>
+              <div className="bg-gray-100 rounded-2xl p-6 space-y-3">
+                <div className="h-5 bg-gray-200 rounded w-1/4" />
+                <div className="h-4 bg-gray-200 rounded w-full" />
+                <div className="h-4 bg-gray-200 rounded w-5/6" />
+                <div className="h-4 bg-gray-200 rounded w-4/6" />
+              </div>
+            </div>
+            {/* Sidebar skeleton */}
+            <div className="space-y-4">
+              <div className="bg-gray-100 rounded-2xl p-6 space-y-3">
+                <div className="h-8 bg-gray-200 rounded w-1/2" />
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
+                <div className="h-11 bg-gray-200 rounded-xl w-full mt-4" />
+                <div className="h-11 bg-gray-200 rounded-xl w-full" />
+              </div>
+            </div>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -183,8 +200,6 @@ export default function ServiceDetailPage() {
   if (error || !service) {
     return (
       <div className="min-h-screen bg-white text-black">
-        <Header />
-        <CategoryNav />
         <main className="max-w-7xl mx-auto p-5">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Service not found</h1>
@@ -194,7 +209,6 @@ export default function ServiceDetailPage() {
             </Link>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -257,26 +271,26 @@ export default function ServiceDetailPage() {
 
   return (
     <div className="min-h-screen bg-white text-black">
-      <Header />
-      <CategoryNav />
 
       <main className="max-w-7xl mx-auto p-5">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start">
           {/* ── Main content ── */}
-          <section className="lg:col-span-2 space-y-6">
+          <section className="lg:col-span-2 space-y-6 order-1">
             {/* Hero image */}
             <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-              {service.image_url ? (
-                <img
-                  src={service.image_url}
-                  alt={service.title}
-                  className="w-full h-56 sm:h-80 object-cover"
-                />
-              ) : (
-                <div className="w-full h-56 sm:h-80 bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
-                  <span className="text-6xl">🛠️</span>
-                </div>
-              )}
+              <AspectRatio ratio={16 / 9}>
+                {service.image_url ? (
+                  <img
+                    src={service.image_url}
+                    alt={service.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+                    <span className="text-6xl">🛠️</span>
+                  </div>
+                )}
+              </AspectRatio>
             </div>
 
             {/* Title & info card */}
@@ -436,29 +450,10 @@ export default function ServiceDetailPage() {
               <p className="text-gray-500 text-sm">No reviews yet for this service.</p>
             </div>
 
-            {/* Similar services */}
-            {similarServices.length > 0 && (
-              <div className="rounded-2xl border border-gray-200 shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Similar services</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {similarServices.map((s) => (
-                    <Link key={s.id} href={`/serviceDetail/${s.id}`}>
-                      <ListingCard
-                        title={s.title}
-                        price={s.price}
-                        location={s.location}
-                        postedTime={formatRelativeDate(s.created_at)}
-                        imageUrl={s.image_url ?? undefined}
-                      />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
           </section>
 
-          {/* ── Sidebar ── */}
-          <aside className="lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto space-y-6">
+          {/* ── Sidebar ── order-2 on mobile so it appears before similar services */}
+          <aside className="lg:col-span-1 space-y-6 order-2">
             {isOwner ? (
               /* ── Owner panel ── */
               <div className="border border-gray-200 rounded-2xl p-6 bg-white shadow-sm space-y-3">
@@ -467,7 +462,6 @@ export default function ServiceDetailPage() {
                   className="w-full bg-green-700 hover:bg-green-800 text-white h-12 gap-2"
                   onClick={() => setShowEditModal(true)}
                 >
-                  <Pencil className="h-4 w-4" />
                   Edit Listing
                 </Button>
                 {confirmDelete ? (
@@ -492,7 +486,6 @@ export default function ServiceDetailPage() {
                     className="w-full h-12 text-red-600 border-red-200 hover:bg-red-50 gap-2"
                     onClick={() => setConfirmDelete(true)}
                   >
-                    <Trash2 className="h-4 w-4" />
                     Delete Listing
                   </Button>
                 )}
@@ -612,10 +605,40 @@ export default function ServiceDetailPage() {
               </div>
             </div>
           </aside>
+
+          {/* ── Similar Services ── order-3: appears after sidebar on mobile */}
+          {similarServices.length > 0 && (
+            <div className="lg:col-span-2 order-3 space-y-4">
+              <h2 className="text-lg font-bold text-gray-900">Similar Services</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {similarServices.map((s) => (
+                  <Link key={s.id} href={`/serviceDetail/${s.id}`} className="block group">
+                    <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white hover:shadow-md transition-shadow">
+                      <AspectRatio ratio={16 / 9}>
+                        {s.image_url ? (
+                          <img src={s.image_url} alt={s.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                            <Grid3x3 className="h-10 w-10 text-gray-300" />
+                          </div>
+                        )}
+                      </AspectRatio>
+                      <div className="p-3">
+                        <p className="font-semibold text-gray-900 line-clamp-1 group-hover:text-green-700 transition-colors">{s.title}</p>
+                        <p className="text-green-700 font-bold text-sm mt-1">${s.price}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />{s.location}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
-      <Footer />
       <SupportButton floating />
 
       {/* Owner edit modal */}

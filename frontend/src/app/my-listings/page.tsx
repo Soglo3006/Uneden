@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import Header from "@/components/home/Header";
-import Footer from "@/components/home/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { Pencil, Trash2, Plus, Grid3x3, MapPin } from "lucide-react";
+import { Plus, Grid3x3, MapPin } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import EditListingModal from "@/components/listings/EditListingModal";
 
 interface MyService {
@@ -31,7 +30,7 @@ interface MyService {
 }
 
 export default function MyListingsPage() {
-  const { user, session } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [listings, setListings] = useState<MyService[]>([]);
@@ -41,6 +40,7 @@ export default function MyListingsPage() {
   const [editingService, setEditingService] = useState<MyService | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) { router.push("/login"); return; }
     if (!session?.access_token) return;
 
@@ -51,7 +51,7 @@ export default function MyListingsPage() {
       .then((data) => setListings(Array.isArray(data) ? data : []))
       .catch(() => setListings([]))
       .finally(() => setLoading(false));
-  }, [user, session, router]);
+  }, [user, session, router, authLoading]);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -69,10 +69,16 @@ export default function MyListingsPage() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-green-700 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">My Listings</h1>
@@ -87,8 +93,8 @@ export default function MyListingsPage() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="border rounded-xl shadow-sm p-4 bg-white animate-pulse">
-                <div className="w-full h-48 bg-gray-200 rounded-lg mb-3" />
+              <div key={i} className="border rounded-xl shadow-sm bg-white animate-pulse overflow-hidden">
+                <div className="w-full aspect-video bg-gray-200" />
                 <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
                 <div className="h-4 bg-gray-100 rounded w-1/2 mb-3" />
                 <div className="flex gap-2">
@@ -111,13 +117,15 @@ export default function MyListingsPage() {
             {listings.map((s) => (
               <div key={s.id} className="border rounded-xl shadow-sm bg-white flex flex-col overflow-hidden hover:shadow-lg transition-all">
                 <Link href={`/serviceDetail/${s.id}`} className="block">
-                  {s.image_url ? (
-                    <img src={s.image_url} alt={s.title} className="w-full h-48 object-cover" />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
-                      <Grid3x3 className="h-12 w-12 text-gray-300" />
-                    </div>
-                  )}
+                  <AspectRatio ratio={16 / 9}>
+                    {s.image_url ? (
+                      <img src={s.image_url} alt={s.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                        <Grid3x3 className="h-12 w-12 text-gray-300" />
+                      </div>
+                    )}
+                  </AspectRatio>
                 </Link>
 
                 <div className="p-4 flex flex-col flex-1">
@@ -147,7 +155,6 @@ export default function MyListingsPage() {
 
                   <div className="mt-auto pt-3 border-t border-gray-100 flex flex-wrap gap-2">
                     <Button size="sm" variant="outline" className="gap-1.5 flex-1" onClick={() => setEditingService(s)}>
-                      <Pencil className="h-3.5 w-3.5" />
                       Edit
                     </Button>
                     {confirmDeleteId === s.id ? (
@@ -169,7 +176,6 @@ export default function MyListingsPage() {
                         className="text-red-600 border-red-200 hover:bg-red-50 gap-1.5 flex-1"
                         onClick={() => setConfirmDeleteId(s.id)}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
                         Delete
                       </Button>
                     )}
@@ -180,8 +186,6 @@ export default function MyListingsPage() {
           </div>
         )}
       </main>
-
-      <Footer />
 
       {editingService && session?.access_token && (
         <EditListingModal

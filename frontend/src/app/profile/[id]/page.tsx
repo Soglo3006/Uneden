@@ -1,8 +1,5 @@
 "use client";
 
-import Header from "@/components/home/Header";
-import CategoryNav from "@/components/home/Category";
-import Footer from "@/components/home/Footer";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,10 +19,9 @@ import {
   UserStar,
   Users,
   Ban,
-  Pencil,
-  Trash2,
 } from "lucide-react";
 import EditListingModal from "@/components/listings/EditListingModal";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import {
   Carousel,
   CarouselContent,
@@ -254,12 +250,10 @@ export default function UserProfilePage() {
   if (loading || isLoggingOut) {
   return (
     <div className="min-h-screen bg-white">
-      <Header />
-      <CategoryNav />
       <div className="bg-gray-50 flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
       </div>
-      <Footer />
+
     </div>
   );
 }
@@ -269,8 +263,6 @@ export default function UserProfilePage() {
   if (error || !profileUser) {
     return (
       <div className="min-h-screen bg-white">
-        <Header />
-        <CategoryNav />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Profile not found</h1>
@@ -282,7 +274,6 @@ export default function UserProfilePage() {
             </Link>
           </div>
         </div>
-        <Footer />
       </div>
     );
   }
@@ -349,8 +340,6 @@ export default function UserProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header />
-      <CategoryNav />
 
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
@@ -375,12 +364,6 @@ export default function UserProfilePage() {
                 </AvatarFallback>
               </Avatar>
 
-              {/* View all listings link under avatar */}
-              <div className="mt-2 w-32 text-center">
-                <a href="#listings" className="underline text-green-700 hover:text-green-800">
-                  View all listings{!listingsLoading ? ` (${userListings.length})` : ""}
-                </a>
-              </div>
 
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
@@ -496,13 +479,11 @@ export default function UserProfilePage() {
                             View Ratings
                           </Button>
                           <Link 
-                            href={`/listings/${(displayName || "user")
-                              .toLowerCase()
-                              .replace(/\s+/g, "-")}`}
+                            href={isOwner ? "/my-listings" : `/profile/${profileId}/listings`}
                           >
                             <Button variant="outline" className="gap-2 cursor-pointer">
                               <Grid3x3 className="h-4 w-4" />
-                              View Listings
+                                  { `View Listings (${userListings.length})`}
                             </Button>
                           </Link>
                           <Button 
@@ -527,7 +508,7 @@ export default function UserProfilePage() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 {isPerson ? "About Me" : "About Our Company"}
               </h2>
-              <p className="text-gray-700 leading-relaxed mb-6">
+              <p className="text-gray-700 leading-relaxed mb-6 break-words">
                 {profileUser.bio}
               </p>
               <Separator className="my-4" />
@@ -678,17 +659,19 @@ export default function UserProfilePage() {
                           <div className="border rounded-xl shadow-sm bg-white h-full flex flex-col overflow-hidden hover:shadow-lg transition-all">
                             {/* Image */}
                             <Link href={`/serviceDetail/${listing.id}`} className="block">
-                              {listing.image_url ? (
-                                <img
-                                  src={listing.image_url}
-                                  alt={listing.title}
-                                  className="w-full h-48 object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
-                                  <Grid3x3 className="h-12 w-12 text-gray-300" />
-                                </div>
-                              )}
+                              <AspectRatio ratio={16 / 9}>
+                                {listing.image_url ? (
+                                  <img
+                                    src={listing.image_url}
+                                    alt={listing.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                                    <Grid3x3 className="h-12 w-12 text-gray-300" />
+                                  </div>
+                                )}
+                              </AspectRatio>
                             </Link>
 
                             <div className="p-4 flex flex-col flex-1">
@@ -730,7 +713,6 @@ export default function UserProfilePage() {
                                     className="gap-1.5 flex-1"
                                     onClick={() => setEditingListing(listing)}
                                   >
-                                    <Pencil className="h-3.5 w-3.5" />
                                     Edit
                                   </Button>
                                   {confirmDeleteListingId === listing.id ? (
@@ -752,7 +734,6 @@ export default function UserProfilePage() {
                                       className="text-red-600 border-red-200 hover:bg-red-50 gap-1.5 flex-1"
                                       onClick={() => setConfirmDeleteListingId(listing.id)}
                                     >
-                                      <Trash2 className="h-3.5 w-3.5" />
                                       Delete
                                     </Button>
                                   )}
@@ -774,13 +755,11 @@ export default function UserProfilePage() {
 
                   {/* View All Button */}
                   <div className="mt-2">
-                    <Link
-                      href={isOwner ? "/my-listings" : `/listings/${(displayName || "user")
-                        .toLowerCase()
-                        .replace(/\s+/g, "-")}`}
-                    >
+                    <Link href={isOwner ? "/my-listings" : `/profile/${profileId}/listings`}>
                       <Button variant="outline" className="w-full cursor-pointer">
-                        {isOwner ? "Manage My Listings" : "View All Listings"}
+                        {isOwner
+                          ? "Manage My Listings"
+                          : `View All Listings (${userListings.length})`}
                       </Button>
                     </Link>
                   </div>
@@ -921,7 +900,6 @@ export default function UserProfilePage() {
         </div>
       </main>
 
-      <Footer />
 
       {/* Settings Modal */}
       {showSettings && (

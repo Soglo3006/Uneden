@@ -21,7 +21,10 @@ export const createConnectAccount = async (req, res) => {
       stripeAccountId = existing.rows[0].stripe_account_id;
     } else {
       // Get user email
-      const user = await pool.query("SELECT email, full_name FROM users WHERE id = $1", [userId]);
+      const user = await pool.query(
+        "SELECT email, CASE WHEN account_type = 'company' THEN company_name ELSE full_name END AS full_name FROM users WHERE id = $1",
+        [userId]
+      );
       if (user.rows.length === 0) {
         return res.status(404).json({ message: "User not found" });
       }

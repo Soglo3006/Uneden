@@ -99,8 +99,8 @@ export default function ProfilePictureUploader({
 
         {/* Cropper Modal */}
         {showCropper && imageToCrop && (
-            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-[90%] max-w-xl">
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <h2 className="text-lg font-semibold mb-4">Adjust your profile photo</h2>
 
                 <div className="relative w-full h-64 bg-gray-200 rounded-xl overflow-hidden">
@@ -118,11 +118,25 @@ export default function ProfilePictureUploader({
                 />
                 </div>
 
-                <div className="mt-4 flex justify-between">
-                <Button variant="outline" onClick={() => setShowCropper(false)} type="button" className="cursor-pointer">
+                <div className="mt-4 mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Zoom</label>
+                  <input
+                    type="range"
+                    title="Zoom"
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    value={zoom}
+                    onChange={(e) => setZoom(Number(e.target.value))}
+                    className="w-full cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setShowCropper(false)} type="button" className="flex-1 cursor-pointer">
                     Cancel
                 </Button>
-                <Button onClick={saveCroppedImage} type="button" className="cursor-pointer">Save</Button>
+                <Button onClick={saveCroppedImage} type="button" className="flex-1 cursor-pointer">Save</Button>
                 </div>
             </div>
             </div>

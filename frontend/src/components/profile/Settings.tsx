@@ -97,34 +97,33 @@ export default function SettingsPage({ onClose, scrollRef }) {
   };
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!session?.access_token) return;
+    const fetchAll = async () => {
+      if (!session?.access_token) {
+        setLoading(false);
+        return;
+      }
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/me`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        if (response.ok) {
-          const data = await response.json();
+        const [profileRes, settingsRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/me`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/settings`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }),
+        ]);
+        if (profileRes.ok) {
+          const data = await profileRes.json();
           setProfileData(data);
           setUserProfilePicture(data.avatar || "");
         }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-      }
-    };
-
-    const fetchSettings = async () => {
-      if (!session?.access_token) return;
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/settings`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        if (response.ok) {
-          const data = await response.json();
+        if (settingsRes.ok) {
+          const data = await settingsRes.json();
           if (data.notifications) setNotifications(prev => ({ ...prev, ...data.notifications }));
           if (data.language) setLanguage(data.language);
           if (data.region) setRegion(data.region);
         }
+        const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+        if (supabaseUser?.identities) setConnectedAccounts(supabaseUser.identities);
       } catch (error) {
         console.error("Error fetching settings:", error);
       } finally {
@@ -132,14 +131,7 @@ export default function SettingsPage({ onClose, scrollRef }) {
       }
     };
 
-    const fetchConnectedAccounts = async () => {
-      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
-      if (supabaseUser?.identities) setConnectedAccounts(supabaseUser.identities);
-    };
-
-    fetchProfile();
-    fetchSettings();
-    fetchConnectedAccounts();
+    fetchAll();
   }, [session]);
 
   useEffect(() => {

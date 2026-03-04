@@ -3,16 +3,16 @@
 import { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
-import Header from "@/components/home/Header";
-import Footer from "@/components/home/Footer";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useStartConversation } from "@/hooks/useStartConversation";
-import { CalendarDays, MessageCircle, MapPin, Grid3x3, Star, AlertTriangle, CheckCircle, XCircle, CreditCard } from "lucide-react";
+import { CalendarDays, MapPin, Grid3x3, Star, AlertTriangle, CheckCircle, XCircle, CreditCard } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import LeaveReviewModal from "@/components/bookings/LeaveReviewModal";
 import OpenDisputeModal from "@/components/bookings/OpenDisputeModal";
 import StripeConnectBanner from "@/components/bookings/StripeConnectBanner";
 import PayNowButton from "@/components/bookings/PayNowButton";
+import BookingDetailModal, { type BookingDetail } from "@/components/bookings/BookingDetailModal";
 
 type BookingStatus = "pending" | "accepted" | "active" | "completed" | "cancelled" | "rejected";
 
@@ -34,6 +34,8 @@ interface ReceivedBooking {
   payment_status: string | null;
   completed_by_worker: boolean;
   completed_by_client: boolean;
+  client_description: string | null;
+  is_one_time?: boolean;
 }
 
 interface SentBooking {
@@ -54,6 +56,8 @@ interface SentBooking {
   payment_status: string | null;
   completed_by_worker: boolean;
   completed_by_client: boolean;
+  client_description: string | null;
+  is_one_time?: boolean;
 }
 
 const STATUS_CONFIG: Record<BookingStatus, { label: string; bar: string; badge: string }> = {
@@ -102,10 +106,10 @@ function formatDate(dateStr: string) {
 
 function LoadingSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {[...Array(4)].map((_, i) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {[...Array(6)].map((_, i) => (
         <div key={i} className="border rounded-xl shadow-sm bg-white animate-pulse overflow-hidden">
-          <div className="w-full h-40 bg-gray-200" />
+          <div className="w-full aspect-video bg-gray-200" />
           <div className="p-4 space-y-2">
             <div className="h-4 bg-gray-200 rounded w-3/4" />
             <div className="h-3 bg-gray-100 rounded w-1/2" />
@@ -135,7 +139,7 @@ function EmptyState({ message }: { message: string }) {
 
 // Inner component that uses useSearchParams (must be wrapped in Suspense)
 function BookingsContent() {
-  const { user, session } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -150,6 +154,9 @@ function BookingsContent() {
   const [reviewBooking, setReviewBooking] = useState<{ id: string; targetName: string } | null>(null);
   const [disputeBooking, setDisputeBooking] = useState<{ id: string; title: string } | null>(null);
 
+  // Booking detail modal
+  const [detailBooking, setDetailBooking] = useState<{ booking: BookingDetail; role: "worker" | "client" } | null>(null);
+
   // Payment redirect feedback
   const paymentResult = searchParams.get("payment");
   const [paymentBanner, setPaymentBanner] = useState<"success" | "cancelled" | null>(
@@ -159,6 +166,7 @@ function BookingsContent() {
   const { startConversation, loading: chatLoading } = useStartConversation();
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) { router.push("/login"); return; }
     if (!session?.access_token) return;
     const headers = { Authorization: `Bearer ${session.access_token}` };
@@ -174,7 +182,7 @@ function BookingsContent() {
       .then((data) => setSent(Array.isArray(data) ? data : []))
       .catch(() => setSent([]))
       .finally(() => setLoadingSent(false));
-  }, [user, session, router]);
+  }, [user, session, router, authLoading]);
 
   // Auto-switch to "sent" tab if returning from a payment redirect
   useEffect(() => {
@@ -230,6 +238,16 @@ function BookingsContent() {
 
   const pendingCount = received.filter((b) => b.status === "pending").length;
 
+  if (authLoading) {
+    return (
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <div className="flex justify-center py-24">
+          <div className="w-8 h-8 border-4 border-green-700 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="max-w-5xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">My Bookings</h1>
@@ -239,7 +257,7 @@ function BookingsContent() {
         <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4 text-green-800">
           <CheckCircle className="h-5 w-5 flex-shrink-0" />
           <p className="text-sm font-medium">Payment successful! The service provider has been notified.</p>
-          <button type="button" onClick={() => setPaymentBanner(null)} className="ml-auto text-green-600 hover:text-green-800">
+          <button type="button" aria-label="Dismiss" onClick={() => setPaymentBanner(null)} className="ml-auto text-green-600 hover:text-green-800">
             <XCircle className="h-4 w-4" />
           </button>
         </div>
@@ -248,7 +266,7 @@ function BookingsContent() {
         <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-4 text-gray-700">
           <XCircle className="h-5 w-5 flex-shrink-0 text-gray-400" />
           <p className="text-sm">Payment was cancelled. You can try again anytime.</p>
-          <button type="button" onClick={() => setPaymentBanner(null)} className="ml-auto text-gray-400 hover:text-gray-600">
+          <button type="button" aria-label="Dismiss" onClick={() => setPaymentBanner(null)} className="ml-auto text-gray-400 hover:text-gray-600">
             <XCircle className="h-4 w-4" />
           </button>
         </div>
@@ -290,29 +308,32 @@ function BookingsContent() {
           {loadingReceived ? <LoadingSkeleton /> : received.length === 0 ? (
             <EmptyState message="No booking requests received yet." />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {received.map((b) => {
                 const statusBar = STATUS_CONFIG[b.status]?.bar ?? "bg-gray-400";
                 return (
-                  <div key={b.id} className="border rounded-xl shadow-sm bg-white flex flex-col overflow-hidden hover:shadow-lg transition-all">
-                    <Link href={`/serviceDetail/${b.service_id}`} className="block relative">
-                      {b.image_url ? (
-                        <img src={b.image_url} alt={b.title} className="w-full h-40 object-cover" />
-                      ) : (
-                        <div className="w-full h-40 bg-gray-100 flex items-center justify-center">
-                          <Grid3x3 className="h-10 w-10 text-gray-300" />
-                        </div>
-                      )}
+                  <div key={b.id} className="border rounded-xl shadow-sm bg-white flex flex-col overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                    onClick={() => setDetailBooking({ booking: b as BookingDetail, role: "worker" })}>
+                    <div className="relative">
+                      <AspectRatio ratio={16 / 9}>
+                        {b.image_url ? (
+                          <img src={b.image_url} alt={b.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                            <Grid3x3 className="h-10 w-10 text-gray-300" />
+                          </div>
+                        )}
+                      </AspectRatio>
                       <div className={`absolute bottom-0 left-0 right-0 h-1 ${statusBar}`} />
-                    </Link>
+                    </div>
 
                     <div className="p-4 flex flex-col flex-1">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <Link href={`/serviceDetail/${b.service_id}`} className="flex-1">
+                        <div className="flex-1">
                           <h3 className="font-semibold text-gray-900 line-clamp-1 hover:text-green-700 transition-colors">
                             {b.title}
                           </h3>
-                        </Link>
+                        </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           <PaymentBadge status={b.payment_status} />
                           <StatusBadge status={b.status} />
@@ -320,7 +341,11 @@ function BookingsContent() {
                       </div>
 
                       <p className="text-xs text-gray-500 mb-2">
-                        From: <span className="font-medium text-gray-700">{b.client_name}</span>
+                        From:{" "}
+                        <Link href={`/profile/${b.client_id}`} onClick={(e) => e.stopPropagation()}
+                          className="font-medium text-gray-700 hover:text-green-700 hover:underline">
+                          {b.client_name}
+                        </Link>
                       </p>
 
                       <p className="text-green-700 font-bold text-lg mb-1">${Number(b.price)}</p>
@@ -335,8 +360,8 @@ function BookingsContent() {
                       {b.category && <p className="text-xs text-gray-400 mb-3">{b.category}</p>}
                       <p className="text-xs text-gray-400 mb-3">{formatDate(b.created_at)}</p>
 
-                      {/* Actions */}
-                      <div className="mt-auto pt-3 border-t border-gray-100 flex flex-wrap gap-2">
+                      {/* Actions — stop propagation so card click doesn't open modal */}
+                      <div className="mt-auto pt-3 border-t border-gray-100 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                         {b.status === "pending" && (
                           <>
                             <Button type="button" size="sm" className="bg-green-700 hover:bg-green-800 text-white flex-1"
@@ -350,8 +375,16 @@ function BookingsContent() {
                           </>
                         )}
                         {b.status === "accepted" && (
-                          <div className="w-full text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                            Waiting for client to complete payment.
+                          <div className="flex flex-col gap-2 w-full">
+                            <div className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                              Waiting for client to complete payment.
+                            </div>
+                            <Button type="button" size="sm" variant="outline"
+                              className="text-red-600 border-red-200 hover:bg-red-50 w-full"
+                              onClick={() => updateStatus(b.id, "cancelled", "received")}
+                              disabled={updating === b.id}>
+                              {updating === b.id ? "…" : "Cancel Booking"}
+                            </Button>
                           </div>
                         )}
                         {b.status === "active" && (
@@ -405,7 +438,6 @@ function BookingsContent() {
                           </span>
                         )}
                         <Button type="button" size="sm" variant="outline" onClick={() => startConversation(b.client_id)} disabled={chatLoading}>
-                          <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
                           Message
                         </Button>
                       </div>
@@ -423,30 +455,33 @@ function BookingsContent() {
         loadingSent ? <LoadingSkeleton /> : sent.length === 0 ? (
           <EmptyState message="You haven't sent any booking requests yet." />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {sent.map((b) => {
               const statusBar = STATUS_CONFIG[b.status]?.bar ?? "bg-gray-400";
               const needsPayment = b.status === "accepted" && (!b.payment_status || b.payment_status === "unpaid");
               return (
-                <div key={b.id} className="border rounded-xl shadow-sm bg-white flex flex-col overflow-hidden hover:shadow-lg transition-all">
-                  <Link href={`/serviceDetail/${b.service_id}`} className="block relative">
-                    {b.image_url ? (
-                      <img src={b.image_url} alt={b.title} className="w-full h-40 object-cover" />
-                    ) : (
-                      <div className="w-full h-40 bg-gray-100 flex items-center justify-center">
-                        <Grid3x3 className="h-10 w-10 text-gray-300" />
-                      </div>
-                    )}
+                <div key={b.id} className="border rounded-xl shadow-sm bg-white flex flex-col overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                  onClick={() => setDetailBooking({ booking: b as BookingDetail, role: "client" })}>
+                  <div className="relative">
+                    <AspectRatio ratio={16 / 9}>
+                      {b.image_url ? (
+                        <img src={b.image_url} alt={b.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                          <Grid3x3 className="h-10 w-10 text-gray-300" />
+                        </div>
+                      )}
+                    </AspectRatio>
                     <div className={`absolute bottom-0 left-0 right-0 h-1 ${statusBar}`} />
-                  </Link>
+                  </div>
 
                   <div className="p-4 flex flex-col flex-1">
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <Link href={`/serviceDetail/${b.service_id}`} className="flex-1">
+                      <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 line-clamp-1 hover:text-green-700 transition-colors">
                           {b.title}
                         </h3>
-                      </Link>
+                      </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         <PaymentBadge status={b.payment_status} />
                         <StatusBadge status={b.status} />
@@ -454,7 +489,11 @@ function BookingsContent() {
                     </div>
 
                     <p className="text-xs text-gray-500 mb-2">
-                      Provider: <span className="font-medium text-gray-700">{b.worker_name}</span>
+                      Provider:{" "}
+                      <Link href={`/profile/${b.worker_id}`} onClick={(e) => e.stopPropagation()}
+                        className="font-medium text-gray-700 hover:text-green-700 hover:underline">
+                        {b.worker_name}
+                      </Link>
                     </p>
 
                     <p className="text-green-700 font-bold text-lg mb-1">${Number(b.price)}</p>
@@ -476,8 +515,8 @@ function BookingsContent() {
                       </div>
                     )}
 
-                    {/* Actions */}
-                    <div className="mt-auto pt-3 border-t border-gray-100 flex flex-wrap gap-2">
+                    {/* Actions — stop propagation so card click doesn't open modal */}
+                    <div className="mt-auto pt-3 border-t border-gray-100 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                       {/* Pay Now button */}
                       {needsPayment && session?.access_token && (
                         <PayNowButton bookingId={b.id} accessToken={session.access_token} />
@@ -540,7 +579,6 @@ function BookingsContent() {
                         </span>
                       )}
                       <Button type="button" size="sm" variant="outline" onClick={() => startConversation(b.worker_id)} disabled={chatLoading}>
-                        <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
                         Message
                       </Button>
                     </div>
@@ -550,6 +588,25 @@ function BookingsContent() {
             })}
           </div>
         )
+      )}
+
+      {/* Booking Detail Modal */}
+      {detailBooking && session?.access_token && (
+        <BookingDetailModal
+          booking={detailBooking.booking}
+          userRole={detailBooking.role}
+          accessToken={session.access_token}
+          onClose={() => setDetailBooking(null)}
+          onUpdated={(bookingId, updates) => {
+            setReceived((prev) => prev.map((b) => b.id === bookingId ? { ...b, ...updates } : b));
+            setSent((prev) => prev.map((b) => b.id === bookingId ? { ...b, ...updates } : b));
+            // Keep the modal in sync too
+            setDetailBooking((prev) => prev ? { ...prev, booking: { ...prev.booking, ...updates } } : null);
+          }}
+          onMessage={(userId) => startConversation(userId)}
+          onOpenReview={(bookingId, targetName) => setReviewBooking({ id: bookingId, targetName })}
+          onOpenDispute={(bookingId, title) => setDisputeBooking({ id: bookingId, title })}
+        />
       )}
 
       {/* Leave Review Modal */}
@@ -586,7 +643,6 @@ function BookingsContent() {
 export default function BookingsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <Suspense fallback={
         <main className="max-w-5xl mx-auto px-4 py-8">
           <div className="animate-pulse space-y-4">
@@ -597,7 +653,6 @@ export default function BookingsPage() {
       }>
         <BookingsContent />
       </Suspense>
-      <Footer />
     </div>
   );
 }

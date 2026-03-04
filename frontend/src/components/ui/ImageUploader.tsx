@@ -101,8 +101,8 @@ export default function ImageUploader({
       </div>
 
       {showCropper && imageToCrop && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[90%] max-w-xl">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold mb-4">Adjust your image</h2>
 
             <div className="relative w-full h-64 bg-gray-200 rounded-xl overflow-hidden mb-4">
@@ -126,6 +126,7 @@ export default function ImageUploader({
               </label>
               <input
                 type="range"
+                title="Zoom"
                 min={1}
                 max={3}
                 step={0.1}

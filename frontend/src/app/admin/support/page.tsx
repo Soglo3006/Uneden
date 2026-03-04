@@ -1,7 +1,4 @@
 "use client";
-import Header from "@/components/home/Header";
-import CategoryNav from "@/components/home/Category";
-import Footer from "@/components/home/Footer";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -148,22 +145,17 @@ export default function SupportAdminPage() {
   if (!allowed) {
     return (
       <div className="min-h-screen bg-white text-black">
-        <Header />
-        <CategoryNav />
         <main className="max-w-7xl mx-auto p-5">
           <Card className="p-10 text-center">
             <p className="text-gray-600">Loading…</p>
           </Card>
         </main>
-        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-white text-black">
-      <Header />
-      <CategoryNav />
 
       <main className="max-w-7xl mx-auto p-5">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
@@ -238,7 +230,6 @@ export default function SupportAdminPage() {
         )}
       </main>
 
-      <Footer />
 
       <Dialog open={openId !== null} onOpenChange={(o) => setOpenId(o ? openId : null)}>
         <DialogContent>

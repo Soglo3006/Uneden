@@ -1,43 +1,38 @@
 "use client";
 
-import Header from "@/components/home/Header";
-import CategoryNav from "@/components/home/Category";
-import Footer from "@/components/home/Footer";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { sampleListings } from "@/lib/listings";
-import ListingCard from "@/components/listings/ListingCard";
 import Link from "next/link";
-import { HeartOff, Grid3x3 } from "lucide-react";
+import { Grid3x3, MapPin, HeartOff } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
-type Service = {
-  id: number;
+interface FavoriteService {
+  id: string;
   title: string;
   price: number;
   location: string;
-  created_at?: string;
-  image_url?: string | null;
-  image?: string | null;
-};
+  category: string | null;
+  subcategory: string | null;
+  image_url: string | null;
+}
 
 export default function FavoritesPage() {
-  const [savedIds, setSavedIds] = useState<number[]>([]);
-  const [items, setItems] = useState<Service[]>([]);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [items, setItems] = useState<FavoriteService[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Load saved IDs from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem("savedListings");
-      const arr: number[] = raw ? JSON.parse(raw) : [];
+      const arr: string[] = raw ? JSON.parse(raw) : [];
       setSavedIds(arr);
     } catch {
       setSavedIds([]);
     }
   }, []);
 
-  // Fetch details for saved IDs (API), fallback to sample listings
+  // Fetch details for saved IDs
   useEffect(() => {
     const fetchAll = async () => {
       if (!savedIds.length) {
@@ -45,10 +40,8 @@ export default function FavoritesPage() {
         setLoading(false);
         return;
       }
-
       setLoading(true);
-      const results: Service[] = [];
-
+      const results: FavoriteService[] = [];
       await Promise.all(
         savedIds.map(async (id) => {
           try {
@@ -58,38 +51,23 @@ export default function FavoritesPage() {
               results.push({
                 id: data.id,
                 title: data.title,
-                price: data.price,
+                price: Number(data.price),
                 location: data.location,
-                created_at: data.created_at,
-                image_url: data.image_url,
+                category: data.category_name ?? data.category ?? null,
+                subcategory: data.subcategory ?? null,
+                image_url: data.image_url ?? null,
               });
-              return;
             }
           } catch {}
-
-          // Fallback to sample listing if API fails
-          const sample = sampleListings.find((s) => s.id === id);
-          if (sample) {
-            results.push({
-              id: sample.id,
-              title: sample.title,
-              price: sample.price as number,
-              location: sample.location,
-              created_at: sample.created_at,
-              image: sample.image,
-            });
-          }
         })
       );
-
       setItems(results);
       setLoading(false);
     };
-
     fetchAll();
   }, [savedIds]);
 
-  const remove = (id: number) => {
+  const remove = (id: string) => {
     try {
       const next = savedIds.filter((x) => x !== id);
       localStorage.setItem("savedListings", JSON.stringify(next));
@@ -99,55 +77,84 @@ export default function FavoritesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-black">
-      <Header />
-      <CategoryNav />
-
-      <main className="max-w-7xl mx-auto p-5">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">My Favorites</h1>
+    <div className="min-h-screen bg-gray-50">
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">My Favorites</h1>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700" />
-          </div>
-        ) : items.length ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {items.map((s) => (
-              <Card key={s.id} className="p-3">
-                <div className="relative">
-                  <button
-                    onClick={() => remove(s.id)}
-                    className="absolute top-2 right-2 z-10 rounded-full bg-white/90 hover:bg-white border border-gray-200 p-2"
-                    aria-label="Remove from favorites"
-                  >
-                    <HeartOff className="h-4 w-4 text-red-500" />
-                  </button>
-                  <Link href={`/serviceDetail/${s.id}`}>
-                    <ListingCard
-                      title={s.title}
-                      price={s.price}
-                      location={s.location}
-                      postedTime={s.created_at || "Recently"}
-                      imageUrl={(s as any).image_url || (s as any).image || undefined}
-                    />
-                  </Link>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="border rounded-xl shadow-sm bg-white animate-pulse overflow-hidden">
+                <div className="w-full aspect-video bg-gray-200" />
+                <div className="p-4 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4" />
+                  <div className="h-4 bg-gray-100 rounded w-1/2" />
+                  <div className="h-8 bg-gray-200 rounded" />
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
-        ) : (
-          <Card className="p-10 text-center">
-            <Grid3x3 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <h2 className="text-lg font-semibold text-gray-900">No favorites yet</h2>
-            <p className="text-gray-600 mt-1">Save services to see them here.</p>
-            <Link href="/">
-              <Button className="mt-4 bg-green-700 text-white hover:bg-green-800">Browse Services</Button>
+        ) : items.length === 0 ? (
+          <div className="text-center py-16 text-gray-500">
+            <Grid3x3 className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <p className="font-medium text-gray-700">No favorites yet.</p>
+            <Link href="/listings" className="text-sm text-green-700 hover:underline mt-2 inline-block">
+              Browse listings
             </Link>
-          </Card>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {items.map((s) => (
+              <div key={s.id} className="border rounded-xl shadow-sm bg-white flex flex-col overflow-hidden hover:shadow-lg transition-all">
+                <Link href={`/serviceDetail/${s.id}`} className="block">
+                  <AspectRatio ratio={16 / 9}>
+                    {s.image_url ? (
+                      <img src={s.image_url} alt={s.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                        <Grid3x3 className="h-12 w-12 text-gray-300" />
+                      </div>
+                    )}
+                  </AspectRatio>
+                </Link>
+
+                <div className="p-4 flex flex-col flex-1">
+                  <Link href={`/serviceDetail/${s.id}`} className="flex-1">
+                    <h3 className="font-semibold text-gray-900 line-clamp-1 hover:text-green-700 transition-colors">
+                      {s.title}
+                    </h3>
+                  </Link>
+
+                  <p className="text-green-700 font-bold text-lg mb-2">${s.price}</p>
+
+                  <div className="flex items-center text-sm text-gray-500 mb-2">
+                    <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
+                    <span className="line-clamp-1">{s.location}</span>
+                  </div>
+
+                  {s.category && (
+                    <p className="text-xs text-gray-500 line-clamp-1 mb-3">
+                      {s.category}{s.subcategory && ` • ${s.subcategory}`}
+                    </p>
+                  )}
+
+                  <div className="mt-auto pt-3 border-t border-gray-100">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-red-600 border-red-200 hover:bg-red-50 gap-1.5"
+                      onClick={() => remove(s.id)}
+                    >
+                      <HeartOff className="h-3.5 w-3.5" />
+                      Remove from Favorites
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </main>
-
-      <Footer />
     </div>
   );
 }

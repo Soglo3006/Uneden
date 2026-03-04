@@ -35,11 +35,11 @@ export const CreateDispute = async (req, res) => {
         );
 
         const users = await pool.query(
-            `SELECT 
-                u1.email as client_email, 
-                u1.full_name as client_name,
+            `SELECT
+                u1.email as client_email,
+                CASE WHEN u1.account_type = 'company' THEN u1.company_name ELSE u1.full_name END as client_name,
                 u2.email as worker_email,
-                u2.full_name as worker_name
+                CASE WHEN u2.account_type = 'company' THEN u2.company_name ELSE u2.full_name END as worker_name
             FROM users u1, users u2
             WHERE u1.id = $1 AND u2.id = $2`,
             [b.client_id, b.worker_id]
