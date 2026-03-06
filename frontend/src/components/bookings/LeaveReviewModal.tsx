@@ -70,7 +70,7 @@ export default function LeaveReviewModal({
             <h2 className="text-lg font-semibold text-gray-900">Leave a Review</h2>
             <p className="text-xs text-gray-500 mt-0.5">Rate your experience with {targetName}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -95,7 +95,7 @@ export default function LeaveReviewModal({
                   onMouseEnter={() => setHovered(i)}
                   onMouseLeave={() => setHovered(0)}
                   onClick={() => setRating(i)}
-                  className="transition-transform hover:scale-110 focus:outline-none"
+                  className="cursor-pointer transition-transform hover:scale-110 focus:outline-none"
                 >
                   <Star
                     className={`h-8 w-8 transition-colors ${

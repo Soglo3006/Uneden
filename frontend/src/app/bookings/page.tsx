@@ -257,7 +257,7 @@ function BookingsContent() {
         <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4 text-green-800">
           <CheckCircle className="h-5 w-5 flex-shrink-0" />
           <p className="text-sm font-medium">Payment successful! The service provider has been notified.</p>
-          <button type="button" aria-label="Dismiss" onClick={() => setPaymentBanner(null)} className="ml-auto text-green-600 hover:text-green-800">
+          <button type="button" aria-label="Dismiss" onClick={() => setPaymentBanner(null)} className="cursor-pointer ml-auto text-green-600 hover:text-green-800">
             <XCircle className="h-4 w-4" />
           </button>
         </div>
@@ -266,7 +266,7 @@ function BookingsContent() {
         <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-4 text-gray-700">
           <XCircle className="h-5 w-5 flex-shrink-0 text-gray-400" />
           <p className="text-sm">Payment was cancelled. You can try again anytime.</p>
-          <button type="button" aria-label="Dismiss" onClick={() => setPaymentBanner(null)} className="ml-auto text-gray-400 hover:text-gray-600">
+          <button type="button" aria-label="Dismiss" onClick={() => setPaymentBanner(null)} className="cursor-pointer ml-auto text-gray-400 hover:text-gray-600">
             <XCircle className="h-4 w-4" />
           </button>
         </div>
@@ -277,7 +277,7 @@ function BookingsContent() {
         <button
           type="button"
           onClick={() => setTab("received")}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`cursor-pointer flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
             tab === "received" ? "border-green-600 text-green-700" : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >
@@ -291,7 +291,7 @@ function BookingsContent() {
         <button
           type="button"
           onClick={() => setTab("sent")}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`cursor-pointer px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
             tab === "sent" ? "border-green-600 text-green-700" : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >

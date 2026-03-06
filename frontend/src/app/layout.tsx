@@ -3,10 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 
-import Header from "@/components/home/Header";
-import CategoryNav from "@/components/home/Category";
-import Footer from "@/components/home/Footer";
-import SupportButton from "@/components/support/SupportButton";
+import ConditionalShell from "@/components/ConditionalShell";
 import LogoutOverlay from "@/components/LogoutOverlay";
 
 const geistSans = Geist({
@@ -36,15 +33,7 @@ export default function RootLayout({
       >
         <AuthProvider>
 
-          <Header />
-          <CategoryNav />
-
-          <main className="flex-1">
-            {children}
-          </main>
-
-          <Footer />
-          <SupportButton floating />
+          <ConditionalShell>{children}</ConditionalShell>
           <LogoutOverlay />
 
         </AuthProvider>

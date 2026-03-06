@@ -146,7 +146,7 @@ export default function EditListingModal({ service, accessToken, onClose, onSave
               {isOffer ? "Offer a Service" : "Looking for a Worker"}
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>

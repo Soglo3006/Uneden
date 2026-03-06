@@ -22,7 +22,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [charging, setCharging] = useState(false);
-  
+
   const { signInWithEmail, signInWithGoogle, signInWithFacebook, signInWithApple } = useAuth();
 
   const { loading } = useProtectedRoute({
@@ -37,7 +37,7 @@ export default function LoginPage() {
     setCharging(true);
 
     try {
-    await signInWithEmail(email, password);
+      await signInWithEmail(email, password);
     } catch (err: any) {
       setCharging(false);
       if (err.message.includes("Email not confirmed")) {
@@ -49,7 +49,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4"> 
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
@@ -85,16 +85,16 @@ export default function LoginPage() {
                     Forgot your password?
                   </a>
                 </div>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  required 
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
               </div>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full bg-green-800 hover:bg-green-900 cursor-pointer"
                 disabled={charging}
               >

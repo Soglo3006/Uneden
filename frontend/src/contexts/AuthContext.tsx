@@ -79,9 +79,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) throw new Error(error.message);
-    
-    alert("Account created! Check your email to verify your account.");
-    router.push("/auth/verify-email");
   };
 
   const signInWithGoogle = async () => {

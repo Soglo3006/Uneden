@@ -100,7 +100,7 @@ function ListingsContent() {
       <div className="flex items-center gap-2 mb-4 lg:hidden">
         <button
           onClick={() => setShowMobileFilters((v) => !v)}
-          className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          className="cursor-pointer flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         >
           <SlidersHorizontal className="h-4 w-4" />
           Filters
@@ -118,7 +118,7 @@ function ListingsContent() {
                 className="inline-flex items-center gap-1 bg-green-50 text-green-800 text-xs px-3 py-1 rounded-full border border-green-200"
               >
                 {label}
-                <button onClick={clear} className="ml-1 hover:text-green-900">
+                <button onClick={clear} className="cursor-pointer ml-1 hover:text-green-900">
                   <X className="h-3 w-3" />
                 </button>
               </span>
@@ -134,7 +134,7 @@ function ListingsContent() {
             {/* Mobile close button */}
             <div className="flex items-center justify-between lg:hidden">
               <span className="text-sm font-semibold text-gray-900">Filters</span>
-              <button onClick={() => setShowMobileFilters(false)} className="p-1 rounded hover:bg-gray-100">
+              <button onClick={() => setShowMobileFilters(false)} className="cursor-pointer p-1 rounded hover:bg-gray-100">
                 <X className="h-4 w-4 text-gray-500" />
               </button>
             </div>
@@ -143,7 +143,7 @@ function ListingsContent() {
             {activeChips.length > 0 && (
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-500">{activeChips.length} filter{activeChips.length > 1 ? "s" : ""} active</span>
-                <button onClick={clearFilters} className="text-xs text-green-700 underline hover:text-green-800">
+                <button onClick={clearFilters} className="cursor-pointer text-xs text-green-700 underline hover:text-green-800">
                   Clear all
                 </button>
               </div>
@@ -161,7 +161,7 @@ function ListingsContent() {
                   <button
                     key={value}
                     onClick={() => setServiceType(value)}
-                    className={`flex-1 text-xs px-2 py-2 rounded-lg border transition-colors ${
+                    className={`cursor-pointer flex-1 text-xs px-2 py-2 rounded-lg border transition-colors ${
                       serviceType === value
                         ? "border-green-700 bg-green-50 text-green-800 font-semibold"
                         : "border-gray-200 text-gray-600 hover:bg-gray-50"
@@ -180,7 +180,7 @@ function ListingsContent() {
                 {selectedCategory && (
                   <button
                     onClick={() => { setSelectedCategory(""); setSelectedSubcategory(""); }}
-                    className="text-xs text-green-700 underline"
+                    className="cursor-pointer text-xs text-green-700 underline"
                   >
                     Clear
                   </button>
@@ -194,7 +194,7 @@ function ListingsContent() {
                         toggleExpand(cat.name);
                         selectCategory(cat.name);
                       }}
-                      className={`w-full flex items-center justify-between py-2 px-2 rounded-lg text-sm transition-colors ${
+                      className={`cursor-pointer w-full flex items-center justify-between py-2 px-2 rounded-lg text-sm transition-colors ${
                         selectedCategory === cat.name && !selectedSubcategory
                           ? "bg-green-50 text-green-800 font-semibold"
                           : "text-gray-700 hover:bg-gray-50"
@@ -213,7 +213,7 @@ function ListingsContent() {
                           <button
                             key={sub}
                             onClick={() => selectSubcategory(cat.name, sub)}
-                            className={`block w-full text-left py-1.5 px-2 rounded text-xs transition-colors ${
+                            className={`cursor-pointer block w-full text-left py-1.5 px-2 rounded text-xs transition-colors ${
                               selectedSubcategory === sub
                                 ? "text-green-800 bg-green-50 font-semibold"
                                 : "text-gray-600 hover:text-green-700 hover:bg-green-50"
@@ -279,7 +279,7 @@ function ListingsContent() {
                   className="inline-flex items-center gap-1 bg-green-50 text-green-800 text-xs px-3 py-1 rounded-full border border-green-200"
                 >
                   {label}
-                  <button onClick={clear} className="ml-1 hover:text-green-900">
+                  <button onClick={clear} className="cursor-pointer ml-1 hover:text-green-900">
                     <X className="h-3 w-3" />
                   </button>
                 </span>

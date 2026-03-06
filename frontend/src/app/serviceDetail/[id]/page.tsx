@@ -328,7 +328,7 @@ export default function ServiceDetailPage() {
                     <button
                       type="button"
                       onClick={() => setIsMapOpen(true)}
-                      className="flex items-center gap-1 hover:text-green-700"
+                      className="cursor-pointer flex items-center gap-1 hover:text-green-700"
                     >
                       <MapPin className="h-4 w-4" />
                       <span className="underline cursor-pointer">{service.location}</span>
@@ -665,7 +665,7 @@ export default function ServiceDetailPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Request Booking</h3>
               {bookingState !== "loading" && (
-                <button onClick={() => setShowBookingModal(false)} className="text-gray-500 hover:text-gray-700">
+                <button onClick={() => setShowBookingModal(false)} className="cursor-pointer text-gray-500 hover:text-gray-700">
                   <X className="h-5 w-5" />
                 </button>
               )}
@@ -770,7 +770,7 @@ export default function ServiceDetailPage() {
               <h3 className="font-semibold text-gray-900">Approximate Location</h3>
               <button
                 onClick={() => setIsMapOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="cursor-pointer text-gray-500 hover:text-gray-700"
                 aria-label="Close map"
               >
                 ✕

@@ -11,6 +11,19 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        // PKCE flow: Supabase sends ?code=xxx in the URL
+        const code = new URLSearchParams(window.location.search).get("code");
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            console.error("Code exchange error:", error);
+            setMessage("Verification failed. Redirecting to login...");
+            setTimeout(() => router.push("/login"), 2000);
+            return;
+          }
+        }
+
+        // Get session after potential code exchange
         const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error) {
@@ -21,9 +34,7 @@ export default function AuthCallbackPage() {
         }
 
         if (session) {
-          const user = session.user;
-          const profileCompleted = user.user_metadata?.profile_completed;
-
+          const profileCompleted = session.user.user_metadata?.profile_completed;
           if (!profileCompleted) {
             setMessage("Email verified! Let's complete your profile...");
             setTimeout(() => router.push("/choose_type"), 1500);
@@ -32,8 +43,19 @@ export default function AuthCallbackPage() {
             setTimeout(() => router.push("/"), 1500);
           }
         } else {
-          setMessage("No session found. Redirecting to login...");
-          setTimeout(() => router.push("/login"), 2000);
+          // Implicit/hash flow fallback — listen for auth state change
+          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === "SIGNED_IN" && session) {
+              subscription.unsubscribe();
+              const profileCompleted = session.user.user_metadata?.profile_completed;
+              router.push(profileCompleted ? "/" : "/choose_type");
+            }
+          });
+          setTimeout(() => {
+            subscription.unsubscribe();
+            setMessage("No session found. Redirecting to login...");
+            setTimeout(() => router.push("/login"), 1500);
+          }, 5000);
         }
       } catch (err) {
         console.error("Callback error:", err);

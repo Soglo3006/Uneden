@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import { createClient } from '@supabase/supabase-js';
+import { notifyWelcome } from '../services/emailService.js';
 
 
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -135,9 +136,14 @@ export const completeProfile = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        res.json({ 
+        const u = result.rows[0];
+        const displayName = u.account_type === "company" ? u.company_name : u.full_name;
+        notifyWelcome(u.email, displayName || u.email)
+          .catch((err) => console.error("Welcome email failed:", err.message));
+
+        res.json({
             message: "Profile completed successfully",
-            user: result.rows[0]
+            user: u
         });
     } catch (err) {
         console.error("Error completing profile:", err);

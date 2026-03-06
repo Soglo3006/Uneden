@@ -92,7 +92,7 @@ export default function ImageUploader({
             <button
             type="button"
             onClick={() => onImageChange("")}
-            className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow hover:bg-red-700 transition"
+            className="cursor-pointer absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow hover:bg-red-700 transition"
             >
             <Trash2 className="w-4 h-4" />
             </button>

@@ -377,7 +377,7 @@ export function useMessages(chatRoomId: string | null) {
       });
       if (error) throw error;
 
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/messages/notify`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/messages/notify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

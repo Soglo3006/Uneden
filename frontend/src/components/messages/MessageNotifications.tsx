@@ -142,7 +142,7 @@ export default function MessageNotifications() {
                   {!chat.is_read ? (
                     <button
                       onClick={(e) => handleMarkAsRead(e, chat.chat_room_id)}
-                      className="shrink-0 group flex items-center justify-center h-8 w-8 rounded-full hover:bg-blue-100 transition-colors"
+                      className="cursor-pointer shrink-0 group flex items-center justify-center h-8 w-8 rounded-full hover:bg-blue-100 transition-colors"
                       title="Marquer comme lu"
                     >
                       {/* Blue dot that becomes a check on hover */}

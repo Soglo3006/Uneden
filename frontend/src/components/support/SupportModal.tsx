@@ -64,7 +64,7 @@ export default function SupportModal({ open, onClose }: SupportModalProps) {
       <Card className="relative z-10 w-full max-w-lg p-6 bg-white">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Uneden Support</h3>
-          <button className="text-gray-500 hover:text-gray-700" onClick={onClose} aria-label="Close">
+          <button className="cursor-pointer text-gray-500 hover:text-gray-700" onClick={onClose} aria-label="Close">
             ✕
           </button>
         </div>

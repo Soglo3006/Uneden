@@ -273,10 +273,10 @@ return (
             <button
             type="button"
             onClick={() => setMode("offer")}
-            className={`flex-1 flex items-center justify-center gap-3 py-4 px-6 rounded-xl border-2 transition-all duration-200 font-semibold text-lg ${
+            className={`cursor-pointer flex-1 flex items-center justify-center gap-3 py-4 px-6 rounded-xl border-2 transition-all duration-200 font-semibold text-lg ${
                 mode === "offer"
                 ? "bg-green-700 text-white border-green-700 shadow-lg"
-                : "bg-white text-gray-700 border-gray-200 hover:border-green-700 hover:bg-green-50 cursor-pointer"
+                : "bg-white text-gray-700 border-gray-200 hover:border-green-700 hover:bg-green-50"
             }`}
             >
             <span>Offer a Service</span>
@@ -284,10 +284,10 @@ return (
             <button
             type="button"
             onClick={() => setMode("looking")}
-            className={`flex-1 flex items-center justify-center gap-3 py-4 px-6 rounded-xl border-2 transition-all duration-200 font-semibold text-lg ${
+            className={`cursor-pointer flex-1 flex items-center justify-center gap-3 py-4 px-6 rounded-xl border-2 transition-all duration-200 font-semibold text-lg ${
                 mode === "looking"
                 ? "bg-green-700 text-white border-green-700 shadow-lg"
-                : "bg-white text-gray-700 border-gray-200 hover:border-green-700 hover:bg-green-50 cursor-pointer"
+                : "bg-white text-gray-700 border-gray-200 hover:border-green-700 hover:bg-green-50"
             }`}
             >
             <span>Looking for a Worker</span>

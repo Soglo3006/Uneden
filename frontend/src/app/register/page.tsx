@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import React, { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
@@ -24,8 +25,10 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [chargement, setChargement] = useState(false)
-  
+  const [showSuccess, setShowSuccess] = useState(false)
+
   const { signUpWithEmail, signInWithGoogle, signInWithFacebook, signInWithApple } = useAuth();
+  const router = useRouter();
 
   const { loading } = useProtectedRoute({
     requireAuth: false,
@@ -51,6 +54,7 @@ export default function RegisterPage() {
 
     try {
       await signUpWithEmail(email, password, fullName);
+      setShowSuccess(true);
     } catch (err: any) {
       setError(err.message || "Registration failed");
     } finally {
@@ -60,6 +64,23 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      {showSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
+            <div className="text-4xl mb-4">✉️</div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Account created!</h2>
+            <p className="text-gray-600 text-sm mb-6">
+              Check your email to verify your account before signing in.
+            </p>
+            <Button
+              className="w-full bg-green-800 hover:bg-green-900"
+              onClick={() => router.push("/auth/verify-email")}
+            >
+              OK
+            </Button>
+          </div>
+        </div>
+      )}
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Create your account</CardTitle>

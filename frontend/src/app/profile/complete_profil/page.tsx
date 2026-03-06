@@ -1008,7 +1008,7 @@ export default function OnboardingPage() {
                                 {skill}
                                 <button
                                     onClick={() => handleRemoveSkill(skill)}
-                                    className="ml-2 hover:text-red-600"
+                                    className="cursor-pointer ml-2 hover:text-red-600"
                                 >
                                     <X className="h-3 w-3" />
                                 </button>
@@ -1156,7 +1156,7 @@ export default function OnboardingPage() {
                                 {service}
                                 <button
                                 onClick={() => handleRemoveSkill(service)}
-                                className="ml-2 hover:text-red-600"
+                                className="cursor-pointer ml-2 hover:text-red-600"
                                 >
                                 <X className="h-3 w-3" />
                                 </button>
@@ -1239,7 +1239,7 @@ export default function OnboardingPage() {
                     >
                         <button
                         onClick={() => handleRemoveExperience(exp.id)}
-                        className="absolute top-4 right-4 text-gray-400 hover:text-red-500"
+                        className="cursor-pointer absolute top-4 right-4 text-gray-400 hover:text-red-500"
                         >
                         <Trash2 className="h-4 w-4" />
                         </button>
@@ -1337,7 +1337,7 @@ export default function OnboardingPage() {
                             />
                             <button
                                 onClick={() => handleRemovePortfolio(item.id)}
-                                className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                className="cursor-pointer absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
                             >
                                 <Trash2 className="h-4 w-4" />
                             </button>

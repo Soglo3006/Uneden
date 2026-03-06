@@ -30,6 +30,8 @@ import SettingsPage from "@/components/profile/Settings";
 import { useRef, useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import MessageNotifications from "@/components/messages/MessageNotifications";
+import BookingNotifications from "@/components/bookings/BookingNotifications";
+import { useUnreadBookings } from "@/hooks/useUnreadBookings";
 
 interface SearchResult {
   id: string;
@@ -120,6 +122,8 @@ export default function Header() {
     await signOut();
   };
 
+  const { unseenCount } = useUnreadBookings();
+
   const isPerson = profileData?.account_type === "person";
   const isCompany = profileData?.account_type === "company";
   const displayName = isPerson ? profileData?.full_name : profileData?.company_name;
@@ -136,6 +140,11 @@ export default function Header() {
             <AvatarImage src={avatarUrl} alt={displayName || "User"} />
             <AvatarFallback className="text-sm">{fallbackInitial}</AvatarFallback>
           </Avatar>
+          {unseenCount > 0 && (
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white ring-2 ring-white">
+              {unseenCount > 9 ? "9+" : unseenCount}
+            </span>
+          )}
           {isCompany && (
             <div className="absolute -bottom-1 -right-1 bg-blue-600 rounded-full p-0.5">
               <Building2 className="h-3 w-3 text-white" />
@@ -179,6 +188,11 @@ export default function Header() {
           <Link href="/bookings" className="cursor-pointer flex items-center">
             <CalendarDays className="mr-2 h-4 w-4" />
             <span>Bookings</span>
+          {unseenCount > 0 && (
+              <span className="ml-auto h-5 min-w-5 px-1 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">
+                {unseenCount > 9 ? "9+" : unseenCount}
+              </span>
+            )}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
@@ -243,7 +257,7 @@ export default function Header() {
                 {headerSearch && !searchLoading && (
                   <button
                     onClick={() => { setHeaderSearch(""); setSearchResults([]); setShowSearchDrop(false); }}
-                    className="text-gray-400 hover:text-gray-600 ml-1 shrink-0"
+                    className="cursor-pointer text-gray-400 hover:text-gray-600 ml-1 shrink-0"
                   >
                     <X size={13} />
                   </button>
@@ -261,7 +275,7 @@ export default function Header() {
                         setHeaderSearch("");
                         router.push(`/serviceDetail/${result.id}`);
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-b-0 transition-colors"
+                      className="cursor-pointer w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-b-0 transition-colors"
                     >
                       {result.image_url ? (
                         <img src={result.image_url} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
@@ -287,7 +301,7 @@ export default function Header() {
                       setShowSearchDrop(false);
                       router.push(`/listings?search=${encodeURIComponent(headerSearch.trim())}`);
                     }}
-                    className="w-full text-center py-3 text-sm text-green-700 font-semibold hover:bg-green-50 transition-colors"
+                    className="cursor-pointer w-full text-center py-3 text-sm text-green-700 font-semibold hover:bg-green-50 transition-colors"
                   >
                     See all results for &ldquo;{headerSearch}&rdquo; →
                   </button>
@@ -340,6 +354,7 @@ export default function Header() {
                     </Button>
                   </Link>
                   <MessageNotifications />
+                  <BookingNotifications />
                 </>
               )}
 
