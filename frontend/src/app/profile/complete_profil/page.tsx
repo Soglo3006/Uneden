@@ -380,7 +380,6 @@ export default function OnboardingPage() {
         portfolio: data.portfolio || [],
       };
 
-      console.log("Sending payload:", payload);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/complete`, {
         method: "PUT",
@@ -396,7 +395,6 @@ export default function OnboardingPage() {
         throw new Error(errorData.message || "Failed to save profile");
       }
 
-      console.log("Profile saved to backend");
 
       // 2. Marquer le profil comme complété dans Supabase Auth
       const { error } = await supabase.auth.updateUser({
@@ -407,7 +405,6 @@ export default function OnboardingPage() {
 
       if (error) throw error;
 
-      console.log("Profile marked as completed in Supabase Auth");
 
       setShowSuccess(true);
 

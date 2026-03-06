@@ -86,7 +86,7 @@ function ListingsContent() {
     debouncedSearch && { label: `"${debouncedSearch}"`, clear: () => setSearch("") },
     selectedCategory && !selectedSubcategory && { label: selectedCategory, clear: () => setSelectedCategory("") },
     selectedSubcategory && { label: selectedSubcategory, clear: () => setSelectedSubcategory("") },
-    debouncedLocation && { label: `📍 ${debouncedLocation}`, clear: () => setLocation("") },
+    debouncedLocation && { label: ` ${debouncedLocation}`, clear: () => setLocation("") },
     serviceType !== "all" && { label: serviceType === "offer" ? "Offering" : "Looking", clear: () => setServiceType("all") },
     (debouncedPrice[0] > 0 || debouncedPrice[1] < 1000) && {
       label: `$${debouncedPrice[0]}–$${debouncedPrice[1] >= 1000 ? "1000+" : debouncedPrice[1]}`,

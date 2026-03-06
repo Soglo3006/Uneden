@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import { notifyBookingCreated, notifyBookingStatusUpdated } from "../services/emailService.js";
+import { pushNewBooking, pushBookingStatus } from "../services/pushService.js";
 import stripe from "../config/stripe.js";
 
 export const createBooking = async (req, res) => {
@@ -59,6 +60,7 @@ export const createBooking = async (req, res) => {
 
     notifyBookingCreated(s.worker_email, s.worker_name, clientName, s.title, booking.id)
       .catch((err) => console.error("Booking email notification failed:", err.message));
+    pushNewBooking(worker_id, clientName, s.title).catch(() => {});
 
     res.status(201).json(booking);
   } catch (err) {
@@ -162,6 +164,7 @@ export const updateBookingStatus = async (req, res) => {
     if (status === "accepted" || status === "rejected") {
       notifyBookingStatusUpdated(b.client_email, b.client_name, b.title, status, b.id)
         .catch((err) => console.error("Status email notification failed:", err.message));
+      pushBookingStatus(b.client_id, status, b.title).catch(() => {});
     }
 
     // One-time listing: when accepted, auto-reject all OTHER pending requests + deactivate listing

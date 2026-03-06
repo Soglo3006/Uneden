@@ -35,14 +35,12 @@ export const completeProfile = async (req, res) => {
             industry,
             team_size,
             
-            // Portfolio (commun)
             portfolio
         } = req.body;
 
         const userId = req.user.id;
         const fullName = req.user.full_name;
 
-        console.log("Completing profile for user:", userId);
 
         //Préparer les métadonnées pour auth.users
         const metaData = account_type === 'person' 
@@ -73,8 +71,6 @@ export const completeProfile = async (req, res) => {
                 profile_completed: true,
             };
 
-        // Mettre à jour auth.users.raw_user_meta_data
-        console.log("Updating auth.users metadata...");
         const { error: metaError } = await supabaseAdmin.auth.admin.updateUserById(
             userId,
             { user_metadata: metaData }
@@ -88,8 +84,6 @@ export const completeProfile = async (req, res) => {
             });
         }
 
-        // Mettre à jour public.users (comme avant)
-        console.log("Updating public.users table...");
         const result = await pool.query(
             `UPDATE users 
             SET 

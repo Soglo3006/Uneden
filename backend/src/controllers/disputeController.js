@@ -90,7 +90,7 @@ export const UpdateDispute = async (req, res) => {
         }
 
         const dispute = await pool.query(
-            `SELECT d.*, b.client_id, b.worker_id 
+            `SELECT d.*, b.client_id, b.worker_id
              FROM disputes d
              JOIN bookings b ON d.booking_id = b.id
              WHERE d.id = $1`,
@@ -119,3 +119,61 @@ export const UpdateDispute = async (req, res) => {
         res.status(500).json({ message: "Server error while updating dispute" });
     }
 }
+
+// ─── Admin endpoints ──────────────────────────────────────────────────────────
+
+export const AdminGetAllDisputes = async (_req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT
+                d.id, d.status, d.description, d.resolution, d.created_at,
+                d.booking_id,
+                b.service_id,
+                s.title AS service_title,
+                s.price AS service_price,
+                CASE WHEN uc.account_type = 'company' THEN uc.company_name ELSE uc.full_name END AS client_name,
+                uc.email AS client_email,
+                CASE WHEN uw.account_type = 'company' THEN uw.company_name ELSE uw.full_name END AS worker_name,
+                uw.email AS worker_email,
+                CASE WHEN ur.account_type = 'company' THEN ur.company_name ELSE ur.full_name END AS raised_by_name,
+                d.raised_by
+             FROM disputes d
+             JOIN bookings b ON d.booking_id = b.id
+             JOIN services s ON b.service_id = s.id
+             JOIN users uc ON b.client_id = uc.id
+             JOIN users uw ON b.worker_id = uw.id
+             JOIN users ur ON d.raised_by = ur.id
+             ORDER BY d.created_at DESC`
+        );
+        res.status(200).json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error fetching disputes" });
+    }
+};
+
+export const AdminUpdateDispute = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, resolution } = req.body;
+
+        const allowed = ["open", "resolved", "rejected"];
+        if (!allowed.includes(status)) {
+            return res.status(400).json({ message: "Invalid dispute status" });
+        }
+
+        const result = await pool.query(
+            `UPDATE disputes SET status = $1, resolution = $2 WHERE id = $3 RETURNING *`,
+            [status, resolution || null, id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Dispute not found" });
+        }
+
+        res.status(200).json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error updating dispute" });
+    }
+};

@@ -240,7 +240,7 @@ export function ConversationList({
       </div>
 
       {/* Conversations list */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         {filteredChats.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <p>

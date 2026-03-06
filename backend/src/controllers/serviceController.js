@@ -139,7 +139,6 @@ export const getAllServices = async (req, res) => {
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
-    console.log(err);
     return res.status(500).json({ message: "Server error while fetching services" });
   }
 };

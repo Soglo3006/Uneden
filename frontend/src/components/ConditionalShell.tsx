@@ -13,14 +13,32 @@ const AUTH_ROUTES = [
   "/profile/complete_profil",
   "/auth/callback",
   "/auth/verify-email",
+  "/forgot-password",
+  "/auth/reset-password",
+];
+
+const NO_CATEGORY_ROUTES = [
+  "/listings",
 ];
 
 export default function ConditionalShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = AUTH_ROUTES.some((r) => pathname.startsWith(r));
+  const isNoCategoryPage = NO_CATEGORY_ROUTES.some((r) => pathname.startsWith(r));
 
   if (isAuthPage) {
     return <main className="flex-1">{children}</main>;
+  }
+
+  if (isNoCategoryPage) {
+    return (
+      <>
+        <Header />
+        <main className="flex-1">{children}</main>
+        <Footer />
+        <SupportButton floating />
+      </>
+    );
   }
 
   return (

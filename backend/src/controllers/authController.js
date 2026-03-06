@@ -3,8 +3,6 @@ import bcrypt from "bcryptjs";
 import { notifyPasswordChanged } from "../services/emailService.js";
 
 export const changePassword = async (req, res) => {
-    console.log(req.body);
-    console.log(req.user);
     try {
         const { oldPassword, newPassword } = req.body;
         const userId = req.user.id;

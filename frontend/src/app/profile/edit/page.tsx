@@ -355,7 +355,6 @@ export default function EditProfilePage() {
         }),
       };
 
-      console.log(payload);
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/profiles/me`,
@@ -369,8 +368,6 @@ export default function EditProfilePage() {
         }
       );
 
-      console.log(" RESPONSE STATUS:", response.status);
-      console.log(" RESPONSE OK?:", response.ok);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -378,8 +375,6 @@ export default function EditProfilePage() {
       }
 
       const responseData = await response.json();
-    console.log(" RÉPONSE DE L'API:", responseData);
-    console.log(" PROFESSION DANS LA RÉPONSE:", responseData.profession);
 
       // Rediriger vers la page de profil
       router.push(`/profile/${user?.id}`);

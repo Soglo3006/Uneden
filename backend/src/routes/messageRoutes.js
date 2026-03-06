@@ -1,6 +1,7 @@
 import express from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { notifyNewMessage } from '../services/emailService.js';
+import { pushNewMessage } from '../services/pushService.js';
 
 const router = express.Router();
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -59,6 +60,7 @@ router.post('/notify', async (req, res) => {
       messagePreview.substring(0, 100),
       chatRoomId
     );
+    pushNewMessage(receiverId, senderName).catch(() => {});
 
     res.json({ sent: true });
   } catch (err) {

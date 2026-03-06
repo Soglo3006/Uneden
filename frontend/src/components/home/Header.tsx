@@ -32,6 +32,7 @@ import { Heart } from "lucide-react";
 import MessageNotifications from "@/components/messages/MessageNotifications";
 import BookingNotifications from "@/components/bookings/BookingNotifications";
 import { useUnreadBookings } from "@/hooks/useUnreadBookings";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface SearchResult {
   id: string;
@@ -123,6 +124,17 @@ export default function Header() {
   };
 
   const { unseenCount } = useUnreadBookings();
+  const { permission, subscribe } = usePushNotifications();
+
+  // Ask for push permission once, after user logs in, if not yet decided
+  useEffect(() => {
+    if (!user) return;
+    if (permission === "default") {
+      const timer = setTimeout(() => subscribe(), 3000);
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, permission]);
 
   const isPerson = profileData?.account_type === "person";
   const isCompany = profileData?.account_type === "company";

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -77,9 +78,16 @@ export default function SettingsPage({ onClose, scrollRef }) {
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
 
+  const { permission, subscribed, subscribe, unsubscribe } = usePushNotifications();
+
   const [notifications, setNotifications] = useState({
-    email: true, sms: false, push: true, marketing: false,
+    email: true, sms: false, push: false, marketing: false,
   });
+
+  // Sync push toggle with real subscription state
+  useEffect(() => {
+    setNotifications(prev => ({ ...prev, push: subscribed || permission === "granted" }));
+  }, [subscribed, permission]);
   const [language, setLanguage] = useState("en");
   const [region, setRegion] = useState("CA");
   const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
@@ -420,7 +428,17 @@ export default function SettingsPage({ onClose, scrollRef }) {
                   </div>
                   <Toggle
                     checked={notifications[key]}
-                    onChange={() => setNotifications(prev => ({ ...prev, [key]: !prev[key] }))}
+                    onChange={() => {
+                      if (key === "push") {
+                        if (notifications.push) {
+                          unsubscribe();
+                        } else {
+                          subscribe();
+                        }
+                        return;
+                      }
+                      setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
+                    }}
                   />
                 </div>
               ))}

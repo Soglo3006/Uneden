@@ -506,7 +506,6 @@ function ShareProfilePage({ setScreen, profileId, displayName }) {
           url: profileUrl,
         });
       } catch (err) {
-        console.log('Share cancelled or failed');
       }
     } else {
       handleCopy();

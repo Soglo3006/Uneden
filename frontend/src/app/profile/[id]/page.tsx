@@ -107,8 +107,6 @@ export default function UserProfilePage() {
           headers.Authorization = `Bearer ${session.access_token}`;
         }
 
-        console.log("Fetching profile from:", url);
-        console.log("Is owner?", user?.id === profileId);
 
         const response = await fetch(url, { headers });
 
@@ -117,7 +115,6 @@ export default function UserProfilePage() {
         }
 
         const data = await response.json();
-        console.log("Profile loaded:", data)
         setProfileUser(data);
         hasFetchedRef.current = true;
       } catch (err: any) {
@@ -196,8 +193,6 @@ export default function UserProfilePage() {
         }
 
         const data = await response.json();
-        console.log("User listings loaded:", data);
-        // Sort by latest if created_at exists
         const sorted = Array.isArray(data)
           ? [...data].sort((a, b) => {
               const aTime = a?.created_at ? new Date(a.created_at).getTime() : 0;
@@ -233,7 +228,6 @@ export default function UserProfilePage() {
         }
 
         const data = await response.json();
-        console.log("User reviews loaded:", data);
         setReviews(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error fetching reviews:", err);
