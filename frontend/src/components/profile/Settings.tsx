@@ -86,8 +86,8 @@ export default function SettingsPage({ onClose, scrollRef }) {
 
   // Sync push toggle with real subscription state
   useEffect(() => {
-    setNotifications(prev => ({ ...prev, push: subscribed || permission === "granted" }));
-  }, [subscribed, permission]);
+    setNotifications(prev => ({ ...prev, push: subscribed }));
+  }, [subscribed]);
   const [language, setLanguage] = useState("en");
   const [region, setRegion] = useState("CA");
   const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);

@@ -158,7 +158,6 @@ export function MessageThread({
     useEffect(() => { loadMoreRef.current = loadMore; }, [loadMore]);
 
 
-    // Index of last own sent message — read receipt only rendered there
     const lastOwnSentIndex = messages.reduce((found, msg, idx) => {
       if (msg.user_id === currentUserId && msg.status !== 'sending' && msg.status !== 'failed') return idx;
       return found;
@@ -336,7 +335,6 @@ export function MessageThread({
               }}
             >
               {messages.map((message, index) => {
-                const isLastOwnSent = index === lastOwnSentIndex;
                 const isOwn = message.user_id === currentUserId;
                 const showDate =
                   index === 0 ||
@@ -520,8 +518,8 @@ export function MessageThread({
                         })}
                       </span>
                       
-                      {/* Accusé de lecture — uniquement sur le dernier message envoyé */}
-                      {isOwn && isLastOwnSent && message.status !== 'sending' && message.status !== 'failed' && (
+                      {/* Accusé de lecture */}
+                      {isOwn && message.status !== 'sending' && message.status !== 'failed' && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span className={`text-xs cursor-help ${message.read_at ? 'text-green-600' : 'text-gray-400'}`}>

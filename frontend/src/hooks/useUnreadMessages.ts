@@ -66,7 +66,7 @@ export function useUnreadMessages() {
               .eq('chat_room_id', chatId)
               .order('created_at', { ascending: false })
               .limit(1)
-              .single();
+              .maybeSingle();
 
             if (!lastMsg) return null;
 
@@ -87,7 +87,7 @@ export function useUnreadMessages() {
               .eq('chat_room_id', chatId)
               .neq('user_id', user.id)
               .limit(1)
-              .single();
+              .maybeSingle();
 
             const displayUserId = otherMember?.user_id || lastMsg.user_id;
 
@@ -96,7 +96,7 @@ export function useUnreadMessages() {
               .from('profiles')
               .select('id, full_name, company_name, account_type, avatar_url')
               .eq('id', displayUserId)
-              .single();
+              .maybeSingle();
 
             // Préfixer "Vous: " si le dernier message est le nôtre
             const messagePreview = lastMsg.user_id === user.id

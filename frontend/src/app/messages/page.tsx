@@ -38,7 +38,7 @@ function MessagesContent() {
   const chatIdFromUrl = searchParams.get('chat');
   const router = useRouter();
 
-  const { chats, loading: chatsLoading, clearUnreadCount, archiveChat } = useChats();
+  const { chats, loading: chatsLoading, clearUnreadCount, archiveChat, removeChat, updateLastMessage } = useChats();
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [messageInput, setMessageInput] = useState('');
@@ -214,14 +214,17 @@ function MessagesContent() {
         fileUrl = data.publicUrl;
       }
 
+      const now = new Date().toISOString();
       if (messageInput.trim() && fileUrl) {
         await sendMessage(messageInput.trim(), replyingTo?.id || null);
         await sendMessage(`[FILE:${fileUrl}]`, null);
-      } 
-      else if (fileUrl) {
+        if (activeChatId) updateLastMessage(activeChatId, `[FILE:${fileUrl}]`, user?.id || '', now);
+      } else if (fileUrl) {
         await sendMessage(`[FILE:${fileUrl}]`, replyingTo?.id || null);
+        if (activeChatId) updateLastMessage(activeChatId, `[FILE:${fileUrl}]`, user?.id || '', now);
       } else {
         await sendMessage(messageInput.trim(), replyingTo?.id || null);
+        if (activeChatId) updateLastMessage(activeChatId, messageInput.trim(), user?.id || '', now);
       }
 
       setMessageInput('');
@@ -267,7 +270,9 @@ function MessagesContent() {
         .from('chat-attachments')
         .getPublicUrl(fileName);
 
-      await sendMessage(`[AUDIO:${data.publicUrl}:${duration}]`, null);
+      const audioContent = `[AUDIO:${data.publicUrl}:${duration}]`;
+      await sendMessage(audioContent, null);
+      if (activeChatId) updateLastMessage(activeChatId, audioContent, user?.id || '', new Date().toISOString());
     } catch (error) {
       console.error('Error sending voice message:', error);
       alert('Échec de l\'envoi du message vocal');
@@ -601,25 +606,24 @@ function MessagesContent() {
                       onToggleMute={() => setIsMuted(!isMuted)}
                       onDeleteConversation={async () => {
                         if (!activeChatId || !user?.id) return;
-                        
-                        // Supprimer tous les messages
-                        const { error: msgError } = await supabase
-                          .from('messages')
-                          .delete()
-                          .eq('chat_room_id', activeChatId);
-                        if (msgError) throw msgError;
 
-                        // Retirer l'utilisateur de la conv
-                        const { error: memberError } = await supabase
+                        // Compute next chat BEFORE any state change
+                        const remainingChats = chats.filter(c => c.id !== activeChatId && !c.is_archived);
+
+                        // Soft-delete: mark as deleted for this user only
+                        // Messages and the other person's view are preserved
+                        const { error } = await supabase
                           .from('chat_room_member')
-                          .delete()
+                          .update({ is_deleted: true })
                           .eq('chat_room_id', activeChatId)
                           .eq('user_id', user.id);
-                        if (memberError) throw memberError;
+                        if (error) throw error;
 
-                        // Trouver la prochaine convo
-                        const remainingChats = chats.filter(c => c.id !== activeChatId);
-                        
+                        // Immediately remove from local state (optimistic)
+                        removeChat(activeChatId);
+
+                        setShowSettings(false);
+
                         if (remainingChats.length > 0) {
                           const nextChatId = remainingChats[0].id;
                           setActiveChatId(nextChatId);
@@ -628,9 +632,6 @@ function MessagesContent() {
                           setActiveChatId(null);
                           router.replace('/messages');
                         }
-
-                        setShowSettings(false);
-                        router.push('/messages');
                       }}
                       onBlockUser={async () => {
                         if (!activeChat?.other_user?.id) return;

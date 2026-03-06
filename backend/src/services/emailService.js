@@ -86,6 +86,21 @@ const emailTemplates = {
     `),
   }),
 
+  unreadReminder: (receiverName, senderName, unreadCount) => ({
+    subject: `Vous avez ${unreadCount > 1 ? `${unreadCount} messages non lus` : "un message non lu"} sur Uneden`,
+    html: base(`
+      <h2 style="margin:0 0 8px;color:#111827;">Vous avez des messages en attente</h2>
+      <p style="color:#374151;">Bonjour <strong>${receiverName}</strong>,</p>
+      <p style="color:#374151;">
+        <strong>${senderName}</strong> vous a envoyé
+        ${unreadCount > 1 ? `<strong>${unreadCount} messages</strong>` : "un message"}
+        il y a plus de 24h et attend votre réponse.
+      </p>
+      <p style="color:#6b7280;font-size:14px;">Ne laissez pas cette opportunité passer !</p>
+      ${btn(`${FRONTEND}/messages`, "Voir mes messages")}
+    `),
+  }),
+
   newReview: (targetName, reviewerName, rating, comment) => ({
     subject: `Nouvelle évaluation reçue — ${rating}/5 ⭐`,
     html: base(`
@@ -168,6 +183,9 @@ export const notifyBookingStatusUpdated = (clientEmail, clientName, serviceTitle
 
 export const notifyNewMessage = (receiverEmail, receiverName, senderName, messagePreview, conversationId) =>
   sendEmail(receiverEmail, "newMessage", [receiverName, senderName, messagePreview, conversationId]);
+
+export const notifyUnreadReminder = (receiverEmail, receiverName, senderName, unreadCount) =>
+  sendEmail(receiverEmail, "unreadReminder", [receiverName, senderName, unreadCount]);
 
 export const notifyNewReview = (targetEmail, targetName, reviewerName, rating, comment) =>
   sendEmail(targetEmail, "newReview", [targetName, reviewerName, rating, comment]);

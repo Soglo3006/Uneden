@@ -22,6 +22,37 @@ router.post('/notify', async (req, res) => {
 
     const receiverId = members[0].user_id;
 
+    // Compter les messages dans cette conversation
+    // Si c'est le 1er message → nouvelle conversation → email
+    // Sinon → pas d'email (le rappel 24h gère le reste)
+    const { count: messageCount } = await supabase
+      .from('messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('chat_room_id', chatRoomId)
+      .is('deleted_at', null);
+
+    const isFirstMessage = (messageCount ?? 0) <= 1;
+
+    // Toujours envoyer le push (pas de coût)
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, company_name, account_type')
+      .in('id', [senderUserId, receiverId]);
+
+    const sender = profiles?.find(p => p.id === senderUserId);
+    const receiver = profiles?.find(p => p.id === receiverId);
+
+    const senderName = sender?.account_type === 'company'
+      ? sender.company_name
+      : sender?.full_name || 'Quelqu\'un';
+
+    pushNewMessage(receiverId, senderName).catch(() => {});
+
+    // Email seulement si c'est le 1er message de la conversation
+    if (!isFirstMessage) return res.json({ sent: false, reason: 'not first message' });
+
+    if (!receiver?.email) return res.json({ sent: false });
+
     // Vérifier si le destinataire est en ligne
     const { data: presence } = await supabase
       .from('user_presence')
@@ -34,21 +65,6 @@ router.post('/notify', async (req, res) => {
 
     if (isOnline) return res.json({ sent: false, reason: 'user online' });
 
-    // Récupérer les profils
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, email, full_name, company_name, account_type')
-      .in('id', [senderUserId, receiverId]);
-
-    const sender = profiles?.find(p => p.id === senderUserId);
-    const receiver = profiles?.find(p => p.id === receiverId);
-
-    if (!receiver?.email) return res.json({ sent: false });
-
-    const senderName = sender?.account_type === 'company'
-      ? sender.company_name
-      : sender?.full_name || 'Quelqu\'un';
-
     const receiverName = receiver?.account_type === 'company'
       ? receiver.company_name
       : receiver?.full_name || 'là';
@@ -60,7 +76,6 @@ router.post('/notify', async (req, res) => {
       messagePreview.substring(0, 100),
       chatRoomId
     );
-    pushNewMessage(receiverId, senderName).catch(() => {});
 
     res.json({ sent: true });
   } catch (err) {
