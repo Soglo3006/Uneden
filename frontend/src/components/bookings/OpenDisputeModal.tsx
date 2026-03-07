@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { X, AlertTriangle, CheckCircle } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
+import { X, AlertTriangle, CheckCircle, ImagePlus, Loader2 } from "lucide-react";
 
 interface Props {
   bookingId: string;
@@ -22,11 +23,41 @@ export default function OpenDisputeModal({
   onOpened,
 }: Props) {
   const [description, setDescription] = useState("");
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isValid = description.trim().length >= 20;
+
+  const handlePhotos = (files: FileList | null) => {
+    if (!files) return;
+    const valid = Array.from(files).filter(f => f.type.startsWith("image/")).slice(0, 4);
+    setPhotos(prev => [...prev, ...valid].slice(0, 4));
+    setPreviews(prev => [...prev, ...valid.map(f => URL.createObjectURL(f))].slice(0, 4));
+  };
+
+  const removePhoto = (idx: number) => {
+    URL.revokeObjectURL(previews[idx]);
+    setPhotos(p => p.filter((_, i) => i !== idx));
+    setPreviews(p => p.filter((_, i) => i !== idx));
+  };
+
+  const uploadPhotos = async (disputeId: string) => {
+    const results: { url: string; name: string }[] = [];
+    for (const file of photos) {
+      const ext = file.name.split(".").pop();
+      const path = `${disputeId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from("dispute-attachments").upload(path, file);
+      if (error) continue;
+      const { data } = supabase.storage.from("dispute-attachments").getPublicUrl(path);
+      results.push({ url: data.publicUrl, name: file.name });
+    }
+    return results;
+  };
 
   const handleSubmit = async () => {
     if (!isValid) {
@@ -36,12 +67,10 @@ export default function OpenDisputeModal({
     setSubmitting(true);
     setError("");
     try {
+      // 1. Create dispute
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/disputes`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ booking_id: bookingId, description: description.trim() }),
       });
       if (!res.ok) {
@@ -49,15 +78,29 @@ export default function OpenDisputeModal({
         setError(data.message ?? "Failed to open dispute.");
         return;
       }
+      const dispute = await res.json();
+
+      // 2. Upload photos if any, then post first message
+      let attachments: { url: string; name: string }[] = [];
+      if (photos.length > 0) {
+        setUploading(true);
+        attachments = await uploadPhotos(dispute.id);
+        setUploading(false);
+      }
+
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/disputes/${dispute.id}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ content: description.trim(), attachments }),
+      });
+
       setSuccess(true);
-      setTimeout(() => {
-        onOpened(bookingId);
-        onClose();
-      }, 800);
+      setTimeout(() => { onOpened(bookingId); onClose(); }, 800);
     } catch {
       setError("Network error. Please try again.");
     } finally {
       setSubmitting(false);
+      setUploading(false);
     }
   };
 
@@ -71,11 +114,11 @@ export default function OpenDisputeModal({
               <AlertTriangle className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Open a Dispute</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Open a Complaint</h2>
               <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{serviceTitle}</p>
             </div>
           </div>
-          <button onClick={onClose} className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors">
+          <button type="button" aria-label="Close" onClick={onClose} className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -83,16 +126,13 @@ export default function OpenDisputeModal({
         {/* Body */}
         <div className="px-6 py-5 space-y-4">
           <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-            Opening a dispute will notify our team and both parties. Please describe the issue clearly.
+            Describe the issue clearly. Both parties will be able to respond. Our team will review and close the complaint.
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              {error}
-            </p>
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
           )}
 
-          {/* Description */}
           <div className="space-y-2">
             <Label className="text-base font-medium text-gray-900">
               Describe the issue <span className="text-red-500">*</span>
@@ -100,13 +140,59 @@ export default function OpenDisputeModal({
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Explain what went wrong, what was agreed upon, and what outcome you're seeking…"
+              placeholder="Explain what went wrong, what was agreed, and what outcome you're seeking…"
               className="min-h-32 resize-none"
             />
             <p className={`text-xs text-right ${description.length < 20 ? "text-gray-400" : "text-green-600"}`}>
-              {description.length} / 20 characters minimum
+              {description.length} / 20 minimum
             </p>
           </div>
+
+          {/* Photo upload */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">Photos (optional, max 4)</Label>
+            <div className="flex flex-wrap gap-2">
+              {previews.map((src, i) => (
+                <div key={i} className="relative">
+                  <img src={src} alt={`Photo ${i + 1}`} className="h-16 w-16 object-cover rounded-lg border border-gray-200" />
+                  <button
+                    type="button"
+                    aria-label="Remove photo"
+                    onClick={() => removePhoto(i)}
+                    className="absolute -top-1 -right-1 bg-gray-800 text-white rounded-full h-4 w-4 flex items-center justify-center"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              ))}
+              {photos.length < 4 && (
+                <button
+                  type="button"
+                  aria-label="Add photo"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-16 w-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-500 transition-colors"
+                >
+                  <ImagePlus className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              aria-label="Upload photos"
+              title="Upload photos"
+              onChange={(e) => handlePhotos(e.target.files)}
+            />
+          </div>
+
+          {uploading && (
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Loader2 className="h-4 w-4 animate-spin" /> Uploading photos…
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -118,18 +204,10 @@ export default function OpenDisputeModal({
             disabled={submitting || !isValid}
           >
             {success ? (
-              <span className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" /> Dispute Opened!
-              </span>
+              <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4" /> Complaint Opened!</span>
             ) : submitting ? (
-              <span className="flex items-center gap-2">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Opening…
-              </span>
-            ) : "Open Dispute"}
+              <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Opening…</span>
+            ) : "Open Complaint"}
           </Button>
         </div>
       </div>

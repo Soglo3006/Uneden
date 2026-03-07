@@ -1,6 +1,7 @@
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
 import { supabaseAdmin } from "../lib/supabase.js";
+import pool from "../config/db.js";
 
 const router = express.Router();
 
@@ -42,6 +43,88 @@ router.delete("/unsubscribe", protect, async (req, res) => {
     res.json({ message: "Unsubscribed" });
   } catch (err) {
     res.status(500).json({ message: "Failed to unsubscribe" });
+  }
+});
+
+// ─── In-app notifications CRUD ────────────────────────────────────────────────
+
+// GET /notifications — list recent 50 for current user
+router.get("/", protect, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, type, title, body, link, read_at, created_at
+       FROM notifications
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// GET /notifications/unread-count
+router.get("/unread-count", protect, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM notifications WHERE user_id = $1 AND read_at IS NULL`,
+      [req.user.id]
+    );
+    res.json({ count: result.rows[0].count });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// PATCH /notifications/read-all — mark all unread as read
+router.patch("/read-all", protect, async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE notifications SET read_at = NOW() WHERE user_id = $1 AND read_at IS NULL`,
+      [req.user.id]
+    );
+    res.json({ message: "All marked as read" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// DELETE /notifications/all — delete all for current user
+router.delete("/all", protect, async (req, res) => {
+  try {
+    await pool.query(`DELETE FROM notifications WHERE user_id = $1`, [req.user.id]);
+    res.json({ message: "All deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// PATCH /notifications/:id/read — mark one as read
+router.patch("/:id/read", protect, async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE notifications SET read_at = NOW() WHERE id = $1 AND user_id = $2`,
+      [req.params.id, req.user.id]
+    );
+    res.json({ message: "Marked as read" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// DELETE /notifications/:id — delete one
+router.delete("/:id", protect, async (req, res) => {
+  try {
+    await pool.query(
+      `DELETE FROM notifications WHERE id = $1 AND user_id = $2`,
+      [req.params.id, req.user.id]
+    );
+    res.json({ message: "Deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
   }
 });
 

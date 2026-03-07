@@ -24,7 +24,6 @@ const runReminders = async () => {
         user_id,
         chat_room_id,
         last_reminder_sent_at,
-        user_presence!left ( last_seen ),
         profiles!inner ( email, full_name, company_name, account_type )
       `)
       .or(`last_reminder_sent_at.is.null,last_reminder_sent_at.lt.${cutoff24h}`);
@@ -35,8 +34,15 @@ const runReminders = async () => {
     for (const row of rows) {
       const userId    = row.user_id;
       const chatRoomId = row.chat_room_id;
-      const lastSeen  = row.user_presence?.last_seen;
       const profile   = row.profiles;
+
+      // Fetch user presence separately (no FK relationship in schema)
+      const { data: presenceData } = await supabase
+        .from("user_presence")
+        .select("last_seen")
+        .eq("user_id", userId)
+        .maybeSingle();
+      const lastSeen = presenceData?.last_seen;
 
       // Skip if user was online in the last 24h
       if (lastSeen && new Date(lastSeen) > new Date(cutoff24h)) continue;

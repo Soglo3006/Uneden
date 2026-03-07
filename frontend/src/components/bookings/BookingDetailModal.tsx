@@ -8,6 +8,7 @@ import {
   AlertTriangle, CheckCircle, CreditCard, FileText, Grid3x3
 } from "lucide-react";
 import PayNowButton from "@/components/bookings/PayNowButton";
+import DisputeThread from "@/components/bookings/DisputeThread";
 
 type BookingStatus = "pending" | "accepted" | "active" | "completed" | "cancelled" | "rejected";
 
@@ -270,10 +271,11 @@ export default function BookingDetailModal({
             )}
 
             {booking.has_dispute && (
-              <div className="flex items-center gap-1.5 text-xs text-amber-600 font-medium">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                A dispute has been opened for this booking.
-              </div>
+              <DisputeThread
+                bookingId={booking.id}
+                currentUserId={userRole === "worker" ? booking.worker_id : booking.client_id}
+                accessToken={accessToken}
+              />
             )}
           </div>
         </div>

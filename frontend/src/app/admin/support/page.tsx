@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { isAdminUser } from "../../../lib/auth";
 import { RefreshCw } from "lucide-react";
@@ -161,8 +160,7 @@ export default function SupportAdminPage() {
       <main className="max-w-7xl mx-auto p-5">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Uneden Support Inbox</h1>
-            <Link href="/admin/disputes" className="text-sm text-green-700 hover:underline">Dispute management →</Link>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Support Inbox</h1>
           </div>
           <div className="flex items-center gap-2">
             <Input placeholder="Search subject, email, text" value={search} onChange={(e) => setSearch(e.target.value)} className="w-56" />

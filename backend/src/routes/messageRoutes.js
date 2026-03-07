@@ -2,6 +2,7 @@ import express from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { notifyNewMessage } from '../services/emailService.js';
 import { pushNewMessage } from '../services/pushService.js';
+import { createNotification } from '../services/notificationService.js';
 
 const router = express.Router();
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -53,6 +54,15 @@ router.post('/notify', async (req, res) => {
     if (!receiverMemberRaw.is_muted) {
       pushNewMessage(receiverId, senderName).catch(() => {});
     }
+
+    // In-app notification for new message
+    createNotification({
+      userId: receiverId,
+      type: "message",
+      title: `New message from ${senderName}`,
+      body: messagePreview ? messagePreview.substring(0, 100) : "You have a new message",
+      link: `/messages?chat=${chatRoomId}`,
+    });
 
     // Email seulement si c'est le 1er message de la conversation
     if (!isFirstMessage) return res.json({ sent: false, reason: 'not first message' });

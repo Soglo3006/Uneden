@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { isAdminUser } from "@/lib/auth";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -34,21 +35,30 @@ export default function AuthCallbackPage() {
         }
 
         if (session) {
-          const profileCompleted = session.user.user_metadata?.profile_completed;
-          if (!profileCompleted) {
-            setMessage("Email verified! Let's complete your profile...");
-            setTimeout(() => router.push("/choose_type"), 1500);
+          if (isAdminUser(session.user)) {
+            setMessage("Welcome, Admin!");
+            setTimeout(() => router.push("/admin"), 1500);
           } else {
-            setMessage("Welcome back!");
-            setTimeout(() => router.push("/"), 1500);
+            const profileCompleted = session.user.user_metadata?.profile_completed;
+            if (!profileCompleted) {
+              setMessage("Email verified! Let's complete your profile...");
+              setTimeout(() => router.push("/choose_type"), 1500);
+            } else {
+              setMessage("Welcome back!");
+              setTimeout(() => router.push("/"), 1500);
+            }
           }
         } else {
           // Implicit/hash flow fallback — listen for auth state change
           const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (event === "SIGNED_IN" && session) {
               subscription.unsubscribe();
-              const profileCompleted = session.user.user_metadata?.profile_completed;
-              router.push(profileCompleted ? "/" : "/choose_type");
+              if (isAdminUser(session.user)) {
+                router.push("/admin");
+              } else {
+                const profileCompleted = session.user.user_metadata?.profile_completed;
+                router.push(profileCompleted ? "/" : "/choose_type");
+              }
             }
           });
           setTimeout(() => {

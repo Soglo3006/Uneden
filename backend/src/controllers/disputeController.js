@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import { notifyDisputeCreated } from "../services/emailService.js";
+import { createNotification } from "../services/notificationService.js";
 
 export const CreateDispute = async (req, res) => {
     try {
@@ -49,6 +50,17 @@ export const CreateDispute = async (req, res) => {
             const { client_email, client_name, worker_email, worker_name } = users.rows[0];
             await notifyDisputeCreated(client_email, client_name, booking_id, description);
             await notifyDisputeCreated(worker_email, worker_name, booking_id, description);
+
+            // Notify the other party in-app
+            const otherPartyId = raised_by === b.client_id ? b.worker_id : b.client_id;
+            const raisedByName = raised_by === b.client_id ? client_name : worker_name;
+            createNotification({
+              userId: otherPartyId,
+              type: "dispute",
+              title: "Complaint opened",
+              body: `${raisedByName} opened a complaint about a booking.`,
+              link: "/bookings",
+            });
         }
 
         res.status(201).json(result.rows[0]);
@@ -119,6 +131,95 @@ export const UpdateDispute = async (req, res) => {
         res.status(500).json({ message: "Server error while updating dispute" });
     }
 }
+
+// ─── Dispute thread ───────────────────────────────────────────────────────────
+
+export const GetDisputeByBooking = async (req, res) => {
+    try {
+        const { bookingId } = req.params;
+        const userId = req.user.id;
+
+        // Verify user is part of this booking
+        const booking = await pool.query(
+            `SELECT client_id, worker_id FROM bookings WHERE id = $1`,
+            [bookingId]
+        );
+        if (booking.rows.length === 0) return res.status(404).json({ message: "Booking not found" });
+        const b = booking.rows[0];
+        if (b.client_id !== userId && b.worker_id !== userId) {
+            return res.status(403).json({ message: "Not authorized" });
+        }
+
+        const dispute = await pool.query(
+            `SELECT * FROM disputes WHERE booking_id = $1 LIMIT 1`,
+            [bookingId]
+        );
+        if (dispute.rows.length === 0) return res.status(404).json({ message: "No dispute found" });
+        const d = dispute.rows[0];
+
+        const messages = await pool.query(
+            `SELECT dm.*,
+                CASE WHEN u.account_type = 'company' THEN u.company_name ELSE u.full_name END AS sender_name,
+                u.account_type AS sender_account_type
+             FROM dispute_messages dm
+             JOIN users u ON dm.user_id = u.id
+             WHERE dm.dispute_id = $1
+             ORDER BY dm.created_at ASC`,
+            [d.id]
+        );
+
+        res.json({ dispute: d, messages: messages.rows });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+export const PostDisputeMessage = async (req, res) => {
+    try {
+        const { disputeId } = req.params;
+        const { content, attachments } = req.body;
+        const userId = req.user.id;
+
+        if (!content?.trim() && (!attachments || attachments.length === 0)) {
+            return res.status(400).json({ message: "Message cannot be empty" });
+        }
+
+        // Verify dispute exists and user is part of it
+        const dispute = await pool.query(
+            `SELECT d.*, b.client_id, b.worker_id
+             FROM disputes d JOIN bookings b ON d.booking_id = b.id
+             WHERE d.id = $1`,
+            [disputeId]
+        );
+        if (dispute.rows.length === 0) return res.status(404).json({ message: "Dispute not found" });
+        const d = dispute.rows[0];
+        if (d.client_id !== userId && d.worker_id !== userId) {
+            return res.status(403).json({ message: "Not authorized" });
+        }
+        if (d.status !== 'open') {
+            return res.status(400).json({ message: "This dispute is closed. No more messages can be sent." });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO dispute_messages (dispute_id, user_id, content, attachments)
+             VALUES ($1, $2, $3, $4) RETURNING *`,
+            [disputeId, userId, content?.trim() || '', JSON.stringify(attachments || [])]
+        );
+
+        const msg = result.rows[0];
+
+        // Enrich with sender name
+        const user = await pool.query(
+            `SELECT CASE WHEN account_type = 'company' THEN company_name ELSE full_name END AS sender_name, account_type AS sender_account_type FROM users WHERE id = $1`,
+            [userId]
+        );
+        res.status(201).json({ ...msg, ...user.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
 
 // ─── Admin endpoints ──────────────────────────────────────────────────────────
 

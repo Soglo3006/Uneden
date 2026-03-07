@@ -30,7 +30,7 @@ import SettingsPage from "@/components/profile/Settings";
 import { useRef, useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import MessageNotifications from "@/components/messages/MessageNotifications";
-import BookingNotifications from "@/components/bookings/BookingNotifications";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import { useUnreadBookings } from "@/hooks/useUnreadBookings";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
@@ -366,7 +366,7 @@ export default function Header() {
                     </Button>
                   </Link>
                   <MessageNotifications />
-                  <BookingNotifications />
+                  <NotificationBell />
                 </>
               )}
 

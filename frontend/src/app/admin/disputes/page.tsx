@@ -158,9 +158,6 @@ export default function AdminDisputesPage() {
                 <Badge className="bg-amber-500 text-white">{openCount} open</Badge>
               )}
             </div>
-            <div className="flex gap-3 text-sm text-gray-500">
-              <Link href="/admin/support" className="hover:text-green-700 hover:underline">Support tickets →</Link>
-            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Input

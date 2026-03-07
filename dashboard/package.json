@@ -1,0 +1,14 @@
+{
+  "name": "uneden-dashboard",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Uneden Admin Console Dashboard",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "build": "npx pkg index.js --targets node18-win-x64 --output uneden-dashboard.exe"
+  },
+  "pkg": {
+    "assets": ["config.json"]
+  }
+}

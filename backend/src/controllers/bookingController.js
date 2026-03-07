@@ -2,6 +2,7 @@ import pool from "../config/db.js";
 import { notifyBookingCreated, notifyBookingStatusUpdated } from "../services/emailService.js";
 import { pushNewBooking, pushBookingStatus } from "../services/pushService.js";
 import stripe from "../config/stripe.js";
+import { createNotification } from "../services/notificationService.js";
 
 export const createBooking = async (req, res) => {
   try {
@@ -61,6 +62,13 @@ export const createBooking = async (req, res) => {
     notifyBookingCreated(s.worker_email, s.worker_name, clientName, s.title, booking.id)
       .catch((err) => console.error("Booking email notification failed:", err.message));
     pushNewBooking(worker_id, clientName, s.title).catch(() => {});
+    createNotification({
+      userId: worker_id,
+      type: "booking_request",
+      title: "New booking request",
+      body: `${clientName} applied to your listing "${s.title}"`,
+      link: "/bookings",
+    });
 
     res.status(201).json(booking);
   } catch (err) {
@@ -165,6 +173,15 @@ export const updateBookingStatus = async (req, res) => {
       notifyBookingStatusUpdated(b.client_email, b.client_name, b.title, status, b.id)
         .catch((err) => console.error("Status email notification failed:", err.message));
       pushBookingStatus(b.client_id, status, b.title).catch(() => {});
+      createNotification({
+        userId: b.client_id,
+        type: status === "accepted" ? "booking_accepted" : "booking_rejected",
+        title: status === "accepted" ? "Booking accepted" : "Booking rejected",
+        body: status === "accepted"
+          ? `Your request for "${b.title}" was accepted!`
+          : `Your request for "${b.title}" was declined.`,
+        link: "/bookings",
+      });
     }
 
     // One-time listing: when accepted, auto-reject all OTHER pending requests + deactivate listing
@@ -326,6 +343,31 @@ async function finalizeCompletion(booking) {
     `UPDATE wallets SET total_spent = total_spent + $1, updated_at = NOW() WHERE user_id = $2`,
     [amount, booking.client_id]
   );
+
+  // Notify worker: payment received
+  createNotification({
+    userId: booking.worker_id,
+    type: "payment",
+    title: "Payment received",
+    body: `You received $${workerReceives.toFixed(2)} for "${booking.title}"`,
+    link: "/wallet",
+  });
+
+  // Notify both: listing completed
+  createNotification({
+    userId: booking.worker_id,
+    type: "booking_completed",
+    title: "Listing completed",
+    body: `"${booking.title}" has been marked as completed.`,
+    link: "/bookings",
+  });
+  createNotification({
+    userId: booking.client_id,
+    type: "booking_completed",
+    title: "Listing completed",
+    body: `"${booking.title}" has been marked as completed.`,
+    link: "/bookings",
+  });
 }
 
 async function autoReleasePayment(bookingId, workerId) {

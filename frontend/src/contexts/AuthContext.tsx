@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { isAdminUser } from "@/lib/auth";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
@@ -56,13 +57,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signInWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) throw new Error(error.message);
-    router.push("/");
+    router.push(isAdminUser(data.user) ? "/admin" : "/");
   };
 
   const signUpWithEmail = async (email: string, password: string, fullName: string) => {
