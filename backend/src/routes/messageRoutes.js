@@ -11,16 +11,20 @@ router.post('/notify', async (req, res) => {
     const { chatRoomId, senderUserId, messagePreview } = req.body;
     if (!chatRoomId || !senderUserId) return res.status(400).json({ error: 'Missing fields' });
 
-    // Trouver le destinataire
+    // Trouver le destinataire (qui n'a pas supprimé la conversation de son côté)
     const { data: members } = await supabase
       .from('chat_room_member')
-      .select('user_id')
+      .select('user_id, is_deleted, is_muted')
       .eq('chat_room_id', chatRoomId)
       .neq('user_id', senderUserId);
 
     if (!members?.length) return res.json({ sent: false });
 
-    const receiverId = members[0].user_id;
+    const receiverMemberRaw = members[0];
+    const receiverId = receiverMemberRaw.user_id;
+
+    // Si le destinataire a supprimé la conversation, pas de notification
+    if (receiverMemberRaw.is_deleted) return res.json({ sent: false, reason: 'conversation deleted by receiver' });
 
     // Compter les messages dans cette conversation
     // Si c'est le 1er message → nouvelle conversation → email
@@ -32,14 +36,6 @@ router.post('/notify', async (req, res) => {
       .is('deleted_at', null);
 
     const isFirstMessage = (messageCount ?? 0) <= 1;
-
-    // Vérifier si le destinataire a mis en sourdine cette conversation
-    const { data: receiverMember } = await supabase
-      .from('chat_room_member')
-      .select('is_muted')
-      .eq('chat_room_id', chatRoomId)
-      .eq('user_id', receiverId)
-      .maybeSingle();
 
     const { data: profiles } = await supabase
       .from('profiles')
@@ -54,7 +50,7 @@ router.post('/notify', async (req, res) => {
       : sender?.full_name || 'Quelqu\'un';
 
     // Envoyer le push seulement si la conversation n'est pas en sourdine
-    if (!receiverMember?.is_muted) {
+    if (!receiverMemberRaw.is_muted) {
       pushNewMessage(receiverId, senderName).catch(() => {});
     }
 

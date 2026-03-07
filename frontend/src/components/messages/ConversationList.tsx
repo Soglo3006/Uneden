@@ -61,9 +61,9 @@ function ConversationItem({
   const isCompany = chat.other_user?.account_type === 'company';
 
   const displayName = isPerson
-    ? chat.other_user?.full_name
+    ? chat.other_user?.full_name || chat.name || 'Unknown'
     : isCompany
-    ? chat.other_user?.company_name
+    ? chat.other_user?.company_name || chat.name || 'Unknown'
     : chat.other_user?.full_name || chat.name || 'Unknown';
 
   const lastMessagePreview = (() => {

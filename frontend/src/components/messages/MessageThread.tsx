@@ -158,11 +158,6 @@ export function MessageThread({
     useEffect(() => { loadMoreRef.current = loadMore; }, [loadMore]);
 
 
-    const lastOwnSentIndex = messages.reduce((found, msg, idx) => {
-      if (msg.user_id === currentUserId && msg.status !== 'sending' && msg.status !== 'failed') return idx;
-      return found;
-    }, -1);
-
     const pinnedMessages = messages
       .filter(msg => msg.pinned_at && msg.content !== 'Message supprimé')
       .sort((a, b) => new Date(a.pinned_at!).getTime() - new Date(b.pinned_at!).getTime())

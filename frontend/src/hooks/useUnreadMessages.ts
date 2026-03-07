@@ -41,11 +41,12 @@ export function useUnreadMessages() {
 
     const fetchMessages = async (playSound = false) => {
       try {
-        // 1. Récupérer tous les chats de l'user
+        // 1. Récupérer tous les chats de l'user (non supprimés)
         const { data: memberData } = await supabase
           .from('chat_room_member')
           .select('chat_room_id')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('is_deleted', false);
 
         if (!memberData || memberData.length === 0) {
           setUnreadChats([]);
@@ -175,8 +176,22 @@ export function useUnreadMessages() {
           table: 'messages',
         },
         () => {
-          // Update (read_at changé) → re-fetch sans son
           fetchMessages(false);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_room_member',
+        },
+        (payload) => {
+          // Re-fetch quand is_deleted ou is_archived change pour cet user
+          const row = payload.new as { user_id: string; is_deleted?: boolean; is_archived?: boolean };
+          if (row.user_id === user.id) {
+            fetchMessages(false);
+          }
         }
       )
       .subscribe();

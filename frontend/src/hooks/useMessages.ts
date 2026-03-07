@@ -4,6 +4,36 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const PAGE_SIZE = 40;
 
+export interface Message {
+  id: string;
+  content: string;
+  user_id: string;
+  chat_room_id: string;
+  created_at: string;
+  read_at?: string | null;
+  edited_at?: string | null;
+  pinned_at?: string | null;
+  replied_to_message_id?: string | null;
+  client_temp_id?: string;
+  deleted_at?: string | null;
+  status?: string;
+  reactions?: { emoji: string; user_ids: string[] }[];
+  sender?: {
+    id?: string;
+    full_name?: string;
+    company_name?: string;
+    account_type?: string;
+    avatar_url?: string;
+  } | null;
+  replied_to?: {
+    id: string;
+    content: string;
+    user_id: string;
+    sender_name?: string;
+    deleted_at?: string | null;
+  } | null;
+}
+
 export function useMessages(chatRoomId: string | null) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);

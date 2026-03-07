@@ -15,6 +15,7 @@ const AUTH_ROUTES = [
   "/auth/verify-email",
   "/forgot-password",
   "/auth/reset-password",
+  "/admin",
 ];
 
 const NO_CATEGORY_ROUTES = [
