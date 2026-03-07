@@ -33,7 +33,14 @@ router.post('/notify', async (req, res) => {
 
     const isFirstMessage = (messageCount ?? 0) <= 1;
 
-    // Toujours envoyer le push (pas de coût)
+    // Vérifier si le destinataire a mis en sourdine cette conversation
+    const { data: receiverMember } = await supabase
+      .from('chat_room_member')
+      .select('is_muted')
+      .eq('chat_room_id', chatRoomId)
+      .eq('user_id', receiverId)
+      .maybeSingle();
+
     const { data: profiles } = await supabase
       .from('profiles')
       .select('id, email, full_name, company_name, account_type')
@@ -46,7 +53,10 @@ router.post('/notify', async (req, res) => {
       ? sender.company_name
       : sender?.full_name || 'Quelqu\'un';
 
-    pushNewMessage(receiverId, senderName).catch(() => {});
+    // Envoyer le push seulement si la conversation n'est pas en sourdine
+    if (!receiverMember?.is_muted) {
+      pushNewMessage(receiverId, senderName).catch(() => {});
+    }
 
     // Email seulement si c'est le 1er message de la conversation
     if (!isFirstMessage) return res.json({ sent: false, reason: 'not first message' });

@@ -48,6 +48,7 @@ function MessagesContent() {
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
   const [selectedMessageKey, setSelectedMessageKey] = useState<string | null>(null);
   const [showMobileChat, setShowMobileChat] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
@@ -245,12 +246,14 @@ function MessagesContent() {
 
   const handleChatSelect = (chatId: string) => {
     if (chatId === activeChatId) return;
+    // Reset instantly for immediate UI feedback; useEffect will load real values
+    setIsBlocked(false);
+    setIsBlockedByOther(false);
+    setIsMuted(false);
+    setBlockCheckLoading(true);
     setActiveChatId(chatId);
     clearUnreadCount(chatId);
     setShowMobileChat(true);
-    setIsBlocked(false);
-    setIsBlockedByOther(false);
-    setBlockCheckLoading(true);
     setShowSettings(false);
     setReplyingTo(null);
     router.push(`/messages?chat=${chatId}`);
@@ -281,6 +284,8 @@ function MessagesContent() {
 
   const handleBackToList = () => {
     setShowMobileChat(false);
+    setShowMobileSidebar(false);
+    setShowSettings(false);
   };
 
   const scrollToMessage = (messageId: string) => {
@@ -306,41 +311,49 @@ function MessagesContent() {
     }, 2000);
   };
 
-    useEffect(() => {
-    const checkBlocked = async () => {
-      if (!user?.id || !activeChat?.other_user?.id) {
-        setIsBlocked(false);
-        setIsBlockedByOther(false);
-        setBlockCheckLoading(false);
-        return;
-      }
+  useEffect(() => {
+    if (!activeChatId || !user?.id || !activeChat?.other_user?.id) {
+      setIsBlocked(false);
+      setIsBlockedByOther(false);
+      setIsMuted(false);
+      setBlockCheckLoading(false);
+      return;
+    }
 
-      setBlockCheckLoading(true);
+    // Capture snapshot — prevents stale async results from a previous chat
+    let cancelled = false;
+    const chatId = activeChatId;
+    const otherUserId = activeChat.other_user.id;
+    setBlockCheckLoading(true);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setBlockCheckLoading(false);
-        return;
-      }
-
-      const [{ data: iBlockedThem }, { data: theyBlockedMe }] = await Promise.all([
+    (async () => {
+      const [{ data: iBlockedThem }, { data: theyBlockedMe }, { data: memberRow }] = await Promise.all([
         supabase.from('blocked_users').select('id')
           .eq('blocker_id', user.id)
-          .eq('blocked_user_id', activeChat.other_user.id)
+          .eq('blocked_user_id', otherUserId)
           .maybeSingle(),
         supabase.from('blocked_users').select('id')
-          .eq('blocker_id', activeChat.other_user.id)
+          .eq('blocker_id', otherUserId)
           .eq('blocked_user_id', user.id)
+          .maybeSingle(),
+        supabase.from('chat_room_member').select('is_muted')
+          .eq('chat_room_id', chatId)
+          .eq('user_id', user.id)
           .maybeSingle(),
       ]);
 
+      if (cancelled) return;
+
       setIsBlocked(!!iBlockedThem);
       setIsBlockedByOther(!!theyBlockedMe);
+      setIsMuted(!!(memberRow as any)?.is_muted);
       setBlockCheckLoading(false);
-    };
+    })().catch(() => {
+      if (!cancelled) setBlockCheckLoading(false);
+    });
 
-    checkBlocked();
-  }, [user?.id, activeChat?.other_user?.id]);
+    return () => { cancelled = true; };
+  }, [activeChatId, user?.id, activeChat?.other_user?.id]);
 
   const handleUnblock = async () => {
     if (!user?.id || !activeChat?.other_user?.id) return;
@@ -393,7 +406,7 @@ function MessagesContent() {
               </div>
 
               {/* COLONNE 2 : Zone de messages */}
-              <div className={`${(isLargeScreen || (isMobile ? showMobileChat : true)) && (!showSettings || isLargeScreen) ? 'flex' : 'hidden'} flex-1 min-w-0 flex-col bg-white min-h-0 overflow-hidden`}>
+              <div className={`${(isLargeScreen || (isMobile ? showMobileChat : true)) && (!showMobileSidebar || isLargeScreen) ? 'flex' : 'hidden'} flex-1 min-w-0 flex-col bg-white min-h-0 overflow-hidden`}>
                 {activeChat ? (
                   <>
                     {/* Header personnalisé avec bouton retour */}
@@ -450,8 +463,15 @@ function MessagesContent() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setShowSettings(!showSettings)}
-                          className={`cursor-pointer ${showSettings ? 'bg-gray-100' : ''}`}
+                          onClick={() => {
+                            if (isLargeScreen) {
+                              setShowSettings(!showSettings);
+                            } else {
+                              setShowMobileSidebar(true);
+                              setShowSettings(false);
+                            }
+                          }}
+                          className={`cursor-pointer ${(showSettings || showMobileSidebar) ? 'bg-gray-100' : ''}`}
                         >
                           <Info className="h-5 w-5" />
                         </Button>
@@ -590,7 +610,7 @@ function MessagesContent() {
               </div>
 
               {/* COLONNE 3 : Panneau About */}
-              <div className={`${isLargeScreen || (showSettings && showMobileChat) ? 'flex' : 'hidden'} ${isLargeScreen ? 'w-72 shrink-0' : 'flex-1'} border-l bg-white min-h-0`}>
+              <div className={`${isLargeScreen || showMobileSidebar ? 'flex' : 'hidden'} ${isLargeScreen ? 'w-72 shrink-0' : 'flex-1'} border-l bg-white min-h-0`}>
                 {showSettings
                   ? <ConversationSettings
                       messages={messages}
@@ -602,8 +622,17 @@ function MessagesContent() {
                       }}
                       otherUser={activeChat?.other_user}
                       onClose={() => setShowSettings(false)}
+                      backButton={!isLargeScreen}
                       isMuted={isMuted}
-                      onToggleMute={() => setIsMuted(!isMuted)}
+                      onToggleMute={async () => {
+                        if (!activeChatId || !user?.id) return;
+                        const newMuted = !isMuted;
+                        setIsMuted(newMuted);
+                        await supabase.from('chat_room_member')
+                          .update({ is_muted: newMuted })
+                          .eq('chat_room_id', activeChatId)
+                          .eq('user_id', user.id);
+                      }}
                       onDeleteConversation={async () => {
                         if (!activeChatId || !user?.id) return;
 
@@ -682,7 +711,13 @@ function MessagesContent() {
                         }
                       }}
                     />
-                  : <ProfileSidebar otherUser={activeChat?.other_user} />
+                  : <ProfileSidebar
+                      otherUser={activeChat?.other_user}
+                      onClose={!isLargeScreen ? () => setShowMobileSidebar(false) : undefined}
+                      onOpenSettings={!isLargeScreen ? () => setShowSettings(true) : undefined}
+                      isBlocked={isBlocked}
+                      isBlockedByOther={isBlockedByOther}
+                    />
                 }
               </div>
 

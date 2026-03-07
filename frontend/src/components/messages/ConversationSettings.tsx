@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Search, BellOff, Bell, Trash2, Ban, Flag, X, Archive, ArchiveRestore } from 'lucide-react';
+import { Search, BellOff, Bell, Trash2, Ban, Flag, X, Archive, ArchiveRestore, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,6 +29,7 @@ interface ConversationSettingsProps {
   onMessageClick?: (messageId: string) => void;
   isArchived?: boolean;
   onArchive?: () => Promise<void>;
+  backButton?: boolean;
 }
 
 export function ConversationSettings({
@@ -45,6 +46,7 @@ export function ConversationSettings({
   onMessageClick,
   isArchived,
   onArchive,
+  backButton,
 }: ConversationSettingsProps) {
   const [confirmAction, setConfirmAction] = useState<'delete' | 'block' | 'unblock' | 'report' | null>(null);
   const [loading, setLoading] = useState(false);
@@ -133,7 +135,7 @@ export function ConversationSettings({
       <div className="shrink-0 p-4 bg-gray-50 border-b flex items-center justify-between h-[73px]">
         <h3 className="text-lg font-semibold">Paramètres</h3>
         <Button variant="ghost" size="icon" onClick={onClose} className='cursor-pointer'>
-          <X className="h-5 w-5" />
+          {backButton ? <ArrowLeft className="h-5 w-5" /> : <X className="h-5 w-5" />}
         </Button>
       </div>
 
