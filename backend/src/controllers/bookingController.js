@@ -2,7 +2,7 @@ import pool from "../config/db.js";
 import { notifyBookingCreated, notifyBookingStatusUpdated } from "../services/emailService.js";
 import { pushNewBooking, pushBookingStatus } from "../services/pushService.js";
 import stripe from "../config/stripe.js";
-import { createNotification } from "../services/notificationService.js";
+import { createNotification, shouldSendEmail } from "../services/notificationService.js";
 
 export const createBooking = async (req, res) => {
   try {
@@ -59,8 +59,10 @@ export const createBooking = async (req, res) => {
       [req.user.id]
     );
 
-    notifyBookingCreated(s.worker_email, s.worker_name, clientName, s.title, booking.id)
-      .catch((err) => console.error("Booking email notification failed:", err.message));
+    shouldSendEmail(worker_id, "listing").then((ok) => {
+      if (ok) notifyBookingCreated(s.worker_email, s.worker_name, clientName, s.title, booking.id)
+        .catch((err) => console.error("Booking email notification failed:", err.message));
+    });
     pushNewBooking(worker_id, clientName, s.title).catch(() => {});
     createNotification({
       userId: worker_id,
@@ -86,7 +88,9 @@ export const getMyBookings = async (req, res) => {
               CASE WHEN w.account_type = 'company' THEN w.company_name ELSE w.full_name END AS client_name,
               EXISTS(SELECT 1 FROM reviews WHERE booking_id = b.id AND reviewer_id = $1) AS has_reviewed,
               EXISTS(SELECT 1 FROM disputes WHERE booking_id = b.id) AS has_dispute,
-              b.payment_status, b.completed_by_worker, b.completed_by_client
+              b.payment_status, b.completed_by_worker, b.completed_by_client,
+              b.worker_note, b.custom_price, b.last_modified_at, b.modified_fields,
+              b.cancel_requested_by, b.cancel_reason
        FROM bookings b
        JOIN services s ON b.service_id = s.id
        JOIN users u ON b.worker_id = u.id
@@ -110,7 +114,9 @@ export const getReceivedBookings = async (req, res) => {
               CASE WHEN u.account_type = 'company' THEN u.company_name ELSE u.full_name END AS client_name,
               EXISTS(SELECT 1 FROM reviews WHERE booking_id = b.id AND reviewer_id = $1) AS has_reviewed,
               EXISTS(SELECT 1 FROM disputes WHERE booking_id = b.id) AS has_dispute,
-              b.payment_status, b.completed_by_worker, b.completed_by_client
+              b.payment_status, b.completed_by_worker, b.completed_by_client,
+              b.worker_note, b.custom_price, b.last_modified_at, b.modified_fields,
+              b.cancel_requested_by, b.cancel_reason
        FROM bookings b
        JOIN services s ON b.service_id = s.id
        JOIN users u ON b.client_id = u.id
@@ -170,8 +176,10 @@ export const updateBookingStatus = async (req, res) => {
     );
 
     if (status === "accepted" || status === "rejected") {
-      notifyBookingStatusUpdated(b.client_email, b.client_name, b.title, status, b.id)
-        .catch((err) => console.error("Status email notification failed:", err.message));
+      shouldSendEmail(b.client_id, "listing").then((ok) => {
+        if (ok) notifyBookingStatusUpdated(b.client_email, b.client_name, b.title, status, b.id)
+          .catch((err) => console.error("Status email notification failed:", err.message));
+      });
       pushBookingStatus(b.client_id, status, b.title).catch(() => {});
       createNotification({
         userId: b.client_id,
@@ -276,12 +284,173 @@ export const markCompleted = async (req, res) => {
   }
 };
 
+// ─── Customize booking (worker edits price / note) ────────────────────────────
+export const customizeBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { worker_note, custom_price } = req.body;
+
+    const booking = await pool.query(
+      `SELECT b.*, s.title,
+              CASE WHEN cc.account_type = 'company' THEN cc.company_name ELSE cc.full_name END AS client_name
+       FROM bookings b
+       JOIN services s ON b.service_id = s.id
+       JOIN users cc ON b.client_id = cc.id
+       WHERE b.id = $1`,
+      [id]
+    );
+    if (booking.rows.length === 0) return res.status(404).json({ message: "Booking not found" });
+    const b = booking.rows[0];
+
+    if (b.worker_id !== req.user.id) return res.status(403).json({ message: "Only the provider can customize this request" });
+    if (!["pending", "accepted"].includes(b.status)) return res.status(400).json({ message: "Can only customize pending or accepted requests" });
+
+    // Track which fields changed
+    const modifiedFields = [];
+    if (custom_price !== undefined && Number(custom_price) !== Number(b.price)) modifiedFields.push("price");
+    if (worker_note !== undefined && worker_note !== b.worker_note) modifiedFields.push("description");
+
+    const result = await pool.query(
+      `UPDATE bookings
+       SET worker_note = $1, custom_price = $2,
+           last_modified_at = NOW(), modified_fields = $3
+       WHERE id = $4 RETURNING *`,
+      [
+        worker_note ?? b.worker_note,
+        custom_price !== undefined ? Number(custom_price) : b.custom_price,
+        modifiedFields.length > 0 ? modifiedFields : b.modified_fields,
+        id,
+      ]
+    );
+
+    // Notify client if something actually changed
+    if (modifiedFields.length > 0) {
+      createNotification({
+        userId: b.client_id,
+        type: "booking_request",
+        title: "Request details updated",
+        body: `The request for "${b.title}" was modified in: ${modifiedFields.join(", ")}.`,
+        link: "/bookings",
+      });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while customizing booking" });
+  }
+};
+
+// ─── Request cancellation (mutual for active bookings) ────────────────────────
+export const requestCancellation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const userId = req.user.id;
+
+    const booking = await pool.query(
+      `SELECT b.*, s.title FROM bookings b JOIN services s ON b.service_id = s.id WHERE b.id = $1`,
+      [id]
+    );
+    if (booking.rows.length === 0) return res.status(404).json({ message: "Booking not found" });
+    const b = booking.rows[0];
+
+    if (b.client_id !== userId && b.worker_id !== userId) {
+      return res.status(403).json({ message: "You are not part of this booking" });
+    }
+
+    if (b.status !== "active") {
+      return res.status(400).json({ message: "Only active bookings require mutual cancellation" });
+    }
+
+    // If no cancellation requested yet, record the request
+    if (!b.cancel_requested_by) {
+      const result = await pool.query(
+        `UPDATE bookings SET cancel_requested_by = $1, cancel_reason = $2 WHERE id = $3 RETURNING *`,
+        [userId, reason || null, id]
+      );
+      // Notify the other party
+      const otherUserId = userId === b.worker_id ? b.client_id : b.worker_id;
+      createNotification({
+        userId: otherUserId,
+        type: "booking_request",
+        title: "Cancellation requested",
+        body: `The other party wants to cancel "${b.title}". Review and approve or decline.`,
+        link: "/bookings",
+      });
+      return res.json(result.rows[0]);
+    }
+
+    // The OTHER party is now approving the cancellation
+    if (b.cancel_requested_by === userId) {
+      return res.status(400).json({ message: "You already requested cancellation — waiting for the other party" });
+    }
+
+    // Both agreed — cancel the booking
+    const result = await pool.query(
+      `UPDATE bookings SET status = 'cancelled', cancel_requested_by = NULL WHERE id = $1 RETURNING *`,
+      [id]
+    );
+    // Notify requester that it's approved
+    createNotification({
+      userId: b.cancel_requested_by,
+      type: "booking_rejected",
+      title: "Cancellation approved",
+      body: `The cancellation of "${b.title}" has been approved.`,
+      link: "/bookings",
+    });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while processing cancellation" });
+  }
+};
+
+// ─── Decline cancellation request ─────────────────────────────────────────────
+export const declineCancellation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const booking = await pool.query("SELECT * FROM bookings WHERE id = $1", [id]);
+    if (booking.rows.length === 0) return res.status(404).json({ message: "Booking not found" });
+    const b = booking.rows[0];
+
+    if (b.client_id !== userId && b.worker_id !== userId) {
+      return res.status(403).json({ message: "You are not part of this booking" });
+    }
+    if (!b.cancel_requested_by || b.cancel_requested_by === userId) {
+      return res.status(400).json({ message: "No pending cancellation to decline" });
+    }
+
+    const result = await pool.query(
+      `UPDATE bookings SET cancel_requested_by = NULL, cancel_reason = NULL WHERE id = $1 RETURNING *`,
+      [id]
+    );
+    // Notify requester that it was declined
+    createNotification({
+      userId: b.cancel_requested_by,
+      type: "booking_rejected",
+      title: "Cancellation declined",
+      body: `The other party declined your cancellation request.`,
+      link: "/bookings",
+    });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while declining cancellation" });
+  }
+};
+
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
 async function autoRejectOtherRequests(serviceId, acceptedBookingId) {
   // Get all other pending bookings for this service
   const others = await pool.query(
-    "SELECT b.*, u.email, CASE WHEN u.account_type = 'company' THEN u.company_name ELSE u.full_name END AS full_name FROM bookings b JOIN users u ON b.client_id = u.id WHERE b.service_id = $1 AND b.status = 'pending' AND b.id != $2",
+    `SELECT b.id, b.client_id, s.title
+     FROM bookings b
+     JOIN services s ON b.service_id = s.id
+     WHERE b.service_id = $1 AND b.status = 'pending' AND b.id != $2`,
     [serviceId, acceptedBookingId]
   );
 
@@ -290,7 +459,16 @@ async function autoRejectOtherRequests(serviceId, acceptedBookingId) {
       "UPDATE bookings SET status = 'rejected' WHERE service_id = $1 AND status = 'pending' AND id != $2",
       [serviceId, acceptedBookingId]
     );
-    // Could send rejection emails here for each
+    // Notify each rejected client
+    for (const b of others.rows) {
+      createNotification({
+        userId: b.client_id,
+        type: "booking_rejected",
+        title: "Request no longer available",
+        body: `Your request for "${b.title}" was closed — the listing has been filled.`,
+        link: "/bookings",
+      });
+    }
   }
 
   // Deactivate the listing so it no longer appears publicly

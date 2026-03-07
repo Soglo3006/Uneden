@@ -128,4 +128,45 @@ router.delete("/:id", protect, async (req, res) => {
   }
 });
 
+// ─── Email preferences ────────────────────────────────────────────────────────
+
+// GET /notifications/preferences
+router.get("/preferences", protect, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT email_messages, email_payments, email_listings, email_complaints
+       FROM notification_preferences WHERE user_id = $1`,
+      [req.user.id]
+    );
+    if (result.rows.length === 0) {
+      // Return defaults if no row yet
+      return res.json({ email_messages: true, email_payments: true, email_listings: true, email_complaints: true });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// PUT /notifications/preferences
+router.put("/preferences", protect, async (req, res) => {
+  const { email_messages, email_payments, email_listings, email_complaints } = req.body;
+  try {
+    await pool.query(
+      `INSERT INTO notification_preferences (user_id, email_messages, email_payments, email_listings, email_complaints, updated_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())
+       ON CONFLICT (user_id) DO UPDATE SET
+         email_messages = EXCLUDED.email_messages,
+         email_payments = EXCLUDED.email_payments,
+         email_listings = EXCLUDED.email_listings,
+         email_complaints = EXCLUDED.email_complaints,
+         updated_at = NOW()`,
+      [req.user.id, email_messages ?? true, email_payments ?? true, email_listings ?? true, email_complaints ?? true]
+    );
+    res.json({ message: "Preferences saved" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 export default router;

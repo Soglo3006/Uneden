@@ -1,6 +1,6 @@
 import pool from "../config/db.js";
 import { notifyDisputeCreated } from "../services/emailService.js";
-import { createNotification } from "../services/notificationService.js";
+import { createNotification, shouldSendEmail } from "../services/notificationService.js";
 
 export const CreateDispute = async (req, res) => {
     try {
@@ -48,8 +48,10 @@ export const CreateDispute = async (req, res) => {
 
         if (users.rows.length > 0) {
             const { client_email, client_name, worker_email, worker_name } = users.rows[0];
-            await notifyDisputeCreated(client_email, client_name, booking_id, description);
-            await notifyDisputeCreated(worker_email, worker_name, booking_id, description);
+            if (await shouldSendEmail(b.client_id, "complaint"))
+              await notifyDisputeCreated(client_email, client_name, booking_id, description);
+            if (await shouldSendEmail(b.worker_id, "complaint"))
+              await notifyDisputeCreated(worker_email, worker_name, booking_id, description);
 
             // Notify the other party in-app
             const otherPartyId = raised_by === b.client_id ? b.worker_id : b.client_id;

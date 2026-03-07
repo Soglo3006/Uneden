@@ -36,6 +36,12 @@ interface ReceivedBooking {
   completed_by_client: boolean;
   client_description: string | null;
   is_one_time?: boolean;
+  worker_note?: string | null;
+  custom_price?: number | null;
+  last_modified_at?: string | null;
+  modified_fields?: string[] | null;
+  cancel_requested_by?: string | null;
+  cancel_reason?: string | null;
 }
 
 interface SentBooking {
@@ -58,6 +64,12 @@ interface SentBooking {
   completed_by_client: boolean;
   client_description: string | null;
   is_one_time?: boolean;
+  worker_note?: string | null;
+  custom_price?: number | null;
+  last_modified_at?: string | null;
+  modified_fields?: string[] | null;
+  cancel_requested_by?: string | null;
+  cancel_reason?: string | null;
 }
 
 const STATUS_CONFIG: Record<BookingStatus, { label: string; bar: string; badge: string }> = {
@@ -308,10 +320,24 @@ function BookingsContent() {
           {loadingReceived ? <LoadingSkeleton /> : received.length === 0 ? (
             <EmptyState message="No booking requests received yet." />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {received.map((b) => {
-                const statusBar = STATUS_CONFIG[b.status]?.bar ?? "bg-gray-400";
-                return (
+            <div className="space-y-8">
+              {([
+                { label: "Requests", statuses: ["pending"] as BookingStatus[] },
+                { label: "Active", statuses: ["accepted", "active"] as BookingStatus[] },
+                { label: "Completed", statuses: ["completed"] as BookingStatus[] },
+                { label: "Closed", statuses: ["cancelled", "rejected"] as BookingStatus[] },
+              ] as const).filter(({ statuses }) => received.some(b => statuses.includes(b.status))).map(({ label, statuses }) => (
+                <div key={label}>
+                  <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    {label}
+                    <span className="text-gray-300 font-normal normal-case tracking-normal text-xs">
+                      ({received.filter(b => statuses.includes(b.status)).length})
+                    </span>
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {received.filter(b => statuses.includes(b.status)).map((b) => {
+                    const statusBar = STATUS_CONFIG[b.status]?.bar ?? "bg-gray-400";
+                    return (
                   <div key={b.id} className="border rounded-xl shadow-sm bg-white flex flex-col overflow-hidden hover:shadow-lg transition-all cursor-pointer"
                     onClick={() => setDetailBooking({ booking: b as BookingDetail, role: "worker" })}>
                     <div className="relative">
@@ -443,8 +469,11 @@ function BookingsContent() {
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                    );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </>
@@ -455,8 +484,22 @@ function BookingsContent() {
         loadingSent ? <LoadingSkeleton /> : sent.length === 0 ? (
           <EmptyState message="You haven't sent any booking requests yet." />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sent.map((b) => {
+          <div className="space-y-8">
+            {([
+              { label: "Requests", statuses: ["pending"] as BookingStatus[] },
+              { label: "Active", statuses: ["accepted", "active"] as BookingStatus[] },
+              { label: "Completed", statuses: ["completed"] as BookingStatus[] },
+              { label: "Closed", statuses: ["cancelled", "rejected"] as BookingStatus[] },
+            ] as const).filter(({ statuses }) => sent.some(b => statuses.includes(b.status))).map(({ label, statuses }) => (
+              <div key={label}>
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  {label}
+                  <span className="text-gray-300 font-normal normal-case tracking-normal text-xs">
+                    ({sent.filter(b => statuses.includes(b.status)).length})
+                  </span>
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sent.filter(b => statuses.includes(b.status)).map((b) => {
               const statusBar = STATUS_CONFIG[b.status]?.bar ?? "bg-gray-400";
               const needsPayment = b.status === "accepted" && (!b.payment_status || b.payment_status === "unpaid");
               return (
@@ -585,7 +628,10 @@ function BookingsContent() {
                   </div>
                 </div>
               );
-            })}
+              })}
+                </div>
+              </div>
+            ))}
           </div>
         )
       )}

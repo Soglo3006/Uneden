@@ -2,7 +2,7 @@ import express from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { notifyNewMessage } from '../services/emailService.js';
 import { pushNewMessage } from '../services/pushService.js';
-import { createNotification } from '../services/notificationService.js';
+import { createNotification, shouldSendEmail } from '../services/notificationService.js';
 
 const router = express.Router();
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -85,13 +85,16 @@ router.post('/notify', async (req, res) => {
       ? receiver.company_name
       : receiver?.full_name || 'là';
 
-    await notifyNewMessage(
-      receiver.email,
-      receiverName,
-      senderName,
-      messagePreview.substring(0, 100),
-      chatRoomId
-    );
+    const canEmail = await shouldSendEmail(receiverId, "message");
+    if (canEmail) {
+      await notifyNewMessage(
+        receiver.email,
+        receiverName,
+        senderName,
+        messagePreview.substring(0, 100),
+        chatRoomId
+      );
+    }
 
     res.json({ sent: true });
   } catch (err) {

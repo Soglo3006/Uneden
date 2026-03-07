@@ -22,3 +22,31 @@ export async function createNotification({ userId, type, title, body, link = nul
     console.error("Failed to create notification:", err.message);
   }
 }
+
+/**
+ * Check if a user has email enabled for a given category.
+ * Returns true (send) if no preference row exists yet (defaults all ON).
+ *
+ * @param {string} userId
+ * @param {'message'|'payment'|'listing'|'complaint'} category
+ */
+export async function shouldSendEmail(userId, category) {
+  try {
+    const result = await pool.query(
+      `SELECT email_messages, email_payments, email_listings, email_complaints
+       FROM notification_preferences WHERE user_id = $1`,
+      [userId]
+    );
+    if (result.rows.length === 0) return true;
+    const p = result.rows[0];
+    switch (category) {
+      case "message":   return p.email_messages;
+      case "payment":   return p.email_payments;
+      case "listing":   return p.email_listings;
+      case "complaint": return p.email_complaints;
+      default:          return true;
+    }
+  } catch {
+    return true; // fail open
+  }
+}

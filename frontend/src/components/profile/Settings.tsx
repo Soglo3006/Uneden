@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -78,16 +77,10 @@ export default function SettingsPage({ onClose, scrollRef }) {
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
 
-  const { permission, subscribed, subscribe, unsubscribe } = usePushNotifications();
-
-  const [notifications, setNotifications] = useState({
-    email: true, sms: false, push: false, marketing: false,
+  const [emailPrefs, setEmailPrefs] = useState({
+    email_messages: true, email_payments: true, email_listings: true, email_complaints: true,
   });
 
-  // Sync push toggle with real subscription state
-  useEffect(() => {
-    setNotifications(prev => ({ ...prev, push: subscribed }));
-  }, [subscribed]);
   const [language, setLanguage] = useState("en");
   const [region, setRegion] = useState("CA");
   const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
@@ -126,10 +119,15 @@ export default function SettingsPage({ onClose, scrollRef }) {
         }
         if (settingsRes.ok) {
           const data = await settingsRes.json();
-          if (data.notifications) setNotifications(prev => ({ ...prev, ...data.notifications }));
           if (data.language) setLanguage(data.language);
           if (data.region) setRegion(data.region);
         }
+        // Fetch email notification preferences
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/preferences`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }).then(r => r.ok ? r.json() : null).then(data => {
+          if (data) setEmailPrefs(data);
+        }).catch(() => {});
         const { data: { user: supabaseUser } } = await supabase.auth.getUser();
         if (supabaseUser?.identities) setConnectedAccounts(supabaseUser.identities);
       } catch (error) {
@@ -150,11 +148,18 @@ export default function SettingsPage({ onClose, scrollRef }) {
     if (!session?.access_token) return;
     setSavingSettings(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/settings`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ notifications, language, region }),
-      });
+      const [response] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/settings`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ language, region }),
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/preferences`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify(emailPrefs),
+        }),
+      ]);
       if (response.ok) {
         setSettingsSaved(true);
         setTimeout(() => setSettingsSaved(false), 2500);
@@ -415,30 +420,22 @@ export default function SettingsPage({ onClose, scrollRef }) {
               </div>
             </div>
             <div className="space-y-3">
-              {[
-                { key: "email", label: "Email Notifications", desc: "Receive updates via email" },
-                { key: "sms", label: "SMS Notifications", desc: "Get text messages for important updates" },
-                { key: "push", label: "Push Notifications", desc: "Receive notifications on your device" },
-                { key: "marketing", label: "Marketing Emails", desc: "Receive tips, offers, and updates" },
-              ].map(({ key, label, desc }) => (
+              {(
+                [
+                  { key: "email_messages",   label: "Messages",   desc: "New messages from other users" },
+                  { key: "email_payments",   label: "Payments",   desc: "Payment received & wallet updates" },
+                  { key: "email_listings",   label: "Bookings",   desc: "Booking requests, accepted & completed" },
+                  { key: "email_complaints", label: "Complaints", desc: "Disputes & complaint notifications" },
+                ] as { key: keyof typeof emailPrefs; label: string; desc: string }[]
+              ).map(({ key, label, desc }) => (
                 <div key={key} className="flex items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 gap-3">
                   <div className="min-w-0">
                     <p className="font-medium text-gray-900 text-sm">{label}</p>
                     <p className="text-xs sm:text-sm text-gray-600">{desc}</p>
                   </div>
                   <Toggle
-                    checked={notifications[key]}
-                    onChange={() => {
-                      if (key === "push") {
-                        if (notifications.push) {
-                          unsubscribe();
-                        } else {
-                          subscribe();
-                        }
-                        return;
-                      }
-                      setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
-                    }}
+                    checked={emailPrefs[key]}
+                    onChange={() => setEmailPrefs(prev => ({ ...prev, [key]: !prev[key] }))}
                   />
                 </div>
               ))}
