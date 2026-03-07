@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  X, MapPin, CalendarDays, Tag, Star,
-  AlertTriangle, CheckCircle, CreditCard, FileText, Grid3x3,
-  Pencil, Save,
+  X, MapPin, CalendarDays, Tag, CheckCircle, CreditCard, FileText, Grid3x3,
 } from "lucide-react";
-import PayNowButton from "@/components/bookings/PayNowButton";
 import DisputeThread from "@/components/bookings/DisputeThread";
+import WorkerCustomizeSection from "./WorkerCustomizeSection";
+import BookingDetailFooter from "./BookingDetailFooter";
 
 type BookingStatus = "pending" | "accepted" | "active" | "completed" | "cancelled" | "rejected";
 
@@ -32,17 +30,13 @@ export interface BookingDetail {
   completed_by_worker: boolean;
   completed_by_client: boolean;
   is_one_time?: boolean;
-  // worker customization
   worker_note?: string | null;
   custom_price?: number | null;
   last_modified_at?: string | null;
   modified_fields?: string[] | null;
-  // mutual cancellation
   cancel_requested_by?: string | null;
   cancel_reason?: string | null;
-  // received bookings
   client_name?: string;
-  // sent bookings
   worker_name?: string;
 }
 
@@ -75,33 +69,15 @@ function formatDate(dateStr: string) {
 }
 
 export default function BookingDetailModal({
-  booking: initialBooking,
-  userRole,
-  accessToken,
-  onClose,
-  onUpdated,
-  onMessage,
-  onOpenReview,
-  onOpenDispute,
+  booking: initialBooking, userRole, accessToken,
+  onClose, onUpdated, onMessage, onOpenReview, onOpenDispute,
 }: Props) {
   const [booking, setBooking] = useState(initialBooking);
   const [serviceDescription, setServiceDescription] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
-  // Worker edit mode
-  const [editing, setEditing] = useState(false);
-  const [editNote, setEditNote] = useState(initialBooking.worker_note ?? "");
-  const [editPrice, setEditPrice] = useState(String(initialBooking.custom_price ?? initialBooking.price ?? ""));
-  const [saving, setSaving] = useState(false);
-  // Mutual cancel
-  const [cancelMode, setCancelMode] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
 
-  // Keep in sync if parent updates (e.g. after markCompleted)
-  useEffect(() => {
-    setBooking(initialBooking);
-  }, [initialBooking]);
+  useEffect(() => { setBooking(initialBooking); }, [initialBooking]);
 
-  // Fetch service description
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/services/${booking.service_id}`)
       .then((r) => r.json())
@@ -118,12 +94,9 @@ export default function BookingDetailModal({
         body: JSON.stringify({ status }),
       });
       if (!res.ok) return;
-      const updated = { ...booking, status };
-      setBooking(updated);
+      setBooking((prev) => ({ ...prev, status }));
       onUpdated(booking.id, { status });
-    } finally {
-      setUpdating(false);
-    }
+    } finally { setUpdating(false); }
   };
 
   const callMarkCompleted = async () => {
@@ -137,99 +110,24 @@ export default function BookingDetailModal({
       const data = await res.json();
       setBooking((prev) => ({ ...prev, ...data }));
       onUpdated(booking.id, data);
-    } finally {
-      setUpdating(false);
-    }
+    } finally { setUpdating(false); }
   };
 
-  const saveCustomization = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookings/${booking.id}/customize`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ worker_note: editNote, custom_price: Number(editPrice) }),
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      setBooking((prev) => ({ ...prev, ...data }));
-      onUpdated(booking.id, data);
-      setEditing(false);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const submitCancelRequest = async () => {
-    setUpdating(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookings/${booking.id}/cancel-request`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ reason: cancelReason }),
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      setBooking((prev) => ({ ...prev, ...data }));
-      onUpdated(booking.id, data);
-      setCancelMode(false);
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const approveCancellation = async () => {
-    setUpdating(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookings/${booking.id}/cancel-request`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({}),
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      setBooking((prev) => ({ ...prev, ...data }));
-      onUpdated(booking.id, data);
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const declineCancellation = async () => {
-    setUpdating(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookings/${booking.id}/cancel-decline`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      setBooking((prev) => ({ ...prev, ...data }));
-      onUpdated(booking.id, data);
-    } finally {
-      setUpdating(false);
-    }
+  const handleFooterUpdated = (data: Partial<BookingDetail>) => {
+    setBooking((prev) => ({ ...prev, ...data }));
+    onUpdated(booking.id, data);
   };
 
   const currentUserId = userRole === "worker" ? booking.worker_id : booking.client_id;
-  const cancelRequestedByMe = booking.cancel_requested_by === currentUserId;
-  const cancelRequestedByOther = !!booking.cancel_requested_by && !cancelRequestedByMe;
-
   const otherUserName = userRole === "worker" ? (booking.client_name ?? "Client") : (booking.worker_name ?? "Provider");
   const otherUserId = userRole === "worker" ? booking.client_id : booking.worker_id;
   const needsPayment = booking.status === "accepted" && (!booking.payment_status || booking.payment_status === "unpaid");
-
-  const hasMarkedDone =
-    userRole === "worker" ? booking.completed_by_worker : booking.completed_by_client;
-  const otherHasMarkedDone =
-    userRole === "worker" ? booking.completed_by_client : booking.completed_by_worker;
+  const hasMarkedDone = userRole === "worker" ? booking.completed_by_worker : booking.completed_by_client;
+  const otherHasMarkedDone = userRole === "worker" ? booking.completed_by_client : booking.completed_by_worker;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-      <div
-        className="absolute inset-0"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0" onClick={onClose} />
 
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col z-10 overflow-hidden">
         {/* Header */}
@@ -240,8 +138,7 @@ export default function BookingDetailModal({
             </span>
             {booking.is_one_time && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                <Tag className="h-3 w-3" />
-                One-time
+                <Tag className="h-3 w-3" /> One-time
               </span>
             )}
             {booking.payment_status && booking.payment_status !== "unpaid" && (
@@ -258,7 +155,6 @@ export default function BookingDetailModal({
 
         {/* Scrollable body */}
         <div className="overflow-y-auto flex-1">
-          {/* Service image */}
           {booking.image_url ? (
             <img src={booking.image_url} alt={booking.title} className="w-full h-48 object-cover" />
           ) : (
@@ -268,11 +164,11 @@ export default function BookingDetailModal({
           )}
 
           <div className="px-5 py-4 space-y-4">
-            {/* ── Modification banner (client sees when worker edited) */}
-            {userRole === "client" && booking.last_modified_at && booking.modified_fields && booking.modified_fields.length > 0 && (
+            {/* Modification banner */}
+            {userRole === "client" && booking.last_modified_at && (booking.modified_fields?.length ?? 0) > 0 && (
               <div className="bg-red-50 border border-red-300 rounded-lg px-4 py-3 text-sm text-red-800">
                 <p className="font-semibold mb-0.5">This request was recently modified</p>
-                <p className="text-xs">The provider updated: <span className="font-medium">{booking.modified_fields.join(", ")}</span>. Please review carefully before paying.</p>
+                <p className="text-xs">The provider updated: <span className="font-medium">{booking.modified_fields!.join(", ")}</span>. Please review carefully before paying.</p>
               </div>
             )}
 
@@ -286,31 +182,22 @@ export default function BookingDetailModal({
                     <span className="text-sm text-gray-400 line-through ml-2">${Number(booking.price)}</span>
                   )}
                 </span>
-                {booking.category && (
-                  <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">{booking.category}</span>
-                )}
+                {booking.category && <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">{booking.category}</span>}
                 {booking.service_location && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {booking.service_location}
-                  </span>
+                  <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{booking.service_location}</span>
                 )}
               </div>
             </div>
 
-            {/* Service description */}
             {serviceDescription && (
               <div className="text-sm text-gray-600 leading-relaxed bg-gray-50 rounded-lg px-4 py-3 border border-gray-100">
-                {serviceDescription.length > 240
-                  ? serviceDescription.slice(0, 240) + "…"
-                  : serviceDescription}
+                {serviceDescription.length > 240 ? serviceDescription.slice(0, 240) + "…" : serviceDescription}
               </div>
             )}
 
-            {/* Divider */}
             <div className="border-t border-gray-100" />
 
-            {/* Who made the request */}
+            {/* Other user */}
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 flex-shrink-0">
                 <AvatarFallback className="text-sm bg-green-100 text-green-800">
@@ -318,82 +205,37 @@ export default function BookingDetailModal({
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-xs text-gray-500">
-                  {userRole === "worker" ? "Request from" : "Service by"}
-                </p>
+                <p className="text-xs text-gray-500">{userRole === "worker" ? "Request from" : "Service by"}</p>
                 <p className="text-sm font-semibold text-gray-900">{otherUserName}</p>
               </div>
             </div>
 
             {/* Client description */}
-            {booking.client_description && (
+            {booking.client_description ? (
               <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 space-y-1">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-700">
                   <FileText className="h-3.5 w-3.5" />
                   {userRole === "worker" ? "Client's request details" : "Your request details"}
                 </div>
-                <p className="text-sm text-blue-900 leading-relaxed whitespace-pre-line">
-                  {booking.client_description}
-                </p>
+                <p className="text-sm text-blue-900 leading-relaxed whitespace-pre-line">{booking.client_description}</p>
               </div>
-            )}
-
-            {!booking.client_description && (
+            ) : (
               <p className="text-xs text-gray-400 italic">No request description provided.</p>
             )}
 
-            {/* ── Worker note / custom price — worker edit UI */}
+            {/* Worker customize */}
             {userRole === "worker" && ["pending", "accepted"].includes(booking.status) && (
-              <div className="border border-dashed border-gray-300 rounded-xl px-4 py-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Customize this request</p>
-                  {!editing && (
-                    <button onClick={() => setEditing(true)} className="text-xs text-green-700 hover:underline flex items-center gap-1">
-                      <Pencil className="h-3 w-3" /> Edit
-                    </button>
-                  )}
-                </div>
-                {editing ? (
-                  <>
-                    <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Custom price ($)</label>
-                      <input
-                        type="number" min="0" step="0.01"
-                        value={editPrice}
-                        onChange={(e) => setEditPrice(e.target.value)}
-                        className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Note for client</label>
-                      <textarea
-                        value={editNote}
-                        onChange={(e) => setEditNote(e.target.value)}
-                        rows={3}
-                        placeholder="Add details, conditions, or a personalised message…"
-                        className="w-full border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-600"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" className="bg-green-700 hover:bg-green-800 text-white gap-1" onClick={saveCustomization} disabled={saving}>
-                        <Save className="h-3.5 w-3.5" />{saving ? "Saving…" : "Save"}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setEditing(false)} disabled={saving}>Cancel</Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {booking.custom_price && <p className="text-sm text-gray-700">Custom price: <span className="font-semibold text-green-700">${Number(booking.custom_price)}</span></p>}
-                    {booking.worker_note && <p className="text-sm text-gray-600 whitespace-pre-line">{booking.worker_note}</p>}
-                    {!booking.custom_price && !booking.worker_note && (
-                      <p className="text-xs text-gray-400 italic">No customization yet — click Edit to add a note or adjust the price.</p>
-                    )}
-                  </>
-                )}
-              </div>
+              <WorkerCustomizeSection
+                booking={booking}
+                accessToken={accessToken}
+                onSaved={(data) => {
+                  setBooking((prev) => ({ ...prev, ...data }));
+                  onUpdated(booking.id, data as Partial<BookingDetail>);
+                }}
+              />
             )}
 
-            {/* ── Worker note shown to client */}
+            {/* Worker note → client */}
             {userRole === "client" && (booking.worker_note || booking.custom_price) && (
               <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 space-y-1">
                 <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Provider note</p>
@@ -404,214 +246,55 @@ export default function BookingDetailModal({
               </div>
             )}
 
-            {/* Date */}
             <div className="flex items-center gap-1.5 text-xs text-gray-400">
               <CalendarDays className="h-3.5 w-3.5" />
               Requested on {formatDate(booking.created_at)}
             </div>
 
-            {/* Status-specific info */}
             {booking.status === "accepted" && userRole === "worker" && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-700">
                 Waiting for client to complete payment.
               </div>
             )}
-
             {booking.status === "active" && (
               <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2 text-xs text-indigo-700 space-y-1">
-                <div className="flex items-center gap-1.5 font-medium">
-                  Job in progress — both parties must confirm completion.
-                </div>
+                <div className="flex items-center gap-1.5 font-medium">Job in progress — both parties must confirm completion.</div>
                 <div className="flex gap-4">
                   <span className={`flex items-center gap-1 ${booking.completed_by_worker ? "text-green-600" : "text-gray-400"}`}>
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Provider {booking.completed_by_worker ? "✓" : "pending"}
+                    <CheckCircle className="h-3.5 w-3.5" /> Provider {booking.completed_by_worker ? "✓" : "pending"}
                   </span>
                   <span className={`flex items-center gap-1 ${booking.completed_by_client ? "text-green-600" : "text-gray-400"}`}>
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Client {booking.completed_by_client ? "✓" : "pending"}
+                    <CheckCircle className="h-3.5 w-3.5" /> Client {booking.completed_by_client ? "✓" : "pending"}
                   </span>
                 </div>
               </div>
             )}
 
             {booking.has_dispute && (
-              <DisputeThread
-                bookingId={booking.id}
-                currentUserId={userRole === "worker" ? booking.worker_id : booking.client_id}
-                accessToken={accessToken}
-              />
+              <DisputeThread bookingId={booking.id} currentUserId={currentUserId} accessToken={accessToken} />
             )}
           </div>
         </div>
 
-        {/* Footer — action buttons */}
-        <div className="px-5 py-4 border-t border-gray-100 flex flex-col gap-2 flex-shrink-0">
-          {/* Worker: pending */}
-          {userRole === "worker" && booking.status === "pending" && (
-            <div className="flex gap-2">
-              <Button
-                className="flex-1 bg-green-700 hover:bg-green-800 text-white h-11"
-                onClick={() => callStatus("accepted")}
-                disabled={updating}
-              >
-                {updating ? "…" : "Accept"}
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 text-red-600 border-red-200 hover:bg-red-50 h-11"
-                onClick={() => callStatus("rejected")}
-                disabled={updating}
-              >
-                Reject
-              </Button>
-            </div>
-          )}
-
-          {/* Client: pending — cancel */}
-          {userRole === "client" && booking.status === "pending" && (
-            <Button
-              variant="outline"
-              className="w-full text-red-600 border-red-200 hover:bg-red-50 h-11"
-              onClick={() => callStatus("cancelled")}
-              disabled={updating}
-            >
-              {updating ? "…" : "Cancel Request"}
-            </Button>
-          )}
-
-          {/* Worker: accepted — cancel before payment */}
-          {userRole === "worker" && booking.status === "accepted" && (
-            <Button
-              variant="outline"
-              className="w-full text-red-600 border-red-200 hover:bg-red-50 h-11"
-              onClick={() => callStatus("cancelled")}
-              disabled={updating}
-            >
-              {updating ? "…" : "Cancel Booking"}
-            </Button>
-          )}
-
-          {/* Client: accepted — pay now */}
-          {userRole === "client" && needsPayment && (
-            <PayNowButton bookingId={booking.id} accessToken={accessToken} fullWidth />
-          )}
-
-          {/* Active: mark done */}
-          {booking.status === "active" && !hasMarkedDone && (
-            <Button
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-11"
-              onClick={callMarkCompleted}
-              disabled={updating}
-            >
-              {updating ? "…" : userRole === "worker" ? "Mark Work Done" : "Mark Job Done"}
-            </Button>
-          )}
-          {booking.status === "active" && hasMarkedDone && (
-            <div className="flex items-center justify-center gap-2 text-sm text-indigo-600 font-medium py-1">
-              <CheckCircle className="h-4 w-4" />
-              You marked done{!otherHasMarkedDone && ` — waiting for ${userRole === "worker" ? "client" : "provider"}`}
-            </div>
-          )}
-
-          {/* Active: mutual cancellation */}
-          {booking.status === "active" && (
-            <>
-              {/* Other party already requested — show approve/decline */}
-              {cancelRequestedByOther && (
-                <div className="border border-amber-200 bg-amber-50 rounded-xl px-4 py-3 space-y-2">
-                  <p className="text-xs font-semibold text-amber-800">The other party wants to cancel</p>
-                  {booking.cancel_reason && <p className="text-xs text-amber-700 italic">"{booking.cancel_reason}"</p>}
-                  <p className="text-xs text-amber-700">Transaction fees will not be refunded.</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                      onClick={approveCancellation} disabled={updating}>
-                      {updating ? "…" : "Approve"}
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1" onClick={declineCancellation} disabled={updating}>
-                      Decline
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* I already requested — waiting */}
-              {cancelRequestedByMe && (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-xs text-gray-600 text-center">
-                  Cancellation requested — waiting for the other party to approve.
-                </div>
-              )}
-
-              {/* No request yet — show cancel button */}
-              {!booking.cancel_requested_by && !cancelMode && (
-                <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 h-10 text-sm"
-                  onClick={() => setCancelMode(true)}>
-                  Request Cancellation
-                </Button>
-              )}
-
-              {/* Cancel form */}
-              {cancelMode && (
-                <div className="border border-red-200 bg-red-50 rounded-xl px-4 py-3 space-y-2">
-                  <p className="text-xs font-semibold text-red-700">Request cancellation</p>
-                  <p className="text-xs text-red-600">Transaction fees will not be refunded. Both parties must agree.</p>
-                  <textarea
-                    value={cancelReason}
-                    onChange={(e) => setCancelReason(e.target.value)}
-                    rows={2}
-                    placeholder="Reason for cancellation…"
-                    className="w-full border border-red-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
-                  />
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1 text-red-600 border-red-200 hover:bg-red-100"
-                      onClick={submitCancelRequest} disabled={updating || !cancelReason.trim()}>
-                      {updating ? "…" : "Send Request"}
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1" onClick={() => setCancelMode(false)}>Back</Button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Active / completed: dispute */}
-          {(booking.status === "active" || booking.status === "completed") && !booking.has_dispute && (
-            <Button
-              variant="outline"
-              className="w-full text-amber-600 border-amber-200 hover:bg-amber-50 h-10 gap-2"
-              onClick={() => { onOpenDispute(booking.id, booking.title); onClose(); }}
-            >
-              <AlertTriangle className="h-4 w-4" />
-              Open Dispute
-            </Button>
-          )}
-
-          {/* Completed: review */}
-          {booking.status === "completed" && !booking.has_reviewed && (
-            <Button
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white h-10 gap-2"
-              onClick={() => { onOpenReview(booking.id, otherUserName); onClose(); }}
-            >
-              <Star className="h-4 w-4" />
-              Leave a Review
-            </Button>
-          )}
-          {booking.status === "completed" && booking.has_reviewed && (
-            <div className="flex items-center justify-center gap-1.5 text-sm text-gray-400 py-1">
-              <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-              Review submitted
-            </div>
-          )}
-
-          {/* Message */}
-          <Button
-            variant="outline"
-            className="w-full h-10 gap-2"
-            onClick={() => { onMessage(otherUserId); onClose(); }}
-          >
-            Message {otherUserName.split(" ")[0]}
-          </Button>
-        </div>
+        <BookingDetailFooter
+          booking={booking}
+          userRole={userRole}
+          updating={updating}
+          hasMarkedDone={hasMarkedDone}
+          otherHasMarkedDone={otherHasMarkedDone}
+          needsPayment={needsPayment}
+          accessToken={accessToken}
+          otherUserName={otherUserName}
+          otherUserId={otherUserId}
+          currentUserId={currentUserId}
+          onCallStatus={callStatus}
+          onMarkCompleted={callMarkCompleted}
+          onUpdated={handleFooterUpdated}
+          onOpenDispute={onOpenDispute}
+          onOpenReview={onOpenReview}
+          onMessage={onMessage}
+          onClose={onClose}
+        />
       </div>
     </div>
   );

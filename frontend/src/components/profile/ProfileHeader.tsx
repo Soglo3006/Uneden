@@ -1,0 +1,153 @@
+"use client";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Star, MapPin, MessageCircle, Grid3x3, Settings,
+  Ellipsis, UserStar, Users, Ban,
+} from "lucide-react";
+
+interface Props {
+  profileUser: any;
+  displayName: string;
+  displayTitle: string;
+  isPerson: boolean;
+  isCompany: boolean;
+  isOwner: boolean;
+  isBlocked: boolean;
+  isBlockedByOther: boolean;
+  blockLoading: boolean;
+  profileId: string;
+  listingsCount: number;
+  sendMessageLoading: boolean;
+  onSendMessage: () => void;
+  onSettings: () => void;
+  onEllipsis: () => void;
+  onRatings: () => void;
+  onUnblock: () => void;
+}
+
+export default function ProfileHeader({
+  profileUser, displayName, displayTitle, isPerson, isCompany,
+  isOwner, isBlocked, isBlockedByOther, blockLoading,
+  profileId, listingsCount, sendMessageLoading,
+  onSendMessage, onSettings, onEllipsis, onRatings, onUnblock,
+}: Props) {
+  return (
+    <Card className="p-8 mb-8">
+      <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+        <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
+          <AvatarImage src={profileUser.avatar} alt={displayName} />
+          <AvatarFallback className="text-2xl">{displayName.charAt(0)}</AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold text-gray-900">{displayName}</h1>
+            {isCompany && (
+              <Badge className="bg-blue-100 text-blue-700 border-blue-300">Company</Badge>
+            )}
+          </div>
+
+          <p className="text-lg text-gray-600 mb-3">{displayTitle || "Service Provider"}</p>
+
+          <div className="flex flex-wrap items-center gap-4 mb-4">
+            {profileUser.stats && (
+              <div className="flex items-center gap-1">
+                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                <span className="font-semibold text-lg">
+                  {profileUser.stats.average_rating?.toFixed(1) || "N/A"}
+                </span>
+                <span className="text-gray-500">({profileUser.stats.total_reviews || 0} reviews)</span>
+              </div>
+            )}
+            {profileUser.city && profileUser.province && (
+              <div className="flex items-center gap-1 text-gray-600">
+                <MapPin className="h-4 w-4" />
+                <span>{profileUser.city}, {profileUser.province}</span>
+              </div>
+            )}
+            {isCompany && profileUser.team_size && (
+              <div className="flex items-center gap-1 text-gray-600">
+                <Users className="h-4 w-4" />
+                <span>{profileUser.team_size} employees</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            {isOwner ? (
+              <>
+                <Link href="/messages">
+                  <Button className="bg-green-700 hover:bg-green-800 text-white gap-2 cursor-pointer">
+                    <MessageCircle className="h-4 w-4" />
+                    View Messages
+                  </Button>
+                </Link>
+                <Button variant="outline" className="gap-2 cursor-pointer" onClick={onSettings}>
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </Button>
+              </>
+            ) : isBlocked ? (
+              <>
+                <Button
+                  variant="outline"
+                  className="gap-2 cursor-pointer border-green-600 text-green-600 hover:bg-green-50"
+                  onClick={onUnblock}
+                  disabled={blockLoading}
+                >
+                  {blockLoading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Unblocking...
+                    </>
+                  ) : (
+                    <><Ban className="h-4 w-4" />Unblock User</>
+                  )}
+                </Button>
+                <Link href={`/listings/${(displayName || "user").toLowerCase().replace(/\s+/g, "-")}`}>
+                  <Button variant="outline" className="gap-2">
+                    <Grid3x3 className="h-4 w-4" />
+                    View Listings
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                {!isBlockedByOther && (
+                  <Button
+                    onClick={onSendMessage}
+                    disabled={sendMessageLoading}
+                    className="bg-green-700 hover:bg-green-800 text-white gap-2 cursor-pointer"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {sendMessageLoading ? "Loading..." : "Send Message"}
+                  </Button>
+                )}
+                <Button variant="outline" className="gap-2 cursor-pointer" onClick={onRatings}>
+                  <UserStar className="h-4 w-4" />
+                  View Ratings
+                </Button>
+                <Link href={isOwner ? "/my-listings" : `/profile/${profileId}/listings`}>
+                  <Button variant="outline" className="gap-2 cursor-pointer">
+                    <Grid3x3 className="h-4 w-4" />
+                    View Listings ({listingsCount})
+                  </Button>
+                </Link>
+                <Button variant="outline" className="gap-2 cursor-pointer" onClick={onEllipsis}>
+                  <Ellipsis className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}

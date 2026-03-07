@@ -9,12 +9,8 @@ import { supabase } from '@/lib/supabaseClient';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ConversationList } from '@/components/messages/ConversationList';
 import { MessageThread } from '@/components/messages/MessageThread';
-import { MessageInput } from '@/components/messages/MessageInput';
 import { ProfileSidebar } from '@/components/messages/ProfileSidebar';
-import { ArrowLeft, Info, Ban, WifiOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ReplyPreview } from '@/components/messages/ReplyPreview';
+import { WifiOff } from 'lucide-react';
 import { useMessageReactions } from '@/hooks/useMessageReactions';
 import { useDeleteMessage } from '@/hooks/useDeleteMessage';
 import { useMarkAsRead } from '@/hooks/useMarkAsRead';
@@ -25,15 +21,13 @@ import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { useIsTyping } from '@/hooks/useIsTyping';
 import { usePresence } from '@/hooks/usePresence';
 import { useUserPresence } from '@/hooks/useUserPresence';
+import { useConversationActions } from '@/hooks/useConversationActions';
 import { ConversationSettings } from '@/components/messages/ConversationSettings';
-import { Phone, Video } from 'lucide-react';
-import Link from 'next/link';
+import { ChatHeader } from '@/components/messages/ChatHeader';
+import { ChatInputArea } from '@/components/messages/ChatInputArea';
 
 function MessagesContent() {
-  const { user } = useProtectedRoute({
-    requireAuth: true,
-    requireProfileCompleted: true,
-  });
+  const { user } = useProtectedRoute({ requireAuth: true, requireProfileCompleted: true });
 
   const searchParams = useSearchParams();
   const chatIdFromUrl = searchParams.get('chat');
@@ -55,25 +49,17 @@ function MessagesContent() {
   const [isBlocked, setIsBlocked] = useState(false);
   const [isBlockedByOther, setIsBlockedByOther] = useState(false);
   const [blockCheckLoading, setBlockCheckLoading] = useState(false);
-
   const [replyingTo, setReplyingTo] = useState<{
-    id: string;
-    content: string;
-    user_id: string;
-    sender_name?: string;
+    id: string; content: string; user_id: string; sender_name?: string;
   } | null>(null);
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
-    const check = () => {
-      setIsMobile(window.innerWidth < 768);
-      setIsLargeScreen(window.innerWidth >= 1024);
-    };
+    const check = () => { setIsMobile(window.innerWidth < 768); setIsLargeScreen(window.innerWidth >= 1024); };
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
@@ -81,16 +67,13 @@ function MessagesContent() {
 
   useEffect(() => {
     setIsOnline(navigator.onLine);
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+    const up = () => setIsOnline(true);
+    const down = () => setIsOnline(false);
+    window.addEventListener('online', up);
+    window.addEventListener('offline', down);
+    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down); };
   }, []);
-  
+
   const { messages, loading: messagesLoading, sending, sendMessage, retryMessage, loadedChatId, hasMore, loadingMore, loadMore } = useMessages(activeChatId);
   const isMessagesLoading = messagesLoading || loadedChatId !== activeChatId;
   const { toggleReaction } = useMessageReactions();
@@ -98,86 +81,101 @@ function MessagesContent() {
   const { markChatAsRead } = useMarkAsRead();
   const { markReadByLink } = useNotifications();
   const { editMessage } = useEditMessage();
-  const { togglePin, checkPinLimit } = usePinMessage();
+  const { togglePin } = usePinMessage();
+
+  const activeChat = chats.find(c => c.id === activeChatId);
+  usePresence(user?.id || null);
+  const { sendTyping } = useTypingIndicator(activeChatId, user?.id);
+  const isTyping = useIsTyping(activeChatId, activeChat?.other_user?.id);
+  const isOtherOnline = useUserPresence(activeChat?.other_user?.id);
+
+  const actions = useConversationActions({
+    activeChatId,
+    userId: user?.id,
+    otherUser: activeChat?.other_user,
+    chats,
+    isArchived: activeChat?.is_archived || false,
+    setIsBlocked,
+    setIsMuted,
+    setShowSettings,
+    setActiveChatId,
+    removeChat,
+    archiveChat,
+  });
 
   useEffect(() => {
     if (activeChatId && user?.id && !messagesLoading) {
       const timer = setTimeout(() => {
         markChatAsRead(activeChatId, user.id);
         clearUnreadCount(activeChatId);
-        // Also mark bell notifications for this chat as read
         markReadByLink(`chat=${activeChatId}`);
       }, 1000);
-
       return () => clearTimeout(timer);
     }
   }, [activeChatId, user?.id, messagesLoading, markChatAsRead, clearUnreadCount, markReadByLink]);
 
   useEffect(() => {
     if (!chats.length) return;
-
-    if (chatIdFromUrl) {
-      setActiveChatId(chatIdFromUrl);
-      if (isMobile) setShowMobileChat(true);
-      return;
-    }
-
-    // Si pas de chat dans l’URL, on prend le 1er et on met aussi l’URL
+    if (chatIdFromUrl) { setActiveChatId(chatIdFromUrl); if (isMobile) setShowMobileChat(true); return; }
     if (!activeChatId) {
       const firstId = chats[0].id;
       setActiveChatId(firstId);
-      router.replace(`/messages?chat=${firstId}`); // replace pour éviter l’historique inutile
+      router.replace(`/messages?chat=${firstId}`);
       if (isMobile) setShowMobileChat(true);
     }
   }, [chats, chatIdFromUrl, activeChatId, isMobile, router]);
 
+  useEffect(() => { if (activeChatId) setShowMobileChat(true); }, [activeChatId]);
+
   useEffect(() => {
-    if (activeChatId) {
-      setShowMobileChat(true);
+    if (!activeChatId || !user?.id || !activeChat?.other_user?.id) {
+      setIsBlocked(false); setIsBlockedByOther(false); setIsMuted(false); setBlockCheckLoading(false);
+      return;
     }
-  }, [activeChatId]);
+    let cancelled = false;
+    const chatId = activeChatId;
+    const otherUserId = activeChat.other_user.id;
+    setBlockCheckLoading(true);
+    (async () => {
+      const [{ data: iBlockedThem }, { data: theyBlockedMe }, { data: memberRow }] = await Promise.all([
+        supabase.from('blocked_users').select('id').eq('blocker_id', user.id).eq('blocked_user_id', otherUserId).maybeSingle(),
+        supabase.from('blocked_users').select('id').eq('blocker_id', otherUserId).eq('blocked_user_id', user.id).maybeSingle(),
+        supabase.from('chat_room_member').select('is_muted').eq('chat_room_id', chatId).eq('user_id', user.id).maybeSingle(),
+      ]);
+      if (cancelled) return;
+      setIsBlocked(!!iBlockedThem);
+      setIsBlockedByOther(!!theyBlockedMe);
+      setIsMuted(!!(memberRow as any)?.is_muted);
+      setBlockCheckLoading(false);
+    })().catch(() => { if (!cancelled) setBlockCheckLoading(false); });
+    return () => { cancelled = true; };
+  }, [activeChatId, user?.id, activeChat?.other_user?.id]);
 
-
-  const activeChat = chats.find(c => c.id === activeChatId);
-  usePresence(user?.id || null);
-
-  const { sendTyping } = useTypingIndicator(activeChatId, user?.id);
-  const isTyping = useIsTyping(activeChatId, activeChat?.other_user?.id);
-  const isOtherOnline = useUserPresence(activeChat?.other_user?.id);
+  const handleUnblock = async () => {
+    if (!user?.id || !activeChat?.other_user?.id) return;
+    await supabase.from('blocked_users').delete()
+      .eq('blocker_id', user.id).eq('blocked_user_id', activeChat.other_user.id);
+    setIsBlocked(false);
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const validTypes = [
-      'image/jpeg',
-      'image/jpg', 
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'application/pdf'
-    ];
-    
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
       alert('Type de fichier non autorisé. Formats acceptés : JPEG, PNG, GIF, WebP, PDF');
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
-
-    const MAX_SIZE = 5 * 1024 * 1024; 
-    if (file.size > MAX_SIZE) {
+    if (file.size > 5 * 1024 * 1024) {
       alert(`Fichier trop volumineux. Taille maximum : 5MB (votre fichier : ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
-
     setAttachedFile(file);
-
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setAttachmentPreview(reader.result as string);
-      };
+      reader.onloadend = () => setAttachmentPreview(reader.result as string);
       reader.readAsDataURL(file);
     } else {
       setAttachmentPreview(null);
@@ -187,38 +185,21 @@ function MessagesContent() {
   const removeAttachment = () => {
     setAttachedFile(null);
     setAttachmentPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSendMessage = async () => {
     if (!messageInput.trim() && !attachedFile) return;
-
     try {
       let fileUrl = null;
-
       if (attachedFile) {
         const fileExt = attachedFile.name.split('.').pop();
-        const fileName = `${user?.id}/${Date.now()}.${fileExt}`;  
-        
-        const { error: uploadError } = await supabase.storage
-          .from('chat-attachments')
-          .upload(fileName, attachedFile);  
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          alert('Failed to upload file');
-          return;
-        }
-
-        const { data } = supabase.storage
-          .from('chat-attachments')
-          .getPublicUrl(fileName);  
-
+        const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('chat-attachments').upload(fileName, attachedFile);
+        if (uploadError) { alert('Failed to upload file'); return; }
+        const { data } = supabase.storage.from('chat-attachments').getPublicUrl(fileName);
         fileUrl = data.publicUrl;
       }
-
       const now = new Date().toISOString();
       if (messageInput.trim() && fileUrl) {
         await sendMessage(messageInput.trim(), replyingTo?.id || null);
@@ -231,29 +212,21 @@ function MessagesContent() {
         await sendMessage(messageInput.trim(), replyingTo?.id || null);
         if (activeChatId) updateLastMessage(activeChatId, messageInput.trim(), user?.id || '', now);
       }
-
       setMessageInput('');
       removeAttachment();
       setReplyingTo(null);
-    } catch (error) {
-      console.error('Error sending message:', error);
+    } catch {
       alert('Failed to send message');
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }
   };
 
   const handleChatSelect = (chatId: string) => {
     if (chatId === activeChatId) return;
-    // Reset instantly for immediate UI feedback; useEffect will load real values
-    setIsBlocked(false);
-    setIsBlockedByOther(false);
-    setIsMuted(false);
+    setIsBlocked(false); setIsBlockedByOther(false); setIsMuted(false);
     setBlockCheckLoading(true);
     setActiveChatId(chatId);
     clearUnreadCount(chatId);
@@ -266,108 +239,36 @@ function MessagesContent() {
   const handleVoiceMessage = async (audioBlob: Blob, duration: number) => {
     try {
       const fileName = `${user?.id}/${Date.now()}.webm`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('chat-attachments')
-        .upload(fileName, audioBlob, { contentType: 'audio/webm' });
-
+      const { error: uploadError } = await supabase.storage.from('chat-attachments').upload(fileName, audioBlob, { contentType: 'audio/webm' });
       if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('chat-attachments')
-        .getPublicUrl(fileName);
-
+      const { data } = supabase.storage.from('chat-attachments').getPublicUrl(fileName);
       const audioContent = `[AUDIO:${data.publicUrl}:${duration}]`;
       await sendMessage(audioContent, null);
       if (activeChatId) updateLastMessage(activeChatId, audioContent, user?.id || '', new Date().toISOString());
-    } catch (error) {
-      console.error('Error sending voice message:', error);
-      alert('Échec de l\'envoi du message vocal');
+    } catch {
+      alert("Échec de l'envoi du message vocal");
     }
   };
 
-  const handleBackToList = () => {
-    setShowMobileChat(false);
-    setShowMobileSidebar(false);
-    setShowSettings(false);
-  };
+  const handleBackToList = () => { setShowMobileChat(false); setShowMobileSidebar(false); setShowSettings(false); };
 
   const scrollToMessage = (messageId: string) => {
     const element = document.getElementById(`message-${messageId}`);
     if (!element) return;
-
     const viewport = element.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null;
     if (viewport) {
-      const top =
-        viewport.scrollTop +
-        element.getBoundingClientRect().top -
-        viewport.getBoundingClientRect().top -
-        viewport.clientHeight / 2 +
-        element.clientHeight / 2;
+      const top = viewport.scrollTop + element.getBoundingClientRect().top - viewport.getBoundingClientRect().top - viewport.clientHeight / 2 + element.clientHeight / 2;
       viewport.scrollTo({ top, behavior: 'smooth' });
     } else {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-
     element.classList.add('bg-yellow-100');
-    setTimeout(() => {
-      element.classList.remove('bg-yellow-100');
-    }, 2000);
+    setTimeout(() => element.classList.remove('bg-yellow-100'), 2000);
   };
 
-  useEffect(() => {
-    if (!activeChatId || !user?.id || !activeChat?.other_user?.id) {
-      setIsBlocked(false);
-      setIsBlockedByOther(false);
-      setIsMuted(false);
-      setBlockCheckLoading(false);
-      return;
-    }
-
-    // Capture snapshot — prevents stale async results from a previous chat
-    let cancelled = false;
-    const chatId = activeChatId;
-    const otherUserId = activeChat.other_user.id;
-    setBlockCheckLoading(true);
-
-    (async () => {
-      const [{ data: iBlockedThem }, { data: theyBlockedMe }, { data: memberRow }] = await Promise.all([
-        supabase.from('blocked_users').select('id')
-          .eq('blocker_id', user.id)
-          .eq('blocked_user_id', otherUserId)
-          .maybeSingle(),
-        supabase.from('blocked_users').select('id')
-          .eq('blocker_id', otherUserId)
-          .eq('blocked_user_id', user.id)
-          .maybeSingle(),
-        supabase.from('chat_room_member').select('is_muted')
-          .eq('chat_room_id', chatId)
-          .eq('user_id', user.id)
-          .maybeSingle(),
-      ]);
-
-      if (cancelled) return;
-
-      setIsBlocked(!!iBlockedThem);
-      setIsBlockedByOther(!!theyBlockedMe);
-      setIsMuted(!!(memberRow as any)?.is_muted);
-      setBlockCheckLoading(false);
-    })().catch(() => {
-      if (!cancelled) setBlockCheckLoading(false);
-    });
-
-    return () => { cancelled = true; };
-  }, [activeChatId, user?.id, activeChat?.other_user?.id]);
-
-  const handleUnblock = async () => {
-    if (!user?.id || !activeChat?.other_user?.id) return;
-    await supabase
-      .from('blocked_users')
-      .delete()
-      .eq('blocker_id', user.id)
-      .eq('blocked_user_id', activeChat.other_user.id);
-    setIsBlocked(false);
-  };
+  const otherUserName = activeChat?.other_user?.account_type === 'company'
+    ? activeChat?.other_user?.company_name || ''
+    : activeChat?.other_user?.full_name || '';
 
   if (chatsLoading) {
     return (
@@ -379,25 +280,21 @@ function MessagesContent() {
     );
   }
 
-
   return (
     <TooltipProvider>
       <div className="min-h-screen flex flex-col bg-gray-50">
-        {/* Bannière hors-ligne */}
         {!isOnline && (
           <div className="flex items-center justify-center gap-2 bg-amber-50 border-b border-amber-200 px-4 py-2">
             <WifiOff className="h-4 w-4 text-amber-600 shrink-0" />
-            <p className="text-sm text-amber-700 font-medium">
-              Connexion perdue — Reconnexion en cours...
-            </p>
+            <p className="text-sm text-amber-700 font-medium">Connexion perdue — Reconnexion en cours...</p>
           </div>
         )}
 
         <div className="flex-1 max-w-[1600px] w-full mx-auto p-2 sm:p-5 min-h-0">
           <div className="bg-white rounded-xl shadow-sm overflow-hidden h-[calc(100vh-180px)] min-h-[500px] min-h-0">
             <div className="flex h-full min-h-0">
-              
-              {/* COLONNE 1 : Liste des conversations */}
+
+              {/* Colonne 1 : Liste des conversations */}
               <div className={`${showMobileChat ? 'hidden' : 'flex'} md:flex w-full md:w-64 lg:w-80 border-r flex-col bg-white min-h-0`}>
                 <ConversationList
                   chats={chats}
@@ -405,82 +302,30 @@ function MessagesContent() {
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                   onChatSelect={handleChatSelect}
-                  currentUserId={user?.id || null} 
+                  currentUserId={user?.id || null}
                 />
               </div>
 
-              {/* COLONNE 2 : Zone de messages */}
+              {/* Colonne 2 : Zone de messages */}
               <div className={`${(isLargeScreen || (isMobile ? showMobileChat : true)) && (!showMobileSidebar || isLargeScreen) ? 'flex' : 'hidden'} flex-1 min-w-0 flex-col bg-white min-h-0 overflow-hidden`}>
                 {activeChat ? (
                   <>
-                    {/* Header personnalisé avec bouton retour */}
-                    <div className="shrink-0 p-4 border-b flex items-center justify-between bg-white shadow-sm h-[73px]">
-                      <div className="flex items-center gap-3">
-                        <Button variant="ghost" size="icon" className="md:hidden shrink-0 cursor-pointer" onClick={handleBackToList}>
-                          <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                        <Link href={`/profile/${activeChat.other_user?.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                          <div className="relative">
-                            <Avatar className="h-10 w-10 shrink-0">
-                              {activeChat.other_user?.avatar_url ? (
-                                <AvatarImage src={activeChat.other_user.avatar_url} />
-                              ) : null}
-                              <AvatarFallback>
-                                {(activeChat.other_user?.account_type === 'company'
-                                  ? activeChat.other_user?.company_name
-                                  : activeChat.other_user?.full_name || 'U'
-                                ).charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            {isOtherOnline && (
-                              <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-                            )}
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <h2 className="font-semibold text-gray-900 truncate">
-                              {activeChat.other_user?.account_type === 'company'
-                                ? activeChat.other_user.company_name
-                                : activeChat.other_user?.full_name || 'Unknown'}
-                            </h2>
-                            <p className="text-xs">
-                              {isOtherOnline
-                                ? <span className="flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-green-500 rounded-full inline-block" />
-                                    <span className="text-green-500 font-medium">En ligne</span>
-                                  </span>
-                                : <span className="text-gray-400">Hors ligne</span>
-                              }
-                            </p>
-                          </div>
-                        </Link>
-                      </div>
-
-                      {/* Boutons droite */}
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" disabled className="opacity-40 cursor-not-allowed">
-                          <Phone className="h-5 w-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled className="opacity-40 cursor-not-allowed">
-                          <Video className="h-5 w-5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            if (isLargeScreen) {
-                              setShowSettings(!showSettings);
-                            } else {
-                              setShowMobileSidebar(true);
-                              setShowSettings(false);
-                            }
-                          }}
-                          className={`cursor-pointer ${(showSettings || showMobileSidebar) ? 'bg-gray-100' : ''}`}
-                        >
-                          <Info className="h-5 w-5" />
-                        </Button>
-                      </div>
-                    </div>
+                    <ChatHeader
+                      otherUser={activeChat.other_user}
+                      isOtherOnline={isOtherOnline}
+                      showSettings={showSettings}
+                      showMobileSidebar={showMobileSidebar}
+                      isLargeScreen={isLargeScreen}
+                      onBack={handleBackToList}
+                      onToggleInfo={() => {
+                        if (isLargeScreen) {
+                          setShowSettings(!showSettings);
+                        } else {
+                          setShowMobileSidebar(true);
+                          setShowSettings(false);
+                        }
+                      }}
+                    />
 
                     <MessageThread
                       messages={messages}
@@ -498,231 +343,89 @@ function MessagesContent() {
                       hasMore={hasMore}
                       loadingMore={loadingMore}
                       loadMore={loadMore}
-                      onReply={(message) => {  
-                        setReplyingTo({
-                          id: message.id,
-                          content: message.content,
-                          user_id: message.user_id,
-                          sender_name: message.sender?.account_type === 'company'
-                            ? message.sender.company_name
-                            : message.sender?.full_name,
-                        });
-                      }}
+                      onReply={(message) => setReplyingTo({
+                        id: message.id,
+                        content: message.content,
+                        user_id: message.user_id,
+                        sender_name: message.sender?.account_type === 'company'
+                          ? message.sender.company_name
+                          : message.sender?.full_name,
+                      })}
                       onReplyClick={scrollToMessage}
-                      onReactionToggle={async (messageId, emoji, currentReactions) => { 
+                      onReactionToggle={async (messageId, emoji, currentReactions) => {
                         if (!user?.id) return;
-                        try {
-                          await toggleReaction(messageId, emoji, user.id, currentReactions);
-                        } catch (error) {
-                          console.error('Failed to toggle reaction:', error);
-                        }
+                        await toggleReaction(messageId, emoji, user.id, currentReactions);
                       }}
-                      onEdit={async (messageId, newContent) => { 
-                        try {
-                          await editMessage(messageId, newContent);
-                        } catch (error) {
-                          console.error('Failed to edit message:', error);
-                          alert('Échec de la modification');
-                        }
+                      onEdit={async (messageId, newContent) => {
+                        await editMessage(messageId, newContent);
                       }}
-                      onPin={async (messageId, isPinned) => {  
-                        try {
-                          await togglePin(messageId, isPinned);
-                        } catch (error) {
-                          console.error('Failed to pin message:', error);
-                          alert('Échec de l\'épinglage');
-                        }
+                      onPin={async (messageId, isPinned) => {
+                        await togglePin(messageId, isPinned);
                       }}
-                      onDelete={async (messageId) => { 
-                        try {
-                          await deleteMessage(messageId);
-                        } catch (error) {
-                          console.error('Failed to delete message:', error);
-                          alert('Échec de la suppression');
-                        }
+                      onDelete={async (messageId) => {
+                        await deleteMessage(messageId);
                       }}
                     />
 
-                    <div className="shrink-0">
-                      <ReplyPreview
-                        repliedMessage={replyingTo}
-                        onCancel={() => setReplyingTo(null)}
-                      />
-                      
-                      {blockCheckLoading ? (
-                        <div className="border-t bg-white px-4 py-3">
-                          <div className="h-10 rounded-xl bg-gray-100 animate-pulse" />
-                        </div>
-                      ) : isBlocked ? (
-                        <div className="border-t bg-white">
-                          {/* Bannière */}
-                          <div className="flex items-center gap-2 px-4 py-2 bg-red-50 border-b border-red-100">
-                            <Ban className="h-4 w-4 text-red-500 shrink-0" />
-                            <p className="text-sm text-red-600">
-                              Vous avez bloqué ce compte. Ce compte ne peut plus vous envoyer de messages.
-                            </p>
-                          </div>
-                          {/* Bouton débloquer */}
-                          <div className="p-4 flex justify-center">
-                            <Button
-                              variant="outline"
-                              className="border-green-700 cursor-pointer text-green-700 hover:bg-green-50"
-                              onClick={handleUnblock}
-                            >
-                              Débloquer {activeChat.other_user?.full_name || activeChat.other_user?.company_name}
-                            </Button>
-                          </div>
-                        </div>
-                        ) : isBlockedByOther ? (
-                        <div className="border-t bg-white">
-                          <div className="flex items-center gap-2 px-4 py-3 bg-gray-50">
-                            <Ban className="h-4 w-4 text-gray-400 shrink-0" />
-                            <p className="text-sm text-gray-500">
-                              Vous ne pouvez plus envoyer de messages à cette personne.
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <MessageInput
-                          value={messageInput}
-                          onChange={(val) => { setMessageInput(val); if (val) sendTyping(); }}
-                          onSend={handleSendMessage}
-                          onKeyPress={handleKeyPress}
-                          onVoiceMessage={handleVoiceMessage}
-                          disabled={sending}
-                          attachedFile={attachedFile}
-                          attachmentPreview={attachmentPreview}
-                          onFileSelect={handleFileSelect}
-                          onRemoveAttachment={removeAttachment}
-                          fileInputRef={fileInputRef}
-                        />
-                      )}
-                    </div>
+                    <ChatInputArea
+                      blockCheckLoading={blockCheckLoading}
+                      isBlocked={isBlocked}
+                      isBlockedByOther={isBlockedByOther}
+                      replyingTo={replyingTo}
+                      onCancelReply={() => setReplyingTo(null)}
+                      otherUserName={otherUserName}
+                      onUnblock={handleUnblock}
+                      messageInput={messageInput}
+                      onMessageChange={(val) => { setMessageInput(val); if (val) sendTyping(); }}
+                      onSend={handleSendMessage}
+                      onKeyPress={handleKeyPress}
+                      onVoiceMessage={handleVoiceMessage}
+                      sending={sending}
+                      attachedFile={attachedFile}
+                      attachmentPreview={attachmentPreview}
+                      onFileSelect={handleFileSelect}
+                      onRemoveAttachment={removeAttachment}
+                      fileInputRef={fileInputRef}
+                    />
                   </>
                 ) : (
                   <div className="flex-1 flex items-center justify-center bg-gray-50">
                     <div className="text-center">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        Select a conversation
-                      </h3>
-                      <p className="text-gray-600">
-                        Choose a conversation from the left to start messaging
-                      </p>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a conversation</h3>
+                      <p className="text-gray-600">Choose a conversation from the left to start messaging</p>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* COLONNE 3 : Panneau About */}
+              {/* Colonne 3 : Panneau About */}
               <div className={`${isLargeScreen || showMobileSidebar ? 'flex' : 'hidden'} ${isLargeScreen ? 'w-72 shrink-0' : 'flex-1'} border-l bg-white min-h-0`}>
-                {showSettings
-                  ? <ConversationSettings
-                      messages={messages}
-                      onMessageClick={scrollToMessage}
-                      isBlocked={isBlocked}
-                      onUnblockUser={async () => {
-                        await handleUnblock();
-                        setShowSettings(false);
-                      }}
-                      otherUser={activeChat?.other_user}
-                      onClose={() => setShowSettings(false)}
-                      backButton={!isLargeScreen}
-                      isMuted={isMuted}
-                      onToggleMute={async () => {
-                        if (!activeChatId || !user?.id) return;
-                        const newMuted = !isMuted;
-                        setIsMuted(newMuted);
-                        await supabase.from('chat_room_member')
-                          .update({ is_muted: newMuted })
-                          .eq('chat_room_id', activeChatId)
-                          .eq('user_id', user.id);
-                      }}
-                      onDeleteConversation={async () => {
-                        if (!activeChatId || !user?.id) return;
-
-                        // Compute next chat BEFORE any state change
-                        const remainingChats = chats.filter(c => c.id !== activeChatId && !c.is_archived);
-
-                        // Soft-delete: mark as deleted for this user only
-                        // Messages and the other person's view are preserved
-                        const { error } = await supabase
-                          .from('chat_room_member')
-                          .update({ is_deleted: true })
-                          .eq('chat_room_id', activeChatId)
-                          .eq('user_id', user.id);
-                        if (error) throw error;
-
-                        // Immediately remove from local state (optimistic)
-                        removeChat(activeChatId);
-
-                        setShowSettings(false);
-
-                        if (remainingChats.length > 0) {
-                          const nextChatId = remainingChats[0].id;
-                          setActiveChatId(nextChatId);
-                          router.replace(`/messages?chat=${nextChatId}`);
-                        } else {
-                          setActiveChatId(null);
-                          router.replace('/messages');
-                        }
-                      }}
-                      onBlockUser={async () => {
-                        if (!activeChat?.other_user?.id) return;
-                        const { error } = await supabase
-                          .from('blocked_users')
-                          .insert({
-                            blocker_id: user?.id,
-                            blocked_user_id: activeChat.other_user.id,
-                          });
-                        if (error && error.code !== '23505') throw error;
-                        setIsBlocked(true);
-                        setShowSettings(false);
-                      }}
-                      onReportUser={async (reason: string, details: string) => {
-                        if (!activeChat?.other_user?.id) return;
-                        const { error } = await supabase
-                          .from('user_reports')
-                          .insert({
-                            reporter_id: user?.id,
-                            reported_user_id: activeChat.other_user.id,
-                            reason,
-                            description: details,
-                            status: 'pending',
-                          });
-                        if (error) throw error;
-                      }}
-                      isArchived={activeChat?.is_archived || false}
-                      onArchive={async () => {
-                        if (!activeChatId || !user?.id) return;
-                        const newIsArchived = !activeChat?.is_archived;
-                        const { error } = await supabase
-                          .from('chat_room_member')
-                          .update({ is_archived: newIsArchived })
-                          .eq('chat_room_id', activeChatId)
-                          .eq('user_id', user.id);
-                        if (error) throw error;
-                        archiveChat(activeChatId, newIsArchived);
-                        if (newIsArchived) {
-                          const next = chats.find(c => c.id !== activeChatId && !c.is_archived);
-                          if (next) {
-                            setActiveChatId(next.id);
-                            router.replace(`/messages?chat=${next.id}`);
-                          } else {
-                            setActiveChatId(null);
-                            router.replace('/messages');
-                          }
-                          setShowSettings(false);
-                        }
-                      }}
-                    />
-                  : <ProfileSidebar
-                      otherUser={activeChat?.other_user}
-                      onClose={!isLargeScreen ? () => setShowMobileSidebar(false) : undefined}
-                      onOpenSettings={!isLargeScreen ? () => setShowSettings(true) : undefined}
-                      isBlocked={isBlocked}
-                      isBlockedByOther={isBlockedByOther}
-                    />
-                }
+                {showSettings ? (
+                  <ConversationSettings
+                    messages={messages}
+                    onMessageClick={scrollToMessage}
+                    isBlocked={isBlocked}
+                    onUnblockUser={async () => { await handleUnblock(); setShowSettings(false); }}
+                    otherUser={activeChat?.other_user}
+                    onClose={() => setShowSettings(false)}
+                    backButton={!isLargeScreen}
+                    isMuted={isMuted}
+                    onToggleMute={() => actions.handleToggleMute(isMuted)}
+                    onDeleteConversation={actions.handleDeleteConversation}
+                    onBlockUser={actions.handleBlockUser}
+                    onReportUser={actions.handleReportUser}
+                    isArchived={activeChat?.is_archived || false}
+                    onArchive={actions.handleArchive}
+                  />
+                ) : (
+                  <ProfileSidebar
+                    otherUser={activeChat?.other_user}
+                    onClose={!isLargeScreen ? () => setShowMobileSidebar(false) : undefined}
+                    onOpenSettings={!isLargeScreen ? () => setShowSettings(true) : undefined}
+                    isBlocked={isBlocked}
+                    isBlockedByOther={isBlockedByOther}
+                  />
+                )}
               </div>
 
             </div>
