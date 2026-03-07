@@ -18,6 +18,7 @@ import { ReplyPreview } from '@/components/messages/ReplyPreview';
 import { useMessageReactions } from '@/hooks/useMessageReactions';
 import { useDeleteMessage } from '@/hooks/useDeleteMessage';
 import { useMarkAsRead } from '@/hooks/useMarkAsRead';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useEditMessage } from '@/hooks/useEditMessage';
 import { usePinMessage } from '@/hooks/usePinMessage';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
@@ -95,6 +96,7 @@ function MessagesContent() {
   const { toggleReaction } = useMessageReactions();
   const { deleteMessage } = useDeleteMessage();
   const { markChatAsRead } = useMarkAsRead();
+  const { markReadByLink } = useNotifications();
   const { editMessage } = useEditMessage();
   const { togglePin, checkPinLimit } = usePinMessage();
 
@@ -103,11 +105,13 @@ function MessagesContent() {
       const timer = setTimeout(() => {
         markChatAsRead(activeChatId, user.id);
         clearUnreadCount(activeChatId);
+        // Also mark bell notifications for this chat as read
+        markReadByLink(`chat=${activeChatId}`);
       }, 1000);
 
       return () => clearTimeout(timer);
     }
-  }, [activeChatId, user?.id, messagesLoading, markChatAsRead, clearUnreadCount]);
+  }, [activeChatId, user?.id, messagesLoading, markChatAsRead, clearUnreadCount, markReadByLink]);
 
   useEffect(() => {
     if (!chats.length) return;

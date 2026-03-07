@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Bell,
   MessageCircle,
@@ -143,14 +144,16 @@ export default function NotificationBell() {
   const { notifications, unreadCount, loading, markRead, markAllRead, deleteOne, clearAll } =
     useNotifications();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
   const handleClick = (notif: AppNotification) => {
     if (!notif.read_at) markRead(notif.id);
+    setOpen(false);
     if (notif.link) router.push(notif.link);
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative cursor-pointer hover:bg-gray-100">
           <Bell className="h-5 w-5 text-gray-700" />

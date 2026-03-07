@@ -83,5 +83,24 @@ export function useNotifications() {
     }).catch(() => {});
   }, [token]);
 
-  return { notifications, unreadCount, loading, markRead, markAllRead, deleteOne, clearAll, refresh: fetchNotifications };
+  // Mark all unread notifications whose link contains a given substring (e.g. "chat=CHAT_ID")
+  const markReadByLink = useCallback((linkSubstring: string) => {
+    if (!token) return;
+    setNotifications((prev) => {
+      const toMark = prev.filter((n) => !n.read_at && n.link?.includes(linkSubstring));
+      toMark.forEach((n) => {
+        fetch(`${API}/notifications/${n.id}/read`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {});
+      });
+      return prev.map((n) =>
+        !n.read_at && n.link?.includes(linkSubstring)
+          ? { ...n, read_at: new Date().toISOString() }
+          : n
+      );
+    });
+  }, [token]);
+
+  return { notifications, unreadCount, loading, markRead, markAllRead, markReadByLink, deleteOne, clearAll, refresh: fetchNotifications };
 }

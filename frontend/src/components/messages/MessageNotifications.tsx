@@ -10,14 +10,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 export default function MessageNotifications() {
   const { unreadChats, unreadCount, loading, markAsRead } = useUnreadMessages();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
   const handleMessageClick = (chatRoomId: string) => {
     markAsRead(chatRoomId);
+    setOpen(false);
     router.push(`/messages?chat=${chatRoomId}`);
   };
 
@@ -44,7 +47,7 @@ export default function MessageNotifications() {
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -161,7 +164,7 @@ export default function MessageNotifications() {
         {/* Footer — See All in Inbox */}
         <div className="border-t border-gray-200 px-4 py-3">
           <button
-            onClick={() => router.push('/messages')}
+            onClick={() => { setOpen(false); router.push('/messages'); }}
             className="text-sm font-medium text-green-700 hover:text-green-800 hover:underline w-full text-center transition-colors cursor-pointer"
           >
             See All in Inbox

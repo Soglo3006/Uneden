@@ -33,6 +33,7 @@ function formatTime(dateString: string) {
 export default function BookingNotifications() {
   const { notifs, loading, unseenCount, markSeen, markAllSeen } = useUnreadBookings();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"received" | "sent">("received");
 
   const received = notifs.filter((n) => n.role === "worker");
@@ -44,6 +45,7 @@ export default function BookingNotifications() {
 
   const handleClick = (id: string) => {
     markSeen(id);
+    setOpen(false);
     router.push("/bookings");
   };
 
@@ -101,7 +103,7 @@ export default function BookingNotifications() {
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative cursor-pointer hover:bg-gray-100">
           <CalendarDays className="h-5 w-5 text-gray-700" />
@@ -179,7 +181,7 @@ export default function BookingNotifications() {
         <div className="border-t border-gray-200 px-4 py-3">
           <button
             type="button"
-            onClick={() => router.push("/bookings")}
+            onClick={() => { setOpen(false); router.push("/bookings"); }}
             className="text-sm font-medium text-green-700 hover:text-green-800 hover:underline w-full text-center transition-colors cursor-pointer"
           >
             See All Bookings
