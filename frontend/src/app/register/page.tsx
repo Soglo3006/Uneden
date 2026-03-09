@@ -34,7 +34,13 @@ export default function RegisterPage() {
     requireAuth: false,
   });
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700" />
+        </div>
+      </div>
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

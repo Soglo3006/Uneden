@@ -303,3 +303,24 @@ export const getUserServices = async (req, res) => {
     res.status(500).json({ message: "Server error while fetching user services" });
   }
 };
+
+export const getCategoryCounts = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        COALESCE(c.name, s.category) AS category_name,
+        COUNT(*)::int AS count
+      FROM services s
+      LEFT JOIN categories c ON c.id = s.category_id
+      WHERE s.is_active = true
+        AND COALESCE(c.name, s.category) IS NOT NULL
+        AND COALESCE(c.name, s.category) != ''
+      GROUP BY COALESCE(c.name, s.category)
+      ORDER BY count DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while fetching category counts" });
+  }
+};

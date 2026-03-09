@@ -9,6 +9,11 @@ import { Category } from "./types";
     { name: "Car Services", subcategories: ["Car wash","Oil change","Tire services"], image: "/Categories/car_support.avif" },
     { name: "Painting & Renovation", subcategories: ["Interior painting","Exterior painting","Renovation projects"], image: "/Categories/renovation.webp" },
     { name: "Landscaping / Gardening", subcategories: ["Lawn care","Garden design","Tree trimming"], image: "/Categories/gardening.webp" },
+    { name: "Snow Removal", subcategories: ["Driveway clearing","Sidewalk clearing","Roof snow removal"], image: "/Categories/snow_removal.png" },
+    { name: "Childcare & Babysitting", subcategories: ["Babysitting","After-school care","Full-time childcare"], image: "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&q=80" },
+    { name: "Pet Care", subcategories: ["Dog walking","Pet sitting","Grooming"], image: "/Categories/petcaring.png" },
+    { name: "Tutoring & Education", subcategories: ["Math & Science","Languages","Test preparation"], image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&q=80" },
+    { name: "Photography", subcategories: ["Event photography","Portrait photography","Real estate photography"], image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&q=80" },
   ];
 
   

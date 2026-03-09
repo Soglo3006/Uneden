@@ -342,8 +342,6 @@ export default function Header() {
                   <SelectGroup>
                     <SelectLabel>Country</SelectLabel>
                     <SelectItem value="canada" className="cursor-pointer">Canada</SelectItem>
-                    <SelectItem value="USA" className="cursor-pointer">USA</SelectItem>
-                    <SelectItem value="UK" className="cursor-pointer">UK</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
