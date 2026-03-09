@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -28,6 +29,7 @@ interface ProfileSidebarProps {
 }
 
 export function ProfileSidebar({ otherUser, onClose, onOpenSettings, isBlocked, isBlockedByOther }: ProfileSidebarProps) {
+  const { t, i18n } = useTranslation();
   const [userListings, setUserListings] = useState<any[]>([]);
   const [listingsLoading, setListingsLoading] = useState(false)
   const [reviewStats, setReviewStats] = useState<{ avg: number; count: number } | null>(null);
@@ -89,7 +91,7 @@ export function ProfileSidebar({ otherUser, onClose, onOpenSettings, isBlocked, 
       <div className="w-full border-l bg-gray-50 flex flex-col h-full">
         <div className="flex items-center justify-center h-full text-gray-500">
           <p className="text-sm text-center px-4">
-            Select a conversation to view profile details
+            {t("messages.selectConversation")}
           </p>
         </div>
       </div>
@@ -102,12 +104,9 @@ export function ProfileSidebar({ otherUser, onClose, onOpenSettings, isBlocked, 
     ? otherUser.company_name
     : otherUser.full_name) || otherUser.full_name || otherUser.company_name || 'Unknown';
 
-  const memberSince = otherUser.created_at 
-  ? new Date(otherUser.created_at).toLocaleDateString('en-US', { 
-      month: 'long', 
-      year: 'numeric' 
-    })
-  : 'Recently';
+  const memberSince = otherUser.created_at
+    ? new Date(otherUser.created_at).toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })
+    : t("messages.recently");
 
   const blocked = isBlocked || isBlockedByOther;
 
@@ -120,7 +119,7 @@ export function ProfileSidebar({ otherUser, onClose, onOpenSettings, isBlocked, 
             <X className="h-5 w-5" />
           </Button>
         ) : <div className="w-9" />}
-        <h3 className="text-lg font-semibold">About</h3>
+        <h3 className="text-lg font-semibold">{t("messages.about")}</h3>
         {onOpenSettings ? (
           <Button variant="ghost" size="icon" onClick={onOpenSettings} className="cursor-pointer">
             <Settings className="h-5 w-5" />
@@ -154,7 +153,7 @@ export function ProfileSidebar({ otherUser, onClose, onOpenSettings, isBlocked, 
                   {reviewStats ? reviewStats.avg : 'N/A'}
                 </span>
                 <span className="text-sm text-gray-500">
-                  ({reviewStats ? reviewStats.count : 0} reviews)
+                  ({t("messages.reviewsCount", { count: reviewStats ? reviewStats.count : 0 })})
                 </span>
               </div>
             )}
@@ -167,7 +166,7 @@ export function ProfileSidebar({ otherUser, onClose, onOpenSettings, isBlocked, 
 
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Member since</span>
+                  <span className="text-gray-600">{t("messages.memberSince")}</span>
                   <span className="font-medium">{memberSince}</span>
                 </div>
               </div>
@@ -178,7 +177,7 @@ export function ProfileSidebar({ otherUser, onClose, onOpenSettings, isBlocked, 
               <div>
                 <h4 className="font-medium text-gray-900 mb-2">Bio</h4>
                 <p className="text-gray-600 text-sm leading-relaxed break-words">
-                  {otherUser.bio || 'No bio available'}
+                  {otherUser.bio || t("messages.noBio")}
                 </p>
               </div>
 
@@ -189,10 +188,10 @@ export function ProfileSidebar({ otherUser, onClose, onOpenSettings, isBlocked, 
 
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-gray-900">Other Services</h4>
+                      <h4 className="font-medium text-gray-900">{t("messages.otherServices")}</h4>
                       <Link href={`/profile/${otherUser.id}`}>
                         <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 cursor-pointer">
-                          View All
+                          {t("common.viewAll")}
                           <ExternalLink className="h-3 w-3" />
                         </Button>
                       </Link>
@@ -232,7 +231,7 @@ export function ProfileSidebar({ otherUser, onClose, onOpenSettings, isBlocked, 
                                   </p>
                                   {listing.type === 'looking' && (
                                     <Badge className="bg-blue-100 text-blue-700 text-xs">
-                                      Looking
+                                      {t("listings.looking")}
                                     </Badge>
                                   )}
                                 </div>
@@ -254,7 +253,7 @@ export function ProfileSidebar({ otherUser, onClose, onOpenSettings, isBlocked, 
       <div className="shrink-0 p-4 bg-gray-50 border-t">
         <Link href={`/profile/${otherUser.id}`}>
           <Button className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer">
-            View Full Profile
+            {t("messages.viewFullProfile")}
           </Button>
         </Link>
       </div>

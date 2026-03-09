@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronRight, ShieldAlert, UserRoundPlus, ArrowLeft } from "lucide-react";
@@ -16,16 +17,17 @@ interface Props {
   userListings: { id: string; title: string; price: number; image_url?: string }[];
 }
 
-const SCREEN_TITLES: Record<Screen, string> = {
-  default: "Profile Options",
-  reportUser: "Report User",
-  reportListing: "Report Listing",
-  blockUser: "Block User",
-  shareProfile: "Share Profile",
-};
-
 export default function EllipsisPage({ onClose, profileId, displayName, userListings }: Props) {
+  const { t } = useTranslation();
   const [screen, setScreen] = useState<Screen>("default");
+
+  const SCREEN_TITLES: Record<Screen, string> = {
+    default: t("profile.profileOptions"),
+    reportUser: t("profile.reportUser"),
+    reportListing: t("report.reportListing"),
+    blockUser: t("profile.blockUser"),
+    shareProfile: t("profile.shareProfile"),
+  };
 
   return (
     <div className="w-full bg-gray-50">
@@ -33,7 +35,7 @@ export default function EllipsisPage({ onClose, profileId, displayName, userList
         <button onClick={onClose} className="text-gray-500 hover:text-gray-900 text-xl absolute top-4 right-4 cursor-pointer">✕</button>
         {screen !== "default" && (
           <button onClick={() => setScreen("default")} className="text-gray-600 hover:text-gray-900 text-sm absolute top-1 left-4 flex items-center gap-1 cursor-pointer">
-            <ArrowLeft className="h-4 w-4" /> Back
+            <ArrowLeft className="h-4 w-4" /> {t("common.back")}
           </button>
         )}
         <div className="max-w-5xl mx-auto px-4 py-6">
@@ -48,18 +50,18 @@ export default function EllipsisPage({ onClose, profileId, displayName, userList
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-4">
                   <ShieldAlert className="h-6 w-6 text-green-700" />
-                  <h2 className="text-xl font-bold text-gray-900">Report & Safety</h2>
+                  <h2 className="text-xl font-bold text-gray-900">{t("profile.reportSafety")}</h2>
                 </div>
               </div>
               <div className="space-y-4">
                 <Button variant="outline" className="w-full justify-between cursor-pointer" onClick={() => setScreen("reportUser")}>
-                  <span>Report User</span><ChevronRight className="h-4 w-4" />
+                  <span>{t("profile.reportUser")}</span><ChevronRight className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" className="w-full justify-between cursor-pointer" onClick={() => setScreen("reportListing")}>
-                  <span>Report Listing</span><ChevronRight className="h-4 w-4" />
+                  <span>{t("report.reportListing")}</span><ChevronRight className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50 cursor-pointer" onClick={() => setScreen("blockUser")}>
-                  <span>Block User</span><ChevronRight className="h-4 w-4" />
+                  <span>{t("profile.blockUser")}</span><ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             </Card>
@@ -67,12 +69,12 @@ export default function EllipsisPage({ onClose, profileId, displayName, userList
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-4">
                   <UserRoundPlus className="h-6 w-6 text-green-700" />
-                  <h2 className="text-xl font-bold text-gray-900">Profile Actions</h2>
+                  <h2 className="text-xl font-bold text-gray-900">{t("profile.profileActions")}</h2>
                 </div>
               </div>
               <div className="space-y-4">
                 <Button variant="outline" className="w-full justify-between cursor-pointer" onClick={() => setScreen("shareProfile")}>
-                  <span>Share Profile</span><ChevronRight className="h-4 w-4" />
+                  <span>{t("profile.shareProfile")}</span><ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             </Card>

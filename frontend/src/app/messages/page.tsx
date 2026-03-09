@@ -26,8 +26,10 @@ import { ConversationSettings } from '@/components/messages/ConversationSettings
 import { ChatHeader } from '@/components/messages/ChatHeader';
 import { ChatInputArea } from '@/components/messages/ChatInputArea';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 function MessagesContent() {
+  const { t } = useTranslation();
   const { user } = useProtectedRoute({ requireAuth: true, requireProfileCompleted: true });
 
   const searchParams = useSearchParams();
@@ -164,12 +166,12 @@ function MessagesContent() {
     if (!file) return;
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Invalid file type. Accepted formats: JPEG, PNG, GIF, WebP, PDF');
+      toast.error(t("messages.invalidFileType"));
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error(`File too large. Maximum size: 5MB`);
+      toast.error(t("messages.fileTooLarge"));
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
@@ -197,7 +199,7 @@ function MessagesContent() {
         const fileExt = attachedFile.name.split('.').pop();
         const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage.from('chat-attachments').upload(fileName, attachedFile);
-        if (uploadError) { toast.error('Failed to upload file'); return; }
+        if (uploadError) { toast.error(t("messages.failedToUpload")); return; }
         const { data } = supabase.storage.from('chat-attachments').getPublicUrl(fileName);
         fileUrl = data.publicUrl;
       }
@@ -217,7 +219,7 @@ function MessagesContent() {
       removeAttachment();
       setReplyingTo(null);
     } catch {
-      toast.error('Failed to send message');
+      toast.error(t("messages.failedToSend"));
     }
   };
 
@@ -247,7 +249,7 @@ function MessagesContent() {
       await sendMessage(audioContent, null);
       if (activeChatId) updateLastMessage(activeChatId, audioContent, user?.id || '', new Date().toISOString());
     } catch {
-      toast.error("Failed to send voice message");
+      toast.error(t("messages.failedToSendVoice"));
     }
   };
 
@@ -287,7 +289,7 @@ function MessagesContent() {
         {!isOnline && (
           <div className="flex items-center justify-center gap-2 bg-amber-50 border-b border-amber-200 px-4 py-2">
             <WifiOff className="h-4 w-4 text-amber-600 shrink-0" />
-            <p className="text-sm text-amber-700 font-medium">Connexion perdue — Reconnexion en cours...</p>
+            <p className="text-sm text-amber-700 font-medium">{t("messages.offlineBanner")}</p>
           </div>
         )}
 
@@ -392,8 +394,8 @@ function MessagesContent() {
                 ) : (
                   <div className="flex-1 flex items-center justify-center bg-gray-50">
                     <div className="text-center">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a conversation</h3>
-                      <p className="text-gray-600">Choose a conversation from the left to start messaging</p>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{t("messages.noConversations")}</h3>
+                      <p className="text-gray-600">{t("messages.startConversation")}</p>
                     </div>
                   </div>
                 )}

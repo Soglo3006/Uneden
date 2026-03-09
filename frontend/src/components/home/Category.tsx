@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -14,9 +15,12 @@ import {
 import { categories } from "@/lib/categories";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+const toKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
 export default function CategoryNav() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { t } = useTranslation();
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -42,38 +46,41 @@ export default function CategoryNav() {
           {/* View all listings button */}
           <Link href="/listings" className="shrink-0">
             <Button className="bg-green-700 text-white hover:bg-green-800 cursor-pointer text-xs sm:text-sm">
-              View All Listings
+              {t("home.viewAllListings")}
             </Button>
           </Link>
 
           {/* Category dropdowns */}
-          {categories.map((category) => (
-            <Select
-              key={category.name}
-              value=""
-              onValueChange={(sub) =>
-                router.push(
-                  `/listings?category=${encodeURIComponent(category.name)}&subcategory=${encodeURIComponent(sub)}`
-                )
-              }
-            >
-              <SelectTrigger
-                onClick={() =>
-                  router.push(`/listings?category=${encodeURIComponent(category.name)}`)
+          {categories.map((category) => {
+            const catKey = toKey(category.name);
+            return (
+              <Select
+                key={category.name}
+                value=""
+                onValueChange={(sub) =>
+                  router.push(
+                    `/listings?category=${encodeURIComponent(category.name)}&subcategory=${encodeURIComponent(sub)}`
+                  )
                 }
-                className="w-[150px] sm:w-[170px] lg:w-[180px] cursor-pointer shrink-0 text-xs sm:text-sm"
               >
-                <SelectValue placeholder={category.name} />
-              </SelectTrigger>
-              <SelectContent>
-                {category.subcategories?.map((subcategory) => (
-                  <SelectItem key={subcategory} value={subcategory} className="cursor-pointer">
-                    {subcategory}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ))}
+                <SelectTrigger
+                  onClick={() =>
+                    router.push(`/listings?category=${encodeURIComponent(category.name)}`)
+                  }
+                  className="w-[150px] sm:w-[170px] lg:w-[180px] cursor-pointer shrink-0 text-xs sm:text-sm"
+                >
+                  <SelectValue placeholder={t(`categories.${catKey}`, { defaultValue: category.name })} />
+                </SelectTrigger>
+                <SelectContent>
+                  {category.subcategories?.map((subcategory) => (
+                    <SelectItem key={subcategory} value={subcategory} className="cursor-pointer">
+                      {t(`categories.${catKey}_${toKey(subcategory)}`, { defaultValue: subcategory })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          })}
         </div>
 
         <button

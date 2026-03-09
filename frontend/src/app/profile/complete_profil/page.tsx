@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { OnboardingData, Experience, PortfolioItem, Language } from "@/components/onboarding/onboardingTypes";
 import OnboardingStepBar from "@/components/onboarding/OnboardingStepBar";
@@ -25,6 +26,7 @@ function OnboardingContent() {
 
   const { user, session } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const accountType = searchParams.get("type") || "person";
 
@@ -125,7 +127,7 @@ function OnboardingContent() {
     setLoading(true);
     try {
       const token = session?.access_token;
-      if (!token) { toast.error("Authentication error. Please login again."); router.push("/login"); return; }
+      if (!token) { toast.error(t("onboarding.authError")); router.push("/login"); return; }
 
       const payload = {
         account_type: data.accountType,
@@ -158,7 +160,7 @@ function OnboardingContent() {
       setShowSuccess(true);
       setTimeout(() => router.push("/"), 2000);
     } catch (err: any) {
-      toast.error(`Failed to complete profile: ${err.message}`);
+      toast.error(t("onboarding.profileSaveFailed", { message: err.message }));
     } finally {
       setLoading(false);
     }
@@ -216,14 +218,14 @@ function OnboardingContent() {
               disabled={currentStep === 1}
               className="gap-2 h-10 sm:h-12 px-4 sm:px-6 text-sm sm:text-base"
             >
-              <ChevronLeft className="h-4 w-4" /> Back
+              <ChevronLeft className="h-4 w-4" /> {t("onboarding.back")}
             </Button>
             <Button
               onClick={handleNext}
               disabled={!canProceed() || loading}
               className="bg-green-600 hover:bg-green-700 text-white gap-2 h-10 sm:h-12 px-4 sm:px-6 text-sm sm:text-base"
             >
-              {loading ? "Saving..." : currentStep === totalSteps ? "Finish Profile" : "Next Step"}
+              {loading ? t("common.loading") : currentStep === totalSteps ? t("onboarding.finish") : t("onboarding.next")}
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>

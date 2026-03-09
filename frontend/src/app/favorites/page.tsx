@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Grid3x3, MapPin, HeartOff } from "lucide-react";
@@ -18,6 +19,7 @@ interface FavoriteService {
 }
 
 export default function FavoritesPage() {
+  const { t } = useTranslation();
   const { user, session } = useAuth();
   const [items, setItems] = useState<FavoriteService[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,7 +97,7 @@ export default function FavoritesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">My Favorites</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">{t("favorites.title")}</h1>
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -113,9 +115,9 @@ export default function FavoritesPage() {
         ) : items.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
             <Grid3x3 className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p className="font-medium text-gray-700">No favorites yet.</p>
+            <p className="font-medium text-gray-700">{t("favorites.noFavorites")}</p>
             <Link href="/listings" className="text-sm text-green-700 hover:underline mt-2 inline-block">
-              Browse listings
+              {t("favorites.browseListings")}
             </Link>
           </div>
         ) : (
@@ -162,7 +164,7 @@ export default function FavoritesPage() {
                       onClick={() => remove(s.id)}
                     >
                       <HeartOff className="h-3.5 w-3.5" />
-                      Remove from Favorites
+                      {t("favorites.remove")}
                     </Button>
                   </div>
                 </div>

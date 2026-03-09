@@ -1,5 +1,6 @@
 // frontend/src/components/home/Header.tsx
 "use client";
+import { useTranslation } from "react-i18next";
 import { Search, User, Settings, LogOut, Building2, List, Wallet, X, CalendarDays } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,6 +34,7 @@ import MessageNotifications from "@/components/messages/MessageNotifications";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { useUnreadBookings } from "@/hooks/useUnreadBookings";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface SearchResult {
   id: string;
@@ -45,6 +47,7 @@ interface SearchResult {
 }
 
 export default function Header() {
+  const { t, i18n } = useTranslation();
   const { user, signOut, session } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -130,6 +133,8 @@ export default function Header() {
     await signOut();
   };
 
+  useScrollLock(showSettings);
+
   const { unseenCount } = useUnreadBookings();
   const { permission, subscribe } = usePushNotifications();
 
@@ -178,7 +183,7 @@ export default function Header() {
             {isCompany && (
               <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-xs">
                 <Building2 className="h-2.5 w-2.5 mr-1" />
-                Company
+                {t("header.company")}
               </Badge>
             )}
           </div>
@@ -194,19 +199,19 @@ export default function Header() {
         <DropdownMenuItem asChild>
           <Link href="/wallet" className="cursor-pointer flex items-center">
             <Wallet className="mr-2 h-4 w-4" />
-            <span>Wallet</span>
+            <span>{t("header.wallet")}</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/my-listings" className="cursor-pointer flex items-center">
             <List className="mr-2 h-4 w-4" />
-            <span>Listings</span>
+            <span>{t("header.listings")}</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/bookings" className="cursor-pointer flex items-center">
             <CalendarDays className="mr-2 h-4 w-4" />
-            <span>Bookings</span>
+            <span>{t("header.bookings")}</span>
           {unseenCount > 0 && (
               <span className="ml-auto h-5 min-w-5 px-1 bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white">
                 {unseenCount > 9 ? "9+" : unseenCount}
@@ -217,19 +222,19 @@ export default function Header() {
         <DropdownMenuItem asChild>
           <Link href={`/profile/${user?.id}`} className="cursor-pointer flex items-center">
             {isPerson ? <User className="mr-2 h-4 w-4" /> : <Building2 className="mr-2 h-4 w-4" />}
-            <span>Profile</span>
+            <span>{t("header.profile")}</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <div className="cursor-pointer flex items-center" onClick={() => setShowSettings(true)}>
             <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+            <span>{t("header.settings")}</span>
           </div>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600 focus:text-red-600">
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log Out</span>
+          <span>{t("header.logOut")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -255,7 +260,7 @@ export default function Header() {
               <div className="flex items-center border border-gray-300 rounded-lg px-3 py-1.5">
                 <Search className="shrink-0 text-gray-400 mr-2" size={16} />
                 <input
-                  placeholder="Search a service..."
+                  placeholder={t("header.search")}
                   type="text"
                   value={headerSearch}
                   onChange={(e) => setHeaderSearch(e.target.value)}
@@ -322,7 +327,7 @@ export default function Header() {
                     }}
                     className="cursor-pointer w-full text-center py-3 text-sm text-green-700 font-semibold hover:bg-green-50 transition-colors"
                   >
-                    See all results for &ldquo;{headerSearch}&rdquo; →
+                    {t("header.seeAllResults", { query: headerSearch })}
                   </button>
                 </div>
               )}
@@ -336,33 +341,33 @@ export default function Header() {
                 else if (val === "hire") router.push("/listings?type=looking");
               }}>
                 <SelectTrigger className="w-[130px] xl:w-[140px] border-gray-300 rounded-lg cursor-pointer">
-                  <SelectValue placeholder="Post Type" />
+                  <SelectValue placeholder={t("header.postType")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="cursor-pointer">All Posts</SelectItem>
-                  <SelectItem value="find" className="cursor-pointer">Find Work</SelectItem>
-                  <SelectItem value="hire" className="cursor-pointer">Hire Worker</SelectItem>
+                  <SelectItem value="all" className="cursor-pointer">{t("header.allPosts")}</SelectItem>
+                  <SelectItem value="find" className="cursor-pointer">{t("header.findWork")}</SelectItem>
+                  <SelectItem value="hire" className="cursor-pointer">{t("header.hireWorker")}</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select defaultValue="canada">
                 <SelectTrigger className="w-[130px] xl:w-[140px] border-gray-300 rounded-lg cursor-pointer">
-                  <SelectValue placeholder="Location" />
+                  <SelectValue placeholder={t("header.location")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectLabel>Country</SelectLabel>
+                    <SelectLabel>{t("header.location")}</SelectLabel>
                     <SelectItem value="canada" className="cursor-pointer">Canada</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
 
-              <ToggleGroup type="single" variant="outline">
+              <ToggleGroup type="single" variant="outline" value={i18n.language === "fr" ? "FR" : "EN"} onValueChange={(val) => { if (val) { const lng = val.toLowerCase(); i18n.changeLanguage(lng); localStorage.setItem("i18nextLng", lng); } }}>
                 <ToggleGroupItem value="EN" className="cursor-pointer text-sm px-3 h-8">EN</ToggleGroupItem>
                 <ToggleGroupItem value="FR" className="cursor-pointer text-sm px-3 h-8">FR</ToggleGroupItem>
               </ToggleGroup>
 
-              
+
             </div>
 
             {/* Actions droite — toujours visibles */}
@@ -384,17 +389,17 @@ export default function Header() {
               ) : (
                 <div className="flex gap-2">
                   <Link href="/login">
-                    <Button variant="outline" size="sm" className="cursor-pointer">Login</Button>
+                    <Button variant="outline" size="sm" className="cursor-pointer">{t("header.login")}</Button>
                   </Link>
                   <Link href="/register">
-                    <Button variant="outline" size="sm" className="cursor-pointer hidden sm:flex">Register</Button>
+                    <Button variant="outline" size="sm" className="cursor-pointer hidden sm:flex">{t("header.register")}</Button>
                   </Link>
                 </div>
               )}
 
               <Link href="/post">
                 <Button className="hidden lg:flex bg-green-700 text-white hover:bg-green-800 cursor-pointer">
-                  Post
+                  {t("header.post")}
                 </Button>
                 <Button size="icon" className="lg:hidden bg-green-700 text-white hover:bg-green-800 cursor-pointer font-bold text-lg">
                   +
@@ -411,22 +416,22 @@ export default function Header() {
               else if (val === "hire") router.push("/listings?type=looking");
             }}>
               <SelectTrigger className="w-[110px] shrink-0 border-gray-300 rounded-lg cursor-pointer text-xs">
-                <SelectValue placeholder="Post Type" />
+                <SelectValue placeholder={t("header.postType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="cursor-pointer">All Posts</SelectItem>
-                <SelectItem value="find" className="cursor-pointer">Find Work</SelectItem>
-                <SelectItem value="hire" className="cursor-pointer">Hire Worker</SelectItem>
+                <SelectItem value="all" className="cursor-pointer">{t("header.allPosts")}</SelectItem>
+                <SelectItem value="find" className="cursor-pointer">{t("header.findWork")}</SelectItem>
+                <SelectItem value="hire" className="cursor-pointer">{t("header.hireWorker")}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select defaultValue="canada">
               <SelectTrigger className="w-[100px] shrink-0 border-gray-300 rounded-lg cursor-pointer text-xs">
-                <SelectValue placeholder="Location" />
+                <SelectValue placeholder={t("header.location")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectLabel>Country</SelectLabel>
+                  <SelectLabel>{t("header.location")}</SelectLabel>
                   <SelectItem value="canada" className="cursor-pointer">Canada</SelectItem>
                   <SelectItem value="USA" className="cursor-pointer">USA</SelectItem>
                   <SelectItem value="UK" className="cursor-pointer">UK</SelectItem>
@@ -434,7 +439,7 @@ export default function Header() {
               </SelectContent>
             </Select>
 
-            <ToggleGroup type="single" variant="outline" className="shrink-0">
+            <ToggleGroup type="single" variant="outline" className="shrink-0" value={i18n.language === "fr" ? "FR" : "EN"} onValueChange={(val) => { if (val) { const lng = val.toLowerCase(); i18n.changeLanguage(lng); localStorage.setItem("i18nextLng", lng); } }}>
               <ToggleGroupItem value="EN" className="cursor-pointer text-xs px-2 h-8">EN</ToggleGroupItem>
               <ToggleGroupItem value="FR" className="cursor-pointer text-xs px-2 h-8">FR</ToggleGroupItem>
             </ToggleGroup>

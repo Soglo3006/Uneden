@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { SubPageHeader } from "./SubPageHeader";
+import { useTranslation } from "react-i18next";
 
 interface BlockedUser {
   id: string;
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export default function BlockedUsersPage({ onBack, onClose }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ export default function BlockedUsersPage({ onBack, onClose }: Props) {
 
   const handleUnblock = async (userId: string) => {
     if (!user) return;
-    const confirmed = window.confirm("Are you sure you want to unblock this user?");
+    const confirmed = window.confirm(t("settings.unblockConfirm"));
     if (!confirmed) return;
     setUnblocking(userId);
     try {
@@ -82,11 +84,15 @@ export default function BlockedUsersPage({ onBack, onClose }: Props) {
     }
   };
 
+  const subtitle = blockedUsers.length === 0
+    ? t("settings.noBlockedYet")
+    : `${blockedUsers.length} ${blockedUsers.length > 1 ? t("settings.blockedUsers") : t("settings.blockedUsers")}`;
+
   return (
     <div className="bg-gray-50">
       <SubPageHeader
-        title="Blocked Users"
-        subtitle={blockedUsers.length === 0 ? "You haven't blocked anyone yet" : `${blockedUsers.length} blocked user${blockedUsers.length > 1 ? "s" : ""}`}
+        title={t("settings.blockedUsers")}
+        subtitle={subtitle}
         onBack={onBack}
         onClose={onClose}
       />
@@ -102,8 +108,8 @@ export default function BlockedUsersPage({ onBack, onClose }: Props) {
                 <Shield className="h-8 w-8 text-gray-400" />
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">No Blocked Users</h3>
-            <p className="text-gray-600 text-sm mt-1">Users you block will appear here.</p>
+            <h3 className="text-lg font-semibold text-gray-900">{t("settings.noBlockedUsers")}</h3>
+            <p className="text-gray-600 text-sm mt-1">{t("settings.noBlockedUsersDesc")}</p>
           </Card>
         ) : (
           <div className="space-y-3">
@@ -120,18 +126,18 @@ export default function BlockedUsersPage({ onBack, onClose }: Props) {
                         <p className="font-semibold text-gray-900 text-sm">{blockedUser.name}</p>
                         {blockedUser.account_type === "company" && (
                           <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-xs">
-                            <Building2 className="h-2.5 w-2.5 mr-1" />Company
+                            <Building2 className="h-2.5 w-2.5 mr-1" />{t("settings.companyAccount")}
                           </Badge>
                         )}
                       </div>
                       <p className="text-xs text-gray-500">
-                        Blocked {new Date(blockedUser.blocked_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        {t("settings.blockedOn")} {new Date(blockedUser.blocked_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       </p>
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="cursor-pointer hover:bg-green-50 hover:border-green-600 hover:text-green-600 shrink-0 text-xs"
                     onClick={() => handleUnblock(blockedUser.id)} disabled={unblocking === blockedUser.id}>
-                    {unblocking === blockedUser.id ? "..." : "Unblock"}
+                    {unblocking === blockedUser.id ? "..." : t("settings.unblock")}
                   </Button>
                 </div>
               </Card>

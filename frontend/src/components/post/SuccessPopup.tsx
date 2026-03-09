@@ -1,4 +1,5 @@
 "use client";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function SuccessPopup({ type, id, onClose }: Props) {
+  const { t } = useTranslation();
   const router = useRouter();
   return (
     <div
@@ -26,26 +28,24 @@ export default function SuccessPopup({ type, id, onClose }: Props) {
           </div>
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          {type === "offer" ? "Service Posted!" : "Job Request Posted!"}
+          {type === "offer" ? t("post.successServiceTitle") : t("post.successJobTitle")}
         </h2>
         <p className="text-gray-500 mb-6">
-          {type === "offer"
-            ? "Your service is now live and visible to everyone."
-            : "Your job request is now live and visible to everyone."}
+          {type === "offer" ? t("post.successServiceDesc") : t("post.successJobDesc")}
         </p>
         <div className="flex flex-col gap-3">
           <Button
             className="w-full bg-green-600 hover:bg-green-700 text-white cursor-pointer"
             onClick={() => router.push(`/serviceDetail/${id}`)}
           >
-            View My Post
+            {t("post.viewMyPost")}
           </Button>
           <Button
             variant="outline"
             className="w-full cursor-pointer"
             onClick={() => router.push("/")}
           >
-            Back to Home
+            {t("post.backToHome")}
           </Button>
         </div>
       </div>

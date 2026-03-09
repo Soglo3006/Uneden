@@ -6,6 +6,7 @@ import { Upload, Trash2 } from "lucide-react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { toast } from "sonner";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface ImageUploaderProps {
   currentImage: string | null;
@@ -23,6 +24,7 @@ export default function ImageUploader({
   const [showCropper, setShowCropper] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
+  useScrollLock(showCropper);
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 

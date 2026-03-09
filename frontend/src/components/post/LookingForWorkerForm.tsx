@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -17,10 +18,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 const urgencyLevels = [
-  { value: "anytime", label: "Anytime" },
-  { value: "few-days", label: "Within a few days" },
-  { value: "today", label: "Today" },
-  { value: "urgent", label: "Urgent" },
+  { value: "anytime", labelKey: "post.urgencyAnytime" },
+  { value: "few-days", labelKey: "post.urgencyFewDays" },
+  { value: "today", labelKey: "post.urgencyToday" },
+  { value: "urgent", labelKey: "post.urgencyUrgent" },
 ];
 
 interface Props {
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export default function LookingForWorkerForm({ onSuccess }: Props) {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const router = useRouter();
 
@@ -58,7 +60,7 @@ export default function LookingForWorkerForm({ onSuccess }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session?.access_token) {
-      toast.error("You must be logged in to post a job request");
+      toast.error(t("post.mustBeLoggedInJob"));
       router.push("/login");
       return;
     }
@@ -96,7 +98,7 @@ export default function LookingForWorkerForm({ onSuccess }: Props) {
       const data = await res.json();
       onSuccess(data.id);
     } catch (error: any) {
-      toast.error(`Failed to post job request: ${error.message}`);
+      toast.error(t("post.failedPostJob", { message: error.message }));
     } finally {
       setSubmitting(false);
     }
@@ -106,12 +108,12 @@ export default function LookingForWorkerForm({ onSuccess }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="jobTitle" className="text-base font-medium text-gray-900">
-          Job Title <span className="text-red-500">*</span>
+          {t("post.jobTitle")} <span className="text-red-500">*</span>
         </Label>
         <Input
           id="jobTitle"
           type="text"
-          placeholder="Ex: Need help moving furniture"
+          placeholder={t("post.jobTitlePlaceholder")}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
@@ -121,11 +123,11 @@ export default function LookingForWorkerForm({ onSuccess }: Props) {
 
       <div className="space-y-2">
         <Label htmlFor="jobDescription" className="text-base font-medium text-gray-900">
-          Description <span className="text-red-500">*</span>
+          {t("post.description")} <span className="text-red-500">*</span>
         </Label>
         <Textarea
           id="jobDescription"
-          placeholder="Describe what kind of worker you're looking for and the job details…"
+          placeholder={t("post.jobDescriptionPlaceholder")}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
@@ -135,14 +137,14 @@ export default function LookingForWorkerForm({ onSuccess }: Props) {
 
       <div className="space-y-2">
         <Label className="text-base font-medium text-gray-900">
-          Budget <span className="text-red-500">*</span>
+          {t("post.budget")} <span className="text-red-500">*</span>
         </Label>
         <div className="flex gap-4">
           <div className="flex-1 relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
             <Input
               type="number"
-              placeholder="Amount"
+              placeholder={t("post.amount")}
               value={budget}
               onChange={(e) => setBudget(e.target.value)}
               required
@@ -152,33 +154,33 @@ export default function LookingForWorkerForm({ onSuccess }: Props) {
           </div>
         </div>
         {budget && Number(budget) <= 0 && (
-          <p className="text-red-600 text-sm">Budget must be greater than zero.</p>
+          <p className="text-red-600 text-sm">{t("post.budgetMustBePositive")}</p>
         )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="jobLocation" className="text-base font-medium text-gray-900">
-          Location <span className="text-red-500">*</span>
+          {t("post.location")} <span className="text-red-500">*</span>
         </Label>
         <LocationAutocomplete
           id="jobLocation"
           value={location}
           onChange={setLocation}
-          placeholder="City, region (ex: Toronto, ON)"
+          placeholder={t("post.locationPlaceholder")}
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label className="text-base font-medium text-gray-900">Urgency Level</Label>
+        <Label className="text-base font-medium text-gray-900">{t("post.urgencyLevel")}</Label>
         <Select value={urgency} onValueChange={setUrgency}>
           <SelectTrigger className="h-12 cursor-pointer">
-            <SelectValue placeholder="Select urgency level" />
+            <SelectValue placeholder={t("post.selectUrgency")} />
           </SelectTrigger>
           <SelectContent>
             {urgencyLevels.map((level) => (
               <SelectItem key={level.value} value={level.value} className="cursor-pointer">
-                {level.label}
+                {t(level.labelKey)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -205,10 +207,10 @@ export default function LookingForWorkerForm({ onSuccess }: Props) {
       />
 
       <div className="space-y-2">
-        <Label className="text-base font-medium text-gray-900">Approx. Job Duration</Label>
+        <Label className="text-base font-medium text-gray-900">{t("post.jobDuration")}</Label>
         <Input
           type="text"
-          placeholder="Ex: 2 hours, 1 day, 1 week"
+          placeholder={t("post.jobDurationPlaceholder")}
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
           className="h-12"
@@ -216,11 +218,11 @@ export default function LookingForWorkerForm({ onSuccess }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label className="text-base font-medium text-gray-900">Upload an Image (optional)</Label>
+        <Label className="text-base font-medium text-gray-900">{t("post.uploadImage")}</Label>
         <ImageUploader
           currentImage={image}
           onImageChange={setImage}
-          label="Upload Job Image"
+          label={t("post.uploadJobImage")}
           aspectRatio={16 / 9}
         />
       </div>
@@ -230,8 +232,8 @@ export default function LookingForWorkerForm({ onSuccess }: Props) {
       <FormSubmitButton
         disabled={!isValid}
         submitting={submitting}
-        label="Post Job Request"
-        note="Your job request will appear publicly after submission."
+        label={t("post.postJobRequest")}
+        note={t("post.jobPublicNote")}
       />
     </form>
   );

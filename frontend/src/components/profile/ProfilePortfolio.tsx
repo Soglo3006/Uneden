@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function ProfilePortfolio({ portfolio, isPerson }: Props) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<any>(null);
 
   if (portfolio.length === 0) return null;
@@ -17,7 +19,7 @@ export default function ProfilePortfolio({ portfolio, isPerson }: Props) {
     <>
       <Card className="p-6 mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          {isPerson ? "My Portfolio" : "Our Projects"}
+          {isPerson ? t("profile.portfolio") : t("profile.ourProjects")}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {portfolio.map((item: any, index: number) => (

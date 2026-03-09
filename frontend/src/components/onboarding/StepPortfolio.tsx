@@ -9,6 +9,7 @@ import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { PortfolioItem } from "./onboardingTypes";
 import { toast } from "sonner";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface Props {
   portfolio: PortfolioItem[];
@@ -21,6 +22,7 @@ export default function StepPortfolio({ portfolio, onAdd, onRemove, onUpdate }: 
   const [showModal, setShowModal] = useState(false);
   const [image, setImage] = useState<string | null>(null);
   const [title, setTitle] = useState("");
+  useScrollLock(showModal);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedPixels, setCroppedPixels] = useState<any>(null);

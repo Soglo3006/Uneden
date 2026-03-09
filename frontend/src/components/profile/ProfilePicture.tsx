@@ -7,6 +7,8 @@ import { Camera } from "lucide-react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { toast } from "sonner";
+import { useScrollLock } from "@/hooks/useScrollLock";
+import { useTranslation } from "react-i18next";
 
 interface ProfilePictureUploaderProps {
 currentProfilePicture: string;
@@ -25,9 +27,11 @@ export default function ProfilePictureUploader({
     showLabel = true,
     readOnly = false,
     }: ProfilePictureUploaderProps) {
+        const { t } = useTranslation();
         const [showCropper, setShowCropper] = useState(false);
         const [imageToCrop, setImageToCrop] = useState<string | null>(null);
         const [crop, setCrop] = useState({ x: 0, y: 0 });
+        useScrollLock(showCropper);
         const [zoom, setZoom] = useState(1);
         const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
@@ -89,10 +93,10 @@ export default function ProfilePictureUploader({
                 type="button"
             >
                 <Camera className="h-4 w-4" />
-                Upload Image
+                {t("profile.uploadImageLabel")}
             </Button>
             {showLabel && (
-                <p className="text-xs text-gray-500">JPG, PNG or GIF. Max 2MB.</p>
+                <p className="text-xs text-gray-500">{t("profile.imageHint")}</p>
             )}
             </div>
             )}
@@ -102,7 +106,7 @@ export default function ProfilePictureUploader({
         {showCropper && imageToCrop && (
             <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-                <h2 className="text-lg font-semibold mb-4">Adjust your profile photo</h2>
+                <h2 className="text-lg font-semibold mb-4">{t("profile.adjustPhoto")}</h2>
 
                 <div className="relative w-full h-64 bg-gray-200 rounded-xl overflow-hidden">
                 <Cropper
@@ -120,10 +124,10 @@ export default function ProfilePictureUploader({
                 </div>
 
                 <div className="mt-4 mb-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Zoom</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">{t("profile.zoom")}</label>
                   <input
                     type="range"
-                    title="Zoom"
+                    title={t("profile.zoom")}
                     min={1}
                     max={3}
                     step={0.1}
@@ -135,9 +139,9 @@ export default function ProfilePictureUploader({
 
                 <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setShowCropper(false)} type="button" className="flex-1 cursor-pointer">
-                    Cancel
+                    {t("profile.cancel")}
                 </Button>
-                <Button onClick={saveCroppedImage} type="button" className="flex-1 cursor-pointer">Save</Button>
+                <Button onClick={saveCroppedImage} type="button" className="flex-1 cursor-pointer">{t("profile.save")}</Button>
                 </div>
             </div>
             </div>

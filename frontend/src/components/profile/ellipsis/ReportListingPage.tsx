@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export default function ReportListingPage({ profileId, displayName, userListings, onClose }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [selectedListingId, setSelectedListingId] = useState("");
   const [reason, setReason] = useState("");
@@ -27,7 +29,7 @@ export default function ReportListingPage({ profileId, displayName, userListings
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async () => {
-    if (!user || !selectedListingId || !reason || !details.trim()) { toast.error("Please fill in all fields"); return; }
+    if (!user || !selectedListingId || !reason || !details.trim()) { toast.error(t("report.fillAllFields")); return; }
     setLoading(true);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reports/listing`, {
@@ -41,7 +43,7 @@ export default function ReportListingPage({ profileId, displayName, userListings
       if (!response.ok) throw new Error("Failed to submit");
       setSuccess(true);
     } catch {
-      toast.error("Failed to submit report. Please try again.");
+      toast.error(t("report.failedSubmit"));
     } finally {
       setLoading(false);
     }
@@ -53,26 +55,29 @@ export default function ReportListingPage({ profileId, displayName, userListings
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
           <Check className="h-8 w-8 text-green-700" />
         </div>
-        <h3 className="text-xl font-bold text-gray-900">Report Received</h3>
+        <h3 className="text-xl font-bold text-gray-900">{t("report.received")}</h3>
         <p className="text-gray-600">
-          Thank you for your report. We've received it and will review the listing carefully.
-          If it violates our policies, we'll take the appropriate action.
+          {t("report.receivedListingDesc")}
         </p>
-        <Button className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer" onClick={onClose}>Close</Button>
+        <Button className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer" onClick={onClose}>
+          {t("report.close")}
+        </Button>
       </Card>
     );
   }
 
   return (
     <Card className="p-6 space-y-4">
-      <p className="text-gray-600">Select the listing from {displayName} you want to report.</p>
+      <p className="text-gray-600">{t("report.selectListingToReport", { name: displayName })}</p>
       <div>
-        <label className="text-sm font-medium text-gray-700 block mb-2">Listing</label>
+        <label className="text-sm font-medium text-gray-700 block mb-2">{t("report.listing")}</label>
         {userListings.length === 0 ? (
-          <p className="text-sm text-gray-500 italic">This user has no listings.</p>
+          <p className="text-sm text-gray-500 italic">{t("report.noListings")}</p>
         ) : (
           <Select value={selectedListingId} onValueChange={setSelectedListingId}>
-            <SelectTrigger className="w-full cursor-pointer"><SelectValue placeholder="Select a listing" /></SelectTrigger>
+            <SelectTrigger className="w-full cursor-pointer">
+              <SelectValue placeholder={t("report.selectListing")} />
+            </SelectTrigger>
             <SelectContent>
               {userListings.map((listing) => (
                 <SelectItem key={listing.id} value={listing.id} className="cursor-pointer">
@@ -88,27 +93,36 @@ export default function ReportListingPage({ profileId, displayName, userListings
         )}
       </div>
       <div>
-        <label className="text-sm font-medium text-gray-700 block mb-2">Reason</label>
+        <label className="text-sm font-medium text-gray-700 block mb-2">{t("report.reason")}</label>
         <Select value={reason} onValueChange={setReason}>
-          <SelectTrigger className="w-full cursor-pointer"><SelectValue placeholder="Select a reason" /></SelectTrigger>
+          <SelectTrigger className="w-full cursor-pointer">
+            <SelectValue placeholder={t("report.selectReason")} />
+          </SelectTrigger>
           <SelectContent>
-            <SelectItem value="misleading" className="cursor-pointer">Misleading Information</SelectItem>
-            <SelectItem value="price" className="cursor-pointer">Wrong Price</SelectItem>
-            <SelectItem value="illegal" className="cursor-pointer">Illegal Service</SelectItem>
-            <SelectItem value="offensive" className="cursor-pointer">Offensive Content</SelectItem>
-            <SelectItem value="scam" className="cursor-pointer">Scam</SelectItem>
-            <SelectItem value="other" className="cursor-pointer">Other</SelectItem>
+            <SelectItem value="misleading" className="cursor-pointer">{t("report.misleading")}</SelectItem>
+            <SelectItem value="price" className="cursor-pointer">{t("report.wrongPrice")}</SelectItem>
+            <SelectItem value="illegal" className="cursor-pointer">{t("report.illegal")}</SelectItem>
+            <SelectItem value="offensive" className="cursor-pointer">{t("report.offensive")}</SelectItem>
+            <SelectItem value="scam" className="cursor-pointer">{t("report.scam")}</SelectItem>
+            <SelectItem value="other" className="cursor-pointer">{t("report.other")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div>
-        <label className="text-sm font-medium text-gray-700 block mb-2">Details</label>
-        <Textarea placeholder="Describe the problem..." className="min-h-[120px] resize-none"
-          value={details} onChange={(e) => setDetails(e.target.value)} />
+        <label className="text-sm font-medium text-gray-700 block mb-2">{t("report.details")}</label>
+        <Textarea
+          placeholder={t("report.listingDetailPlaceholder")}
+          className="min-h-[120px] resize-none"
+          value={details}
+          onChange={(e) => setDetails(e.target.value)}
+        />
       </div>
-      <Button className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer"
-        onClick={handleSubmit} disabled={loading || !selectedListingId || !reason || !details.trim()}>
-        {loading ? "Submitting..." : "Submit Report"}
+      <Button
+        className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer"
+        onClick={handleSubmit}
+        disabled={loading || !selectedListingId || !reason || !details.trim()}
+      >
+        {loading ? t("report.submitting") : t("report.submit")}
       </Button>
     </Card>
   );

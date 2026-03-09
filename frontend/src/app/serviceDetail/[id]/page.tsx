@@ -16,6 +16,7 @@ import BookingSidebar from "@/components/serviceDetail/BookingSidebar";
 import SimilarServices from "@/components/serviceDetail/SimilarServices";
 import BookingModal from "@/components/serviceDetail/BookingModal";
 import LocationMapModal from "@/components/serviceDetail/LocationMapModal";
+import { useTranslation } from "react-i18next";
 
 interface Service {
   id: string;
@@ -53,23 +54,25 @@ interface SimilarService {
   image_url: string | null;
 }
 
-function formatRelativeDate(dateStr: string): string {
-  try {
-    const date = new Date(dateStr);
-    const diffDays = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return date.toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric" });
-  } catch {
-    return dateStr;
-  }
-}
-
 export default function ServiceDetailPage() {
+  const { t, i18n } = useTranslation();
+
+  function formatRelativeDate(dateStr: string): string {
+    try {
+      const date = new Date(dateStr);
+      const diffDays = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays === 0) return t("home.today");
+      if (diffDays === 1) return t("home.yesterday");
+      if (diffDays < 7) return t("home.daysAgo", { days: diffDays });
+      if (diffDays < 30) return t("home.weeksAgo", { weeks: Math.floor(diffDays / 7) });
+      return date.toLocaleDateString(i18n.language, { year: "numeric", month: "short", day: "numeric" });
+    } catch {
+      return dateStr;
+    }
+  }
   const params = useParams();
   const serviceId = params.id as string;
+
 
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,7 +90,7 @@ export default function ServiceDetailPage() {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingState, setBookingState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [bookingNote, setBookingNote] = useState("");
-  const [bookingErrorMsg, setBookingErrorMsg] = useState("Something went wrong. Please try again.");
+  const [bookingErrorMsg, setBookingErrorMsg] = useState("");
   const [existingBookingStatus, setExistingBookingStatus] = useState<string | null>(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -188,10 +191,10 @@ export default function ServiceDetailPage() {
       <div className="min-h-screen bg-white text-black">
         <main className="max-w-7xl mx-auto p-5">
           <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Service not found</h1>
-            <p className="text-gray-600 mb-6">This service doesn&apos;t exist or has been removed.</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">{t("serviceDetail.serviceNotFound")}</h1>
+            <p className="text-gray-600 mb-6">{t("serviceDetail.serviceNotFoundDesc")}</p>
             <Link href="/listings">
-              <Button className="bg-green-700 text-white hover:bg-green-800">Back to Listings</Button>
+              <Button className="bg-green-700 text-white hover:bg-green-800">{t("serviceDetail.backToListings")}</Button>
             </Link>
           </div>
         </main>
@@ -237,14 +240,14 @@ export default function ServiceDetailPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setBookingErrorMsg(data.message || "Something went wrong. Please try again.");
+        setBookingErrorMsg(data.message || t("serviceDetail.bookingError"));
         setBookingState("error");
         return;
       }
       setExistingBookingStatus("pending");
       setBookingState("success");
     } catch {
-      setBookingErrorMsg("Something went wrong. Please try again.");
+      setBookingErrorMsg(t("serviceDetail.bookingError"));
       setBookingState("error");
     }
   };

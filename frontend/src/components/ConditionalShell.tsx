@@ -1,7 +1,9 @@
 "use client";
 
-import { Suspense } from "react";
+import "@/lib/i18n";
+import { Suspense, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import i18n from "@/lib/i18n";
 import Header from "@/components/home/Header";
 import CategoryNav from "@/components/home/Category";
 import Footer from "@/components/home/Footer";
@@ -25,6 +27,13 @@ const NO_CATEGORY_ROUTES = [
 
 export default function ConditionalShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+
+  useEffect(() => {
+    const saved = localStorage.getItem("i18nextLng");
+    const browserLng = navigator.language?.startsWith("fr") ? "fr" : "en";
+    const lng = saved ?? browserLng;
+    if (lng !== i18n.language) i18n.changeLanguage(lng);
+  }, []);
   const isAuthPage = AUTH_ROUTES.some((r) => pathname.startsWith(r));
   const isNoCategoryPage = NO_CATEGORY_ROUTES.some((r) => pathname.startsWith(r));
 

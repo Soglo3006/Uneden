@@ -9,17 +9,20 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import SupportButton from "@/components/support/SupportButton";
 import { Grid3x3, MapPin, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
-function formatRelativeDate(dateStr: string) {
+const toKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
+function formatRelativeDate(dateStr: string, t: (key: string, opts?: any) => string) {
   try {
     const diff = Date.now() - new Date(dateStr).getTime();
     const days = Math.floor(diff / 86400000);
-    if (days === 0) return "Today";
-    if (days === 1) return "Yesterday";
-    if (days < 7) return `${days} days ago`;
-    return `${Math.floor(days / 7)} weeks ago`;
+    if (days === 0) return t("home.today");
+    if (days === 1) return t("home.yesterday");
+    if (days < 7) return t("home.daysAgo", { days });
+    return t("home.weeksAgo", { weeks: Math.floor(days / 7) });
   } catch {
-    return "Recently";
+    return t("home.recently");
   }
 }
 
@@ -36,7 +39,7 @@ interface Listing {
   category_name?: string;
 }
 
-function ListingCard({ listing }: { listing: Listing }) {
+function ListingCard({ listing, t }: { listing: Listing; t: (key: string, opts?: any) => string }) {
   return (
     <Link href={`/serviceDetail/${listing.id}`}>
       <div className="border rounded-xl shadow-sm bg-white flex flex-col overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
@@ -63,7 +66,7 @@ function ListingCard({ listing }: { listing: Listing }) {
             </div>
             <div className="flex items-center gap-1 shrink-0 ml-2">
               <Clock className="h-3 w-3" />
-              <span>{formatRelativeDate(listing.created_at)}</span>
+              <span>{formatRelativeDate(listing.created_at, t)}</span>
             </div>
           </div>
         </div>
@@ -87,6 +90,7 @@ function ListingSkeleton() {
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
   const [listings, setListings] = useState<Listing[]>([]);
   const [nearbyListings, setNearbyListings] = useState<Listing[]>([]);
   const [sortedCategories, setSortedCategories] = useState(categories);
@@ -191,17 +195,18 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-green-800/60" />
           <div className="relative z-10 text-center max-w-2xl mx-auto">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 drop-shadow-md">
-              Find the help you need. <br />
-              Offer the skills you have.
+              {t("home.heroTitle").split("\n").map((line, i) => (
+                <span key={i}>{line}{i === 0 && <br />}</span>
+              ))}
             </h1>
             <p className="text-green-100 text-sm sm:text-base">
-              Connect with your local community for services and opportunities
+              {t("home.heroSubtitle")}
             </p>
           </div>
         </div>
 
         <div className="max-w-7xl mx-auto p-5">
-          <h2 className="text-2xl font-bold mb-5">Recently added</h2>
+          <h2 className="text-2xl font-bold mb-5">{t("home.recentlyAdded")}</h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="grid lg:col-span-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -210,16 +215,16 @@ export default function HomePage() {
               {dataLoading ? (
                 Array.from({ length: 9 }).map((_, i) => <ListingSkeleton key={i} />)
               ) : listings.length === 0 ? (
-                <p className="text-gray-500 col-span-full">No listings yet.</p>
+                <p className="text-gray-500 col-span-full">{t("home.noListings")}</p>
               ) : (
                 listings.slice(0, 9).map((listing) => (
-                  <ListingCard key={listing.id} listing={listing} />
+                  <ListingCard key={listing.id} listing={listing} t={t} />
                 ))
               )}
 
               {/* Popular categories */}
               <div className="col-span-full mt-10">
-                <h1 className="text-3xl font-bold mb-5">Popular Categories</h1>
+                <h1 className="text-3xl font-bold mb-5">{t("home.popularCategories")}</h1>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5">
                   {sortedCategories.slice(0, 8).map((category) => (
                     <Link
@@ -235,7 +240,7 @@ export default function HomePage() {
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
                         <div className="absolute inset-0 flex items-center justify-center">
                           <h2 className="text-white text-xs sm:text-sm font-semibold drop-shadow-lg leading-tight text-center px-1">
-                            {category.name}
+                            {t(`categories.${toKey(category.name)}`, { defaultValue: category.name })}
                           </h2>
                         </div>
                       </div>
@@ -248,37 +253,37 @@ export default function HomePage() {
               {!user && (
                 <div className="col-span-full mt-10 bg-green-800 rounded-2xl p-10 text-center text-white">
                   <h1 className="text-3xl font-bold mb-2">
-                    Together, we all bring something valuable
+                    {t("home.ctaTitle")}
                   </h1>
-                  <p>Join now to discover nearby help and new earning opportunities</p>
+                  <p>{t("home.ctaSubtitle")}</p>
                   <Link href="/login">
-                    <Button className="mt-4 cursor-pointer">Sign In</Button>
+                    <Button className="mt-4 cursor-pointer">{t("home.signIn")}</Button>
                   </Link>
                 </div>
               )}
 
               {/* Ad banner */}
               <div className="border-2 border-dashed border-gray-300 rounded-xl h-[200px] col-span-full flex items-center justify-center text-gray-500">
-                Advertisement<br />728×90
+                {t("home.advertisement")}<br />728×90
               </div>
 
               {/* Listings near you */}
               <div className="col-span-full mt-10">
-                <h1 className="text-2xl font-bold mb-5">Listings near you</h1>
+                <h1 className="text-2xl font-bold mb-5">{t("home.listingsNearYou")}</h1>
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                   {dataLoading ? (
                     Array.from({ length: 3 }).map((_, i) => <ListingSkeleton key={i} />)
                   ) : nearbyListings.length === 0 ? (
-                    <p className="text-gray-500 col-span-full">No listings near you yet.</p>
+                    <p className="text-gray-500 col-span-full">{t("home.noListingsNearYou")}</p>
                   ) : (
                     nearbyListings.map((listing) => (
-                      <ListingCard key={listing.id} listing={listing} />
+                      <ListingCard key={listing.id} listing={listing} t={t} />
                     ))
                   )}
                 </div>
                 <Link href="/listings">
                   <Button className="mt-6 w-full bg-green-700 text-white hover:bg-green-800 cursor-pointer">
-                    View All Listings
+                    {t("home.viewAllListings")}
                   </Button>
                 </Link>
               </div>
@@ -288,10 +293,10 @@ export default function HomePage() {
             {/* Sidebar ads */}
             <div className="lg:col-span-1 space-y-6">
               <div className="border-2 border-dashed border-gray-300 rounded-xl h-[300px] flex items-center justify-center text-gray-500">
-                Advertisement<br />300×600
+                {t("home.advertisement")}<br />300×600
               </div>
               <div className="border-2 border-dashed border-gray-300 rounded-xl h-[250px] flex items-center justify-center text-gray-500">
-                Advertisement<br />300×250
+                {t("home.advertisement")}<br />300×250
               </div>
             </div>
           </div>

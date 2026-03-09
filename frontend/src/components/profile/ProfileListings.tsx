@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ export default function ProfileListings({
   userListings, setUserListings, listingsLoading,
   isOwner, isPerson, profileId, accessToken,
 }: Props) {
+  const { t } = useTranslation();
   const [editingListing, setEditingListing] = useState<any>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -50,12 +52,12 @@ export default function ProfileListings({
       <Card className="p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">
-            {isPerson ? "My Listings" : "Our Services"}
+            {isPerson ? t("profile.listings") : t("profile.ourServices")}
           </h2>
           {isOwner && (
             <Link href="/post">
               <Button className="bg-green-700 hover:bg-green-800 text-white cursor-pointer">
-                Create New Listing
+                {t("profile.createNewListing")}
               </Button>
             </Link>
           )}
@@ -93,7 +95,7 @@ export default function ProfileListings({
                           </Link>
                           {listing.type === "looking" && (
                             <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0 border-0">
-                              Looking
+                              {t("listings.looking")}
                             </Badge>
                           )}
                         </div>
@@ -114,7 +116,7 @@ export default function ProfileListings({
                         {isOwner && (
                           <div className="mt-auto pt-3 border-t border-gray-100 flex gap-2">
                             <Button size="sm" variant="outline" className="gap-1.5 flex-1" onClick={() => setEditingListing(listing)}>
-                              Edit
+                              {t("common.edit")}
                             </Button>
                             {confirmDeleteId === listing.id ? (
                               <>
@@ -124,7 +126,7 @@ export default function ProfileListings({
                                   onClick={() => deleteListing(listing.id)}
                                   disabled={deletingId === listing.id}
                                 >
-                                  {deletingId === listing.id ? "…" : "Confirm"}
+                                  {deletingId === listing.id ? "…" : t("common.confirm")}
                                 </Button>
                                 <Button size="sm" variant="outline" onClick={() => setConfirmDeleteId(null)}>✕</Button>
                               </>
@@ -135,7 +137,7 @@ export default function ProfileListings({
                                 className="text-red-600 border-red-200 hover:bg-red-50 gap-1.5 flex-1"
                                 onClick={() => setConfirmDeleteId(listing.id)}
                               >
-                                Delete
+                                {t("common.delete")}
                               </Button>
                             )}
                           </div>
@@ -156,7 +158,7 @@ export default function ProfileListings({
             <div className="mt-2">
               <Link href={isOwner ? "/my-listings" : `/profile/${profileId}/listings`}>
                 <Button variant="outline" className="w-full cursor-pointer">
-                  {isOwner ? "Manage My Listings" : `View All Listings (${userListings.length})`}
+                  {isOwner ? t("profile.manageListings") : t("profile.viewAllListingsCount", { count: userListings.length })}
                 </Button>
               </Link>
             </div>
@@ -164,14 +166,14 @@ export default function ProfileListings({
         ) : (
           <div className="text-center py-12">
             <Grid3x3 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No listings yet</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t("profile.noListings")}</h3>
             <p className="text-gray-500">
-              {isOwner ? "Your listings will appear here once you create them." : "This user hasn't posted any listings yet."}
+              {isOwner ? t("profile.yourListingsEmpty") : t("profile.userNoListings")}
             </p>
             {isOwner && (
               <Link href="/post">
                 <Button className="mt-4 bg-green-700 hover:bg-green-800 text-white cursor-pointer">
-                  Create Your First Listing
+                  {t("profile.createFirstListing")}
                 </Button>
               </Link>
             )}

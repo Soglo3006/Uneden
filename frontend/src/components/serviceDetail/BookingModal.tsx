@@ -1,4 +1,5 @@
 "use client";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, X } from "lucide-react";
 
@@ -19,6 +20,7 @@ export default function BookingModal({
   state, note, errorMsg, price, serviceTitle, providerFirstName,
   onNoteChange, onSubmit, onClose, onMessageProvider,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
@@ -27,7 +29,7 @@ export default function BookingModal({
       />
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md z-10 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Request Booking</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t("serviceDetail.requestBooking")}</h3>
           {state !== "loading" && (
             <button onClick={onClose} className="cursor-pointer text-gray-500 hover:text-gray-700">
               <X className="h-5 w-5" />
@@ -40,19 +42,19 @@ export default function BookingModal({
             <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-1">Request Sent!</h4>
+            <h4 className="text-lg font-semibold text-gray-900 mb-1">{t("serviceDetail.requestSent")}</h4>
             <p className="text-sm text-gray-600 mb-6">
-              {providerFirstName} will review your request and get back to you shortly.
+              {t("serviceDetail.willReview", { name: providerFirstName })}
             </p>
             <div className="space-y-2">
               <Button
                 className="w-full bg-green-700 text-white hover:bg-green-800"
                 onClick={onMessageProvider}
               >
-                Message {providerFirstName}
+                {t("serviceDetail.messageProvider", { name: providerFirstName })}
               </Button>
               <Button variant="outline" className="w-full" onClick={onClose}>
-                Close
+                {t("serviceDetail.close")}
               </Button>
             </div>
           </div>
@@ -62,15 +64,15 @@ export default function BookingModal({
               <p className="font-medium text-gray-900 text-sm mb-3 line-clamp-2">{serviceTitle}</p>
               <div className="space-y-1.5">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Service Price</span>
+                  <span className="text-gray-600">{t("serviceDetail.servicePrice")}</span>
                   <span className="font-semibold">${price}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Platform Fee</span>
+                  <span className="text-gray-600">{t("serviceDetail.platformFee")}</span>
                   <span className="font-semibold">$5</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold border-t border-gray-200 pt-2">
-                  <span>Total</span>
+                  <span>{t("serviceDetail.total")}</span>
                   <span className="text-green-700">${price + 5}</span>
                 </div>
               </div>
@@ -78,12 +80,12 @@ export default function BookingModal({
 
             <div className="mb-4">
               <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                Describe your request <span className="text-gray-400 font-normal">(optional)</span>
+                {t("serviceDetail.describeRequest")} <span className="text-gray-400 font-normal">{t("serviceDetail.optional")}</span>
               </label>
               <textarea
                 value={note}
                 onChange={(e) => onNoteChange(e.target.value)}
-                placeholder={`Describe what you need from ${providerFirstName}…`}
+                placeholder={t("serviceDetail.describeWhatYouNeed", { name: providerFirstName })}
                 rows={3}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent resize-none"
                 disabled={state === "loading"}
@@ -103,9 +105,9 @@ export default function BookingModal({
                 {state === "loading" ? (
                   <span className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Sending…
+                    {t("serviceDetail.sending")}
                   </span>
-                ) : "Confirm Booking Request"}
+                ) : t("serviceDetail.sendRequest")}
               </Button>
               <Button
                 variant="outline"
@@ -113,7 +115,7 @@ export default function BookingModal({
                 onClick={onClose}
                 disabled={state === "loading"}
               >
-                Cancel
+                {t("serviceDetail.cancel")}
               </Button>
             </div>
           </>

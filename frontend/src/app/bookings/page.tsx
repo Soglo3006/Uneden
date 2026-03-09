@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -36,18 +37,20 @@ function LoadingSkeleton() {
 }
 
 function EmptyState({ message }: { message: string }) {
+  const { t } = useTranslation();
   return (
     <div className="text-center py-16 text-gray-500">
       <CalendarDays className="h-12 w-12 mx-auto mb-3 text-gray-300" />
       <p className="font-medium text-gray-700">{message}</p>
       <Link href="/listings" className="text-sm text-green-700 hover:underline mt-2 inline-block">
-        Browse listings
+        {t("bookings.browseListings")}
       </Link>
     </div>
   );
 }
 
 function BookingsContent() {
+  const { t } = useTranslation();
   const { user, session, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -92,8 +95,8 @@ function BookingsContent() {
   useEffect(() => {
     if (paymentResult === "success" || paymentResult === "cancelled") {
       setTab("sent");
-      const t = setTimeout(() => setPaymentBanner(null), 5000);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => setPaymentBanner(null), 5000);
+      return () => clearTimeout(timer);
     }
   }, [paymentResult]);
 
@@ -149,12 +152,12 @@ function BookingsContent() {
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">My Bookings</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{t("bookings.title")}</h1>
 
       {paymentBanner === "success" && (
         <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4 text-green-800">
           <CheckCircle className="h-5 w-5 flex-shrink-0" />
-          <p className="text-sm font-medium">Payment successful! The service provider has been notified.</p>
+          <p className="text-sm font-medium">{t("bookings.paymentSuccess")}</p>
           <button type="button" aria-label="Dismiss" onClick={() => setPaymentBanner(null)} className="cursor-pointer ml-auto text-green-600 hover:text-green-800">
             <XCircle className="h-4 w-4" />
           </button>
@@ -163,7 +166,7 @@ function BookingsContent() {
       {paymentBanner === "cancelled" && (
         <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-4 text-gray-700">
           <XCircle className="h-5 w-5 flex-shrink-0 text-gray-400" />
-          <p className="text-sm">Payment was cancelled. You can try again anytime.</p>
+          <p className="text-sm">{t("bookings.paymentCancelled")}</p>
           <button type="button" aria-label="Dismiss" onClick={() => setPaymentBanner(null)} className="cursor-pointer ml-auto text-gray-400 hover:text-gray-600">
             <XCircle className="h-4 w-4" />
           </button>
@@ -178,7 +181,7 @@ function BookingsContent() {
             tab === "received" ? "border-green-600 text-green-700" : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >
-          Received
+          {t("bookings.received")}
           {pendingCount > 0 && (
             <span className="bg-amber-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 leading-none">
               {pendingCount}
@@ -192,7 +195,7 @@ function BookingsContent() {
             tab === "sent" ? "border-green-600 text-green-700" : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >
-          Sent
+          {t("bookings.sent")}
         </button>
       </div>
 
@@ -200,7 +203,7 @@ function BookingsContent() {
         <>
           {session?.access_token && <StripeConnectBanner accessToken={session.access_token} />}
           {loadingReceived ? <LoadingSkeleton /> : received.length === 0 ? (
-            <EmptyState message="No booking requests received yet." />
+            <EmptyState message={t("bookings.noReceived")} />
           ) : (
             <ReceivedBookingsList
               bookings={received}
@@ -219,7 +222,7 @@ function BookingsContent() {
 
       {tab === "sent" && (
         loadingSent ? <LoadingSkeleton /> : sent.length === 0 ? (
-          <EmptyState message="You haven't sent any booking requests yet." />
+          <EmptyState message={t("bookings.noSent")} />
         ) : (
           <SentBookingsList
             bookings={sent}

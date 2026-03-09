@@ -1,8 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SearchX } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function NotFound() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="text-center max-w-md">
@@ -13,20 +18,20 @@ export default function NotFound() {
         </div>
 
         <h1 className="text-4xl font-extrabold text-gray-900 mb-2">404</h1>
-        <h2 className="text-xl font-semibold text-gray-700 mb-3">Page not found</h2>
+        <h2 className="text-xl font-semibold text-gray-700 mb-3">{t("notFound.title")}</h2>
         <p className="text-gray-500 mb-8">
-          This page doesn't exist or has been removed. It might be a listing that was deleted or a link that has expired.
+          {t("notFound.description")}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/listings">
             <Button className="bg-green-700 hover:bg-green-800 text-white w-full sm:w-auto">
-              Browse Listings
+              {t("notFound.browseListings")}
             </Button>
           </Link>
           <Link href="/">
             <Button variant="outline" className="w-full sm:w-auto">
-              Go Home
+              {t("notFound.goHome")}
             </Button>
           </Link>
         </div>

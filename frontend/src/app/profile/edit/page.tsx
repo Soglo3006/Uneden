@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import EditBasicInfoCard from "@/components/profile/EditBasicInfoCard";
 import EditPortfolioCard from "@/components/profile/EditPortfolioCard";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface FormData {
   email: string;
@@ -37,6 +38,7 @@ const EMPTY_FORM: FormData = {
 
 export default function EditProfilePage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { user, session, loading: authLoading } = useAuth();
 
   const [accountType, setAccountType] = useState<"person" | "company">("person");
@@ -61,7 +63,7 @@ export default function EditProfilePage() {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/me`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
-        if (!res.ok) throw new Error("Failed to load profile");
+        if (!res.ok) throw new Error(t("profileEdit.failedLoadProfile"));
         const data = await res.json();
         setAccountType(data.account_type || "person");
 
@@ -121,7 +123,7 @@ export default function EditProfilePage() {
       if (!res.ok) { const e = await res.json(); throw new Error(e.message || "Failed to update profile"); }
       router.push(`/profile/${user?.id}`);
     } catch {
-      toast.error("Failed to save profile. Please try again.");
+      toast.error(t("profileEdit.failedSaveProfile"));
     } finally {
       setSaving(false);
     }
@@ -149,19 +151,19 @@ export default function EditProfilePage() {
           {/* Breadcrumb */}
           <div className="mb-8">
             <div className="flex items-center text-sm text-gray-500 mb-4">
-              <Link href="/"><span className="hover:text-green-700 cursor-pointer">Home</span></Link>
+              <Link href="/"><span className="hover:text-green-700 cursor-pointer">{t("notFound.goHome")}</span></Link>
               <ChevronRight className="h-4 w-4 mx-1" />
               <Link href={`/profile/${user?.id}`}>
                 <span className="hover:text-green-700 cursor-pointer">
-                  {isPerson ? "Your Profile" : "Your Company Profile"}
+                  {isPerson ? t("profile.yourProfile") : t("profile.yourCompanyProfile")}
                 </span>
               </Link>
               <ChevronRight className="h-4 w-4 mx-1" />
-              <span className="text-green-700 font-medium">Edit</span>
+              <span className="text-green-700 font-medium">{t("common.edit")}</span>
             </div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">
-                Edit {isPerson ? "Profile" : "Company Profile"}
+                {isPerson ? t("profile.editProfile") : t("profileEdit.editCompanyProfile")}
               </h1>
               {isCompany && (
                 <Badge className="bg-blue-100 text-blue-700 border-blue-300">
@@ -170,7 +172,7 @@ export default function EditProfilePage() {
               )}
             </div>
             <p className="text-gray-600 text-lg">
-              Update your {isPerson ? "personal" : "company"} information
+              {isPerson ? t("profileEdit.updatePersonalInfo") : t("profileEdit.updateCompanyInfo")}
             </p>
           </div>
 
@@ -186,14 +188,14 @@ export default function EditProfilePage() {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
             <Button variant="outline" className="w-full sm:w-auto order-2 sm:order-1 cursor-pointer" onClick={() => router.back()}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white order-1 sm:order-2 cursor-pointer"
               onClick={handleSave}
               disabled={!isFormValid() || isUnchanged || saving}
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? t("profileEdit.saving") : t("profileEdit.saveChanges")}
             </Button>
           </div>
         </div>

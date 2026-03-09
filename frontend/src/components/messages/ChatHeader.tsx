@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Info, Phone, Video } from "lucide-react";
@@ -25,6 +26,7 @@ interface Props {
 export function ChatHeader({
   otherUser, isOtherOnline, showSettings, showMobileSidebar, isLargeScreen, onBack, onToggleInfo,
 }: Props) {
+  const { t } = useTranslation();
   const displayName =
     otherUser?.account_type === "company"
       ? otherUser.company_name
@@ -54,10 +56,10 @@ export function ChatHeader({
               {isOtherOnline ? (
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 bg-green-500 rounded-full inline-block" />
-                  <span className="text-green-500 font-medium">En ligne</span>
+                  <span className="text-green-500 font-medium">{t("messages.online")}</span>
                 </span>
               ) : (
-                <span className="text-gray-400">Hors ligne</span>
+                <span className="text-gray-400">{t("messages.offline")}</span>
               )}
             </p>
           </div>

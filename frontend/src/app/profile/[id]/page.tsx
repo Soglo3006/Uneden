@@ -8,6 +8,7 @@ import { useStartConversation } from "@/hooks/useStartConversation";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 import SettingsPage from "@/components/profile/Settings";
 import EllipsisPage from "@/components/profile/Ellipsis";
 import RatingsPage from "@/components/profile/RatingsPage";
@@ -45,6 +46,7 @@ export default function UserProfilePage() {
   const settingsScrollRef = useRef(null);
   const isOwner = user?.id === profileId;
   const { startConversation, loading: sendMessageLoading } = useStartConversation();
+  const { t } = useTranslation();
 
   useEffect(() => { hasFetchedRef.current = false; }, [profileId]);
 
@@ -131,9 +133,9 @@ export default function UserProfilePage() {
       <div className="min-h-screen bg-white">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Profile not found</h1>
-            <p className="text-gray-600">{error || "This profile doesn't exist."}</p>
-            <Link href="/"><Button className="mt-4 bg-green-700 hover:bg-green-800 text-white">Go Home</Button></Link>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">{t("profile.profileNotFound")}</h1>
+            <p className="text-gray-600">{error || t("profile.profileNotFoundDesc")}</p>
+            <Link href="/"><Button className="mt-4 bg-green-700 hover:bg-green-800 text-white">{t("notFound.goHome")}</Button></Link>
           </div>
         </div>
       </div>
@@ -152,13 +154,13 @@ export default function UserProfilePage() {
   const portfolio = typeof profileUser.portfolio === "string" ? JSON.parse(profileUser.portfolio) : profileUser.portfolio || [];
 
   const handleUnblock = async () => {
-    if (!user || !window.confirm(`Are you sure you want to unblock ${displayName}?`)) return;
+    if (!user || !window.confirm(t("settings.unblockConfirm"))) return;
     setBlockLoading(true);
     try {
       await supabase.from("blocked_users").delete().eq("blocker_id", user.id).eq("blocked_user_id", profileId);
       setIsBlocked(false);
     } catch {
-      toast.error("Failed to unblock user. Please try again.");
+      toast.error(t("profile.failedUnblock"));
     } finally {
       setBlockLoading(false);
     }
@@ -169,10 +171,10 @@ export default function UserProfilePage() {
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center text-sm text-gray-500 mb-4">
-            <Link href="/"><span className="hover:text-green-700 cursor-pointer">Home</span></Link>
+            <Link href="/"><span className="hover:text-green-700 cursor-pointer">{t("notFound.goHome")}</span></Link>
             <ChevronRight className="h-4 w-4 mx-1" />
             <span className="text-green-700 font-medium">
-              {isOwner ? (isPerson ? "Your Profile" : "Your Company Profile") : `${displayName}'s Profile`}
+              {isOwner ? (isPerson ? t("profile.yourProfile") : t("profile.yourCompanyProfile")) : `${displayName}${t("profile.sProfile")}`}
             </span>
           </div>
 

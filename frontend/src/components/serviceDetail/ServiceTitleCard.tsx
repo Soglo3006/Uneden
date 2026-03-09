@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MapPin, Calendar, Globe, Truck, Zap, Tag } from "lucide-react";
 import SaveShareActions from "@/components/serviceDetail/SaveShareActions";
+import { useTranslation } from "react-i18next";
 
 interface Service {
   id: string;
@@ -36,6 +37,8 @@ interface Props {
 export default function ServiceTitleCard({
   service, price, favoritesCount, providerListingCount, onOpenMap, formatRelativeDate,
 }: Props) {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
       <div className="flex flex-col md:flex-row items-start justify-between gap-6">
@@ -45,7 +48,7 @@ export default function ServiceTitleCard({
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
               service.type === "offer" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
             }`}>
-              {service.type === "offer" ? "Offering" : "Looking for"}
+              {service.type === "offer" ? t("listings.offering") : t("listings.looking")}
             </span>
             {service.category_name && (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
@@ -56,7 +59,7 @@ export default function ServiceTitleCard({
             {service.is_one_time && (
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
                 <Tag className="h-3 w-3" />
-                One-time listing
+                {t("post.oneTimeListing")}
               </span>
             )}
           </div>
@@ -80,11 +83,11 @@ export default function ServiceTitleCard({
 
           {favoritesCount > 0 && (
             <div className="text-sm text-gray-600 mt-2">
-              Favorited by{" "}
+              {t("serviceDetail.favoritedBy")}{" "}
               <span className="font-semibold text-gray-900">
                 {favoritesCount >= 1000 ? "1k+" : favoritesCount}
               </span>{" "}
-              users
+              {t("serviceDetail.users")}
             </div>
           )}
 
@@ -110,7 +113,7 @@ export default function ServiceTitleCard({
               <div className="font-semibold text-gray-900">{service.owner_name}</div>
               <div className="mt-2">
                 <span className="underline text-green-700 hover:text-green-800 text-sm">
-                  View all listings ({providerListingCount})
+                  {t("profile.viewAllListingsCount", { count: providerListingCount })}
                 </span>
               </div>
             </div>
@@ -120,7 +123,7 @@ export default function ServiceTitleCard({
 
       {/* Description */}
       <div className="mt-8 pt-6 border-t border-gray-100">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">About this service</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">{t("serviceDetail.aboutService")}</h2>
         <p className="text-gray-700 leading-relaxed text-base whitespace-pre-line">
           {service.description}
         </p>
@@ -129,30 +132,30 @@ export default function ServiceTitleCard({
       {/* Extra details */}
       {(service.availability || service.language || service.mobility || service.urgency) && (
         <div className="mt-6 pt-6 border-t border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Details</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("serviceDetail.detailsSection")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {service.availability && (
               <div className="flex items-center gap-2 text-sm text-gray-700">
                 <Calendar className="h-4 w-4 text-green-600 shrink-0" />
-                <span><span className="font-medium">Availability:</span> {service.availability}</span>
+                <span><span className="font-medium">{t("serviceDetail.availability")}:</span> {service.availability}</span>
               </div>
             )}
             {service.language && (
               <div className="flex items-center gap-2 text-sm text-gray-700">
                 <Globe className="h-4 w-4 text-blue-500 shrink-0" />
-                <span><span className="font-medium">Language:</span> {service.language}</span>
+                <span><span className="font-medium">{t("serviceDetail.language")}:</span> {service.language}</span>
               </div>
             )}
             {service.mobility && (
               <div className="flex items-center gap-2 text-sm text-gray-700">
                 <Truck className="h-4 w-4 text-orange-500 shrink-0" />
-                <span><span className="font-medium">Mobility:</span> {service.mobility}</span>
+                <span><span className="font-medium">{t("serviceDetail.mobility")}:</span> {service.mobility}</span>
               </div>
             )}
             {service.urgency && (
               <div className="flex items-center gap-2 text-sm text-gray-700">
                 <Zap className="h-4 w-4 text-yellow-500 shrink-0" />
-                <span><span className="font-medium">Urgency:</span> {service.urgency}</span>
+                <span><span className="font-medium">{t("serviceDetail.urgency")}:</span> {service.urgency}</span>
               </div>
             )}
           </div>

@@ -1,4 +1,5 @@
 "use client";
+import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export default function StepBasicInfo({ data, accountType, onChange }: Props) {
+  const { t } = useTranslation();
+
   const handlePhone = (e: React.ChangeEvent<HTMLInputElement>) => {
     let input = e.target.value.replace(/\D/g, "");
     if (input.length > 3 && input.length <= 6) input = input.replace(/(\d{3})(\d+)/, "$1-$2");
@@ -21,8 +24,8 @@ export default function StepBasicInfo({ data, accountType, onChange }: Props) {
 
   return (
     <Card className="p-6 sm:p-8 animate-in fade-in duration-300">
-      <h2 className="text-xl font-bold text-gray-900 mb-0">Profile Picture & Basic Info</h2>
-      <p className="text-gray-600">Let&apos;s start with the basics</p>
+      <h2 className="text-xl font-bold text-gray-900 mb-0">{t("onboarding.basicInfoTitle")}</h2>
+      <p className="text-gray-600">{t("onboarding.welcomeSubtitle")}</p>
 
       <div className="space-y-6">
         {accountType === "person" && (
@@ -37,7 +40,7 @@ export default function StepBasicInfo({ data, accountType, onChange }: Props) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-base font-medium text-gray-900">Full Name</Label>
+              <Label htmlFor="fullName" className="text-base font-medium text-gray-900">{t("profileEdit.fullName")}</Label>
               <Input
                 id="fullName"
                 type="text"
@@ -61,7 +64,7 @@ export default function StepBasicInfo({ data, accountType, onChange }: Props) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="companyName" className="text-base font-medium text-gray-900">Company Name</Label>
+              <Label htmlFor="companyName" className="text-base font-medium text-gray-900">{t("profileEdit.companyName")}</Label>
               <Input
                 id="companyName"
                 type="text"
@@ -75,28 +78,28 @@ export default function StepBasicInfo({ data, accountType, onChange }: Props) {
 
         <div className="space-y-2">
           <Label htmlFor="email" className="text-base font-medium text-gray-900">
-            {accountType === "company" ? "Company Email" : "Email"}
+            {accountType === "company" ? t("support.email") : t("login.email")}
           </Label>
           <Input id="email" type="email" value={data.email} disabled className="h-12 bg-gray-50 cursor-not-allowed" />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="phone" className="text-base font-medium text-gray-900">
-            Phone Number <span className="text-red-500">*</span>
+            {t("profileEdit.phone")} <span className="text-red-500">*</span>
           </Label>
           <Input id="phone" type="tel" placeholder="123-456-7890" value={data.phone} onChange={handlePhone} maxLength={12} className="h-12" />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="adresse" className="text-base font-medium text-gray-900">
-            Address <span className="text-red-500">*</span>
+            {t("serviceDetail.location")} <span className="text-red-500">*</span>
           </Label>
           <Input id="adresse" type="text" placeholder="123 Main St, Apt 4B" value={data.adresse} onChange={(e) => onChange({ adresse: e.target.value })} className="h-12" />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="ville" className="text-base font-medium text-gray-900">
-            City <span className="text-red-500">*</span>
+            {t("listings.location")} <span className="text-red-500">*</span>
           </Label>
           <Input id="ville" type="text" placeholder="Montreal" value={data.ville} onChange={(e) => onChange({ ville: e.target.value })} className="h-12" />
         </div>

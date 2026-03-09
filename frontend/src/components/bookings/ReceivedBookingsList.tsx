@@ -5,6 +5,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { MapPin, Grid3x3, Star, AlertTriangle, CheckCircle, CreditCard } from "lucide-react";
 import { ReceivedBooking, BookingStatus, STATUS_CONFIG, BOOKING_GROUPS, formatDate } from "./bookingTypes";
 import { type BookingDetail } from "./BookingDetailModal";
+import { useTranslation } from "react-i18next";
 
 function StatusBadge({ status }: { status: BookingStatus }) {
   const c = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
@@ -16,13 +17,18 @@ function StatusBadge({ status }: { status: BookingStatus }) {
 }
 
 function PaymentBadge({ status }: { status: string | null }) {
+  const { t } = useTranslation();
   if (!status || status === "unpaid") return null;
   const cfg: Record<string, string> = {
     paid: "bg-green-100 text-green-700 border-green-200",
     transferred: "bg-blue-100 text-blue-700 border-blue-200",
     refunded: "bg-gray-100 text-gray-600 border-gray-200",
   };
-  const labels: Record<string, string> = { paid: "Paid", transferred: "Paid out", refunded: "Refunded" };
+  const labels: Record<string, string> = {
+    paid: t("bookings.paid"),
+    transferred: t("bookings.paidOut"),
+    refunded: t("bookings.refunded"),
+  };
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${cfg[status] ?? "bg-gray-100 text-gray-500 border-gray-200"}`}>
       <CreditCard className="h-3 w-3" />
@@ -47,6 +53,7 @@ export default function ReceivedBookingsList({
   bookings, updating, chatLoading,
   onUpdateStatus, onMarkCompleted, onMessage, onReview, onDispute, onCardClick,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-8">
       {BOOKING_GROUPS
@@ -85,14 +92,14 @@ export default function ReceivedBookingsList({
                         <h3 className="font-semibold text-gray-900 line-clamp-1 hover:text-green-700 transition-colors flex-1">
                           {b.title}
                         </h3>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <PaymentBadge status={b.payment_status} />
                           <StatusBadge status={b.status} />
                         </div>
                       </div>
 
                       <p className="text-xs text-gray-500 mb-2">
-                        From:{" "}
+                        {t("bookings.from")}{" "}
                         <Link href={`/profile/${b.client_id}`} onClick={(e) => e.stopPropagation()}
                           className="font-medium text-gray-700 hover:text-green-700 hover:underline">
                           {b.client_name}
@@ -103,7 +110,7 @@ export default function ReceivedBookingsList({
 
                       {b.service_location && (
                         <div className="flex items-center text-xs text-gray-500 mb-1">
-                          <MapPin className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                          <MapPin className="h-3.5 w-3.5 mr-1 shrink-0" />
                           <span className="line-clamp-1">{b.service_location}</span>
                         </div>
                       )}
@@ -116,23 +123,23 @@ export default function ReceivedBookingsList({
                           <>
                             <Button type="button" size="sm" className="bg-green-700 hover:bg-green-800 text-white flex-1"
                               onClick={() => onUpdateStatus(b.id, "accepted", "received")} disabled={updating === b.id}>
-                              {updating === b.id ? "…" : "Accept"}
+                              {updating === b.id ? "…" : t("bookings.accept")}
                             </Button>
                             <Button type="button" size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 flex-1"
                               onClick={() => onUpdateStatus(b.id, "rejected", "received")} disabled={updating === b.id}>
-                              Reject
+                              {t("bookings.reject")}
                             </Button>
                           </>
                         )}
                         {b.status === "accepted" && (
                           <div className="flex flex-col gap-2 w-full">
                             <div className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                              Waiting for client to complete payment.
+                              {t("bookings.waitingForPayment")}
                             </div>
                             <Button type="button" size="sm" variant="outline"
                               className="text-red-600 border-red-200 hover:bg-red-50 w-full"
                               onClick={() => onUpdateStatus(b.id, "cancelled", "received")} disabled={updating === b.id}>
-                              {updating === b.id ? "…" : "Cancel Booking"}
+                              {updating === b.id ? "…" : t("bookings.cancelBooking")}
                             </Button>
                           </div>
                         )}
@@ -141,18 +148,18 @@ export default function ReceivedBookingsList({
                             {!b.completed_by_worker ? (
                               <Button type="button" size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
                                 onClick={() => onMarkCompleted(b.id, "received")} disabled={updating === b.id}>
-                                {updating === b.id ? "…" : "Mark Work Done"}
+                                {updating === b.id ? "…" : t("bookings.markWorkDone")}
                               </Button>
                             ) : (
                               <span className="text-xs text-indigo-600 flex items-center gap-1 flex-1">
-                                <CheckCircle className="h-3.5 w-3.5" /> You marked done
-                                {!b.completed_by_client && " — waiting for client"}
+                                <CheckCircle className="h-3.5 w-3.5" /> {t("bookings.youMarkedDone")}
+                                {!b.completed_by_client && ` — ${t("bookings.waitingForClient")}`}
                               </span>
                             )}
                             {!b.has_dispute && (
                               <Button type="button" size="sm" variant="outline" className="text-amber-600 border-amber-200 hover:bg-amber-50 gap-1.5"
                                 onClick={() => onDispute(b.id, b.title)}>
-                                <AlertTriangle className="h-3.5 w-3.5" /> Dispute
+                                <AlertTriangle className="h-3.5 w-3.5" /> {t("bookings.dispute")}
                               </Button>
                             )}
                           </>
@@ -162,28 +169,28 @@ export default function ReceivedBookingsList({
                             {!b.has_reviewed ? (
                               <Button type="button" size="sm" className="bg-yellow-500 hover:bg-yellow-600 text-white flex-1 gap-1.5"
                                 onClick={() => onReview(b.id, b.client_name)}>
-                                <Star className="h-3.5 w-3.5" /> Review
+                                <Star className="h-3.5 w-3.5" /> {t("bookings.review")}
                               </Button>
                             ) : (
                               <span className="text-xs text-gray-400 italic flex items-center gap-1 flex-1">
-                                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> Reviewed
+                                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> {t("bookings.reviewed")}
                               </span>
                             )}
                             {!b.has_dispute && (
                               <Button type="button" size="sm" variant="outline" className="text-amber-600 border-amber-200 hover:bg-amber-50 gap-1.5"
                                 onClick={() => onDispute(b.id, b.title)}>
-                                <AlertTriangle className="h-3.5 w-3.5" /> Dispute
+                                <AlertTriangle className="h-3.5 w-3.5" /> {t("bookings.dispute")}
                               </Button>
                             )}
                           </>
                         )}
                         {b.has_dispute && (
                           <span className="text-xs text-amber-600 italic flex items-center gap-1">
-                            <AlertTriangle className="h-3.5 w-3.5" /> Dispute open
+                            <AlertTriangle className="h-3.5 w-3.5" /> {t("bookings.disputeOpen")}
                           </span>
                         )}
                         <Button type="button" size="sm" variant="outline" onClick={() => onMessage(b.client_id)} disabled={chatLoading}>
-                          Message
+                          {t("bookings.message")}
                         </Button>
                       </div>
                     </div>

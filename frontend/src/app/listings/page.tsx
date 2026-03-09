@@ -2,14 +2,18 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { ChevronDown, ChevronRight, MapPin, X, SlidersHorizontal } from "lucide-react";
 import { categories } from "@/lib/categories";
 import ListingsGrid from "@/components/listings/ListingsGrid";
 
+const toKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
 // ── Inner component (needs useSearchParams inside Suspense) ──────────────────
 function ListingsContent() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
@@ -47,18 +51,18 @@ function ListingsContent() {
   const [debouncedPrice, setDebouncedPrice] = useState<[number, number]>(priceRange);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(timer);
   }, [search]);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedLocation(location), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedLocation(location), 400);
+    return () => clearTimeout(timer);
   }, [location]);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedPrice(priceRange), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedPrice(priceRange), 300);
+    return () => clearTimeout(timer);
   }, [priceRange]);
 
   const toggleExpand = (name: string) =>
@@ -88,10 +92,10 @@ function ListingsContent() {
 
   const activeChips = [
     debouncedSearch && { label: `"${debouncedSearch}"`, clear: () => setSearch("") },
-    selectedCategory && !selectedSubcategory && { label: selectedCategory, clear: () => setSelectedCategory("") },
-    selectedSubcategory && { label: selectedSubcategory, clear: () => setSelectedSubcategory("") },
+    selectedCategory && !selectedSubcategory && { label: t(`categories.${toKey(selectedCategory)}`, { defaultValue: selectedCategory }), clear: () => setSelectedCategory("") },
+    selectedSubcategory && { label: t(`categories.${toKey(selectedCategory)}_${toKey(selectedSubcategory)}`, { defaultValue: selectedSubcategory }), clear: () => setSelectedSubcategory("") },
     debouncedLocation && { label: ` ${debouncedLocation}`, clear: () => setLocation("") },
-    serviceType !== "all" && { label: serviceType === "offer" ? "Offering" : "Looking", clear: () => setServiceType("all") },
+    serviceType !== "all" && { label: serviceType === "offer" ? t("listings.offering") : t("listings.looking"), clear: () => setServiceType("all") },
     (debouncedPrice[0] > 0 || debouncedPrice[1] < 1000) && {
       label: `$${debouncedPrice[0]}–$${debouncedPrice[1] >= 1000 ? "1000+" : debouncedPrice[1]}`,
       clear: () => setPriceRange([0, 1000]),
@@ -107,7 +111,7 @@ function ListingsContent() {
           className="cursor-pointer flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         >
           <SlidersHorizontal className="h-4 w-4" />
-          Filters
+          {t("listings.filters")}
           {activeChips.length > 0 && (
             <span className="ml-1 bg-green-700 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">
               {activeChips.length}
@@ -137,7 +141,7 @@ function ListingsContent() {
           <div className="border border-gray-200 rounded-xl p-4 space-y-5">
             {/* Mobile close button */}
             <div className="flex items-center justify-between lg:hidden">
-              <span className="text-sm font-semibold text-gray-900">Filters</span>
+              <span className="text-sm font-semibold text-gray-900">{t("listings.filters")}</span>
               <button onClick={() => setShowMobileFilters(false)} className="cursor-pointer p-1 rounded hover:bg-gray-100">
                 <X className="h-4 w-4 text-gray-500" />
               </button>
@@ -146,21 +150,25 @@ function ListingsContent() {
             {/* Clear all */}
             {activeChips.length > 0 && (
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500">{activeChips.length} filter{activeChips.length > 1 ? "s" : ""} active</span>
+                <span className="text-xs text-gray-500">
+                  {activeChips.length > 1
+                    ? t("listings.filtersActivePlural", { count: activeChips.length })
+                    : t("listings.filtersActive", { count: activeChips.length })}
+                </span>
                 <button onClick={clearFilters} className="cursor-pointer text-xs text-green-700 underline hover:text-green-800">
-                  Clear all
+                  {t("listings.clearAll")}
                 </button>
               </div>
             )}
 
             {/* Type */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">Type</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">{t("listings.type")}</h3>
               <div className="flex gap-2">
                 {[
-                  { value: "all", label: "All" },
-                  { value: "offer", label: "Offering" },
-                  { value: "looking", label: "Looking" },
+                  { value: "all", label: t("listings.all") },
+                  { value: "offer", label: t("listings.offering") },
+                  { value: "looking", label: t("listings.looking") },
                 ].map(({ value, label }) => (
                   <button
                     key={value}
@@ -180,13 +188,13 @@ function ListingsContent() {
             {/* Categories */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-gray-900">Category</h3>
+                <h3 className="text-sm font-semibold text-gray-900">{t("listings.category")}</h3>
                 {selectedCategory && (
                   <button
                     onClick={() => { setSelectedCategory(""); setSelectedSubcategory(""); }}
                     className="cursor-pointer text-xs text-green-700 underline"
                   >
-                    Clear
+                    {t("listings.clear")}
                   </button>
                 )}
               </div>
@@ -204,7 +212,7 @@ function ListingsContent() {
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
-                      <span>{cat.name}</span>
+                      <span>{t(`categories.${toKey(cat.name)}`, { defaultValue: cat.name })}</span>
                       {expandedCategories.includes(cat.name) ? (
                         <ChevronDown className="h-4 w-4" />
                       ) : (
@@ -223,7 +231,7 @@ function ListingsContent() {
                                 : "text-gray-600 hover:text-green-700 hover:bg-green-50"
                             }`}
                           >
-                            {sub}
+                            {t(`categories.${toKey(cat.name)}_${toKey(sub)}`, { defaultValue: sub })}
                           </button>
                         ))}
                       </div>
@@ -235,12 +243,12 @@ function ListingsContent() {
 
             {/* Location */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">Location</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">{t("listings.location")}</h3>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   type="text"
-                  placeholder="City or area..."
+                  placeholder={t("listings.cityOrArea")}
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   className="pl-10"
@@ -251,7 +259,7 @@ function ListingsContent() {
             {/* Price range */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-gray-900">Price</h3>
+                <h3 className="text-sm font-semibold text-gray-900">{t("listings.price")}</h3>
                 <span className="text-xs font-medium text-green-700">
                   ${priceRange[0]} – {priceRange[1] >= 1000 ? "$1000+" : `$${priceRange[1]}`}
                 </span>
@@ -267,7 +275,7 @@ function ListingsContent() {
 
             {/* Ad in sidebar */}
             <div className="bg-gray-100 rounded-lg p-6 flex items-center justify-center border border-gray-200">
-              <span className="text-gray-500 text-xs">Ad placeholder</span>
+              <span className="text-gray-500 text-xs">{t("listings.adPlaceholder")}</span>
             </div>
           </div>
         </aside>
@@ -310,13 +318,14 @@ function ListingsContent() {
 
 // ── Page wrapper ─────────────────────────────────────────────────────────────
 export default function ListingsPage() {
+  const { t } = useTranslation();
   return (
     <div className="bg-white min-h-screen text-black">
       {/* Ad banner */}
       <div className="bg-gray-200 border-b border-gray-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="h-20 flex items-center justify-center">
-            <span className="text-gray-500 text-sm font-medium">Ad placeholder</span>
+            <span className="text-gray-500 text-sm font-medium">{t("listings.adPlaceholder")}</span>
           </div>
         </div>
       </div>

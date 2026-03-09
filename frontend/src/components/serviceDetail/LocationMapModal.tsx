@@ -1,11 +1,14 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
+
 interface Props {
   location: string;
   onClose: () => void;
 }
 
 export default function LocationMapModal({ location, onClose }: Props) {
+  const { t } = useTranslation();
   const mapQuery = encodeURIComponent(location);
 
   return (
@@ -13,7 +16,7 @@ export default function LocationMapModal({ location, onClose }: Props) {
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden z-10">
         <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h3 className="font-semibold text-gray-900">Approximate Location</h3>
+          <h3 className="font-semibold text-gray-900">{t("serviceDetail.approximateLocation")}</h3>
           <button
             onClick={onClose}
             className="cursor-pointer text-gray-500 hover:text-gray-700"
@@ -35,14 +38,14 @@ export default function LocationMapModal({ location, onClose }: Props) {
           </div>
         </div>
         <div className="px-4 py-3 text-xs text-gray-600 flex items-center justify-between border-t">
-          <span>This shows an approximate area to protect privacy.</span>
+          <span>{t("serviceDetail.approximateLocationDesc")}</span>
           <a
             href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
             target="_blank"
             rel="noopener noreferrer"
             className="underline text-green-700 hover:text-green-800"
           >
-            Open in Google Maps
+            {t("serviceDetail.openInGoogleMaps")}
           </a>
         </div>
       </div>

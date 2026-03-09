@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -42,6 +43,7 @@ function formatAmount(amount: number) {
 }
 
 export default function WalletPage() {
+  const { t } = useTranslation();
   const { user, session, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -89,7 +91,7 @@ export default function WalletPage() {
     <div className="min-h-screen bg-gray-50">
 
       <main className="max-w-3xl mx-auto px-4 py-10 space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Wallet</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("wallet.title")}</h1>
 
         {/* Balance cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -97,7 +99,7 @@ export default function WalletPage() {
             <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
               <Wallet className="h-6 w-6 text-green-700" />
             </div>
-            <p className="text-xs text-gray-500 mb-1">Available Balance</p>
+            <p className="text-xs text-gray-500 mb-1">{t("wallet.availableBalance")}</p>
             <p className="text-3xl font-extrabold text-green-700">
               ${formatAmount(wallet?.balance ?? 0)}
             </p>
@@ -108,7 +110,7 @@ export default function WalletPage() {
               <ArrowDownCircle className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Total Earned</p>
+              <p className="text-xs text-gray-500">{t("wallet.totalEarned")}</p>
               <p className="text-xl font-bold text-gray-900">${formatAmount(wallet?.total_earned ?? 0)}</p>
             </div>
           </div>
@@ -118,7 +120,7 @@ export default function WalletPage() {
               <ArrowUpCircle className="h-5 w-5 text-red-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Total Spent</p>
+              <p className="text-xs text-gray-500">{t("wallet.totalSpent")}</p>
               <p className="text-xl font-bold text-gray-900">${formatAmount(wallet?.total_spent ?? 0)}</p>
             </div>
           </div>
@@ -127,16 +129,15 @@ export default function WalletPage() {
         {/* Transaction history */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-base font-semibold text-gray-900">Transaction History</h2>
+            <h2 className="text-base font-semibold text-gray-900">{t("wallet.transactionHistory")}</h2>
           </div>
 
           {transactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-gray-400">
               <Clock className="h-10 w-10 mb-3 text-gray-300" />
-              <p className="text-sm font-medium text-gray-600">No transactions yet</p>
-              <p className="text-xs text-gray-400 mt-1">Completed jobs will appear here</p>
+              <p className="text-sm font-medium text-gray-600">{t("wallet.noTransactions")}</p>
               <Link href="/listings" className="text-sm text-green-700 hover:underline mt-4">
-                Browse listings
+                {t("wallet.browseListings")}
               </Link>
             </div>
           ) : (
@@ -161,7 +162,7 @@ export default function WalletPage() {
                     <div className="flex items-center gap-2 mt-0.5">
                       {tx.other_user_name && (
                         <span className="text-xs text-gray-500">
-                          {tx.type === "credit" ? "From" : "To"} {tx.other_user_name}
+                          {tx.type === "credit" ? t("wallet.from") : t("wallet.to")} {tx.other_user_name}
                         </span>
                       )}
                       <span className="text-xs text-gray-400">·</span>

@@ -1,28 +1,29 @@
 "use client";
 
 import { useRef, useEffect, useLayoutEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowDown, MessageCircle, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PinnedMessages } from "./PinnedMessages";
 import { MessageItem } from "./MessageItem";
 
-function getDateLabel(dateStr: string): string {
+function getDateLabel(dateStr: string, t: (k: string) => string, lng: string): string {
   const date = new Date(dateStr);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  if (date.toDateString() === today.toDateString()) return "Aujourd'hui";
-  if (date.toDateString() === yesterday.toDateString()) return "Hier";
+  if (date.toDateString() === today.toDateString()) return t("messages.today");
+  if (date.toDateString() === yesterday.toDateString()) return t("messages.yesterday");
 
   const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
   if (diffDays < 7) {
-    const day = date.toLocaleDateString("fr-FR", { weekday: "long" });
+    const day = date.toLocaleDateString(lng, { weekday: "long" });
     return day.charAt(0).toUpperCase() + day.slice(1);
   }
   const sameYear = date.getFullYear() === today.getFullYear();
-  return date.toLocaleDateString("fr-FR", {
+  return date.toLocaleDateString(lng, {
     day: "numeric", month: "short",
     ...(sameYear ? {} : { year: "numeric" }),
   });
@@ -81,6 +82,7 @@ export function MessageThread({
   retryMessage, onReply, onReplyClick, onReactionToggle, onEdit, onPin, onDelete,
   isTyping, hasMore, loadingMore, loadMore,
 }: MessageThreadProps) {
+  const { t, i18n } = useTranslation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMessagesLength = useRef(0);
   const isInitialLoad = useRef(true);
@@ -183,8 +185,8 @@ export function MessageThread({
               <MessageCircle className="h-12 w-12" />
             </div>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a conversation</h3>
-          <p className="text-gray-600">Choose a conversation from the left to start messaging</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{t("messages.selectConversationTitle")}</h3>
+          <p className="text-gray-600">{t("messages.selectConversationStart")}</p>
         </div>
       </div>
     );
@@ -220,7 +222,7 @@ export function MessageThread({
             </div>
           ) : messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-gray-500">
-              <p>No messages yet. Start the conversation!</p>
+              <p>{t("messages.startConversationEmpty")}</p>
             </div>
           ) : (
             <div className="space-y-4" onPointerDown={() => { setSelectedMessageKey(null); setOpenMenuKey(null); }}>
@@ -232,7 +234,7 @@ export function MessageThread({
                     key={message.id}
                     message={message}
                     showDate={showDate}
-                    dateLabel={showDate ? getDateLabel(message.created_at) : ""}
+                    dateLabel={showDate ? getDateLabel(message.created_at, t, i18n.language) : ""}
                     isOwn={isOwn}
                     currentUserId={currentUserId}
                     otherUser={otherUser}

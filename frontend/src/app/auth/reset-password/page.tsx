@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { KeyRound, CheckCircle } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -88,7 +90,7 @@ export default function ResetPasswordPage() {
               <KeyRound className="h-6 w-6 text-green-700" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Set new password</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t("auth.resetPassword")}</CardTitle>
           <CardDescription>Choose a strong password for your account.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -97,7 +99,7 @@ export default function ResetPasswordPage() {
               <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">{error}</div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="password">New password</Label>
+              <Label htmlFor="password">{t("auth.newPassword")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -109,7 +111,7 @@ export default function ResetPasswordPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm">Confirm password</Label>
+              <Label htmlFor="confirm">{t("auth.confirmPassword")}</Label>
               <Input
                 id="confirm"
                 type="password"
@@ -124,7 +126,7 @@ export default function ResetPasswordPage() {
               className="w-full bg-green-800 hover:bg-green-900"
               disabled={loading}
             >
-              {loading ? "Updating…" : "Update password"}
+              {loading ? t("auth.updating") : t("auth.updatePassword")}
             </Button>
           </form>
         </CardContent>

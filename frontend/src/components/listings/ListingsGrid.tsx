@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { MapPin, Clock, Grid3x3 } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Badge } from "@/components/ui/badge";
@@ -30,23 +31,26 @@ export interface ListingsFilters {
   serviceType?: string;
 }
 
-function formatRelativeDate(dateStr: string): string {
+function formatRelativeDate(dateStr: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
   try {
     const diff = Date.now() - new Date(dateStr).getTime();
     const days = Math.floor(diff / 86400000);
-    if (days === 0) return "Today";
-    if (days === 1) return "Yesterday";
-    if (days < 7) return `${days} days ago`;
-    return `${Math.floor(days / 7)} weeks ago`;
+    if (days === 0) return t("home.today");
+    if (days === 1) return t("home.yesterday");
+    if (days < 7) return t("home.daysAgo", { days });
+    return t("home.weeksAgo", { weeks: Math.floor(days / 7) });
   } catch {
-    return "Recently";
+    return t("home.recently");
   }
 }
+
+const toKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 
 const LISTINGS_PER_PAGE = 12;
 const AD_INTERVAL = 8; // insert ad every N cards
 
 export default function ListingsGrid({ filters }: { filters?: ListingsFilters }) {
+  const { t } = useTranslation();
   const [listings, setListings] = useState<ApiService[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -122,8 +126,8 @@ export default function ListingsGrid({ filters }: { filters?: ListingsFilters })
     return (
       <div ref={gridTopRef} className="text-center py-16 text-gray-500">
         <Grid3x3 className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-        <p className="text-lg font-medium text-gray-700">No services found</p>
-        <p className="text-sm mt-1">Try adjusting your filters</p>
+        <p className="text-lg font-medium text-gray-700">{t("common.noResults")}</p>
+        <p className="text-sm mt-1">{t("listings.adjustFilters")}</p>
       </div>
     );
   }
@@ -147,7 +151,7 @@ export default function ListingsGrid({ filters }: { filters?: ListingsFilters })
                 key={`ad-${item.key}`}
                 className="sm:col-span-2 lg:col-span-3 bg-gray-100 rounded-xl p-6 flex items-center justify-center border border-gray-200 h-24"
               >
-                <span className="text-gray-400 text-sm font-medium">Ad placeholder</span>
+                <span className="text-gray-400 text-sm font-medium">{t("listings.adPlaceholder")}</span>
               </div>
             );
           }
@@ -172,13 +176,16 @@ export default function ListingsGrid({ filters }: { filters?: ListingsFilters })
                       {s.title}
                     </h3>
                     {s.type === "looking" && (
-                      <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0 border-0">Looking</Badge>
+                      <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0 border-0">{t("listings.looking")}</Badge>
                     )}
                   </div>
 
                   {(s.category_name || s.subcategory) && (
                     <p className="text-xs text-gray-400 mb-1 line-clamp-1">
-                      {[s.category_name, s.subcategory].filter(Boolean).join(" | ")}
+                      {[
+                        s.category_name ? t(`categories.${toKey(s.category_name)}`, { defaultValue: s.category_name }) : null,
+                        s.subcategory ? t(`categories.${toKey(s.category_name ?? "")}_${toKey(s.subcategory)}`, { defaultValue: s.subcategory }) : null,
+                      ].filter(Boolean).join(" | ")}
                     </p>
                   )}
 
@@ -191,7 +198,7 @@ export default function ListingsGrid({ filters }: { filters?: ListingsFilters })
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                       <Clock className="h-3 w-3" />
-                      <span>{formatRelativeDate(s.created_at)}</span>
+                      <span>{formatRelativeDate(s.created_at, t)}</span>
                     </div>
                   </div>
                 </div>

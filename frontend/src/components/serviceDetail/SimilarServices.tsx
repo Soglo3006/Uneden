@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { MapPin, Grid3x3 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface SimilarService {
   id: string;
@@ -16,11 +17,13 @@ interface Props {
 }
 
 export default function SimilarServices({ services }: Props) {
+  const { t } = useTranslation();
+
   if (services.length === 0) return null;
 
   return (
     <div className="lg:col-span-2 order-3 space-y-4">
-      <h2 className="text-lg font-bold text-gray-900">Similar Services</h2>
+      <h2 className="text-lg font-bold text-gray-900">{t("serviceDetail.similar")}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {services.map((s) => (
           <Link key={s.id} href={`/serviceDetail/${s.id}`} className="block group">

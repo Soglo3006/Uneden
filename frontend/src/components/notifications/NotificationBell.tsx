@@ -22,6 +22,7 @@ import {
 import { useNotifications, type AppNotification } from "@/hooks/useNotifications";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const TYPE_CONFIG: Record<
   string,
@@ -123,7 +124,7 @@ function NotifRow({
           <button
             onClick={onRead}
             className="cursor-pointer h-6 w-6 rounded-full flex items-center justify-center text-gray-400 hover:text-green-600 hover:bg-green-100 transition-colors"
-            title="Mark as read"
+            title={t("notifications.markAsRead")}
           >
             <Check className="h-3.5 w-3.5" />
           </button>
@@ -131,7 +132,7 @@ function NotifRow({
         <button
           onClick={onDelete}
           className="cursor-pointer h-6 w-6 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-          title="Delete"
+          title={t("common.delete")}
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
@@ -141,6 +142,7 @@ function NotifRow({
 }
 
 export default function NotificationBell() {
+  const { t } = useTranslation();
   const { notifications, unreadCount, loading, markRead, markAllRead, deleteOne, clearAll } =
     useNotifications();
   const router = useRouter();
@@ -169,9 +171,9 @@ export default function NotificationBell() {
         {/* Header */}
         <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900">
-            Notifications
+            {t("notifications.title")}
             {unreadCount > 0 && (
-              <span className="ml-1.5 text-xs font-normal text-gray-500">({unreadCount} new)</span>
+              <span className="ml-1.5 text-xs font-normal text-gray-500">{t("notifications.newCount", { count: unreadCount })}</span>
             )}
           </h3>
           <div className="flex items-center gap-3">
@@ -180,7 +182,7 @@ export default function NotificationBell() {
                 onClick={markAllRead}
                 className="cursor-pointer text-xs text-green-700 hover:underline"
               >
-                Mark all read
+                {t("notifications.markAllRead")}
               </button>
             )}
             {notifications.length > 0 && (
@@ -188,7 +190,7 @@ export default function NotificationBell() {
                 onClick={clearAll}
                 className="cursor-pointer text-xs text-gray-400 hover:text-red-500 hover:underline"
               >
-                Clear all
+                {t("notifications.clearAll")}
               </button>
             )}
           </div>
@@ -203,7 +205,7 @@ export default function NotificationBell() {
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
               <Bell className="h-10 w-10 text-gray-300 mb-2" />
-              <p className="text-sm text-gray-500">No notifications yet</p>
+              <p className="text-sm text-gray-500">{t("notifications.noNotifications")}</p>
             </div>
           ) : (
             notifications.map((n) => (

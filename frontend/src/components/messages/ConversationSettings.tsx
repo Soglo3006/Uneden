@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, BellOff, Bell, Trash2, Ban, Flag, X, Archive, ArchiveRestore, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +49,7 @@ export function ConversationSettings({
   onArchive,
   backButton,
 }: ConversationSettingsProps) {
+  const { t, i18n } = useTranslation();
   const [confirmAction, setConfirmAction] = useState<'delete' | 'block' | 'unblock' | 'report' | null>(null);
   const [loading, setLoading] = useState(false);
   const [reportReason, setReportReason] = useState('');
@@ -58,7 +60,7 @@ export function ConversationSettings({
 
   const displayName = otherUser?.account_type === 'company'
     ? otherUser.company_name
-    : otherUser?.full_name || 'Unknown';
+    : otherUser?.full_name || t("common.unknown", { defaultValue: "Unknown" });
 
   // Filtrer les messages selon la recherche
   const searchResults = searchQuery.trim().length >= 2
@@ -104,27 +106,27 @@ export function ConversationSettings({
 
   const confirmTexts = {
     delete: {
-      title: 'Supprimer la conversation',
-      description: 'Cette action est irréversible. Tous les messages seront supprimés.',
-      button: 'Supprimer',
+      title: t("messages.deleteConversationTitle"),
+      description: t("messages.deleteConversationDesc"),
+      button: t("common.delete"),
       color: 'bg-red-500 hover:bg-red-600',
     },
     block: {
-      title: `Bloquer ${displayName}`,
-      description: `${displayName} ne pourra plus vous envoyer de messages.`,
-      button: 'Bloquer',
+      title: t("messages.blockUserTitle", { name: displayName }),
+      description: t("messages.blockUserDesc", { name: displayName }),
+      button: t("messages.block"),
       color: 'bg-red-500 hover:bg-red-600',
     },
     report: {
-      title: `Signaler ${displayName}`,
-      description: 'Voulez-vous signaler cet utilisateur à notre équipe ?',
-      button: 'Signaler',
+      title: t("messages.reportUserTitle", { name: displayName }),
+      description: t("messages.reportUserDesc"),
+      button: t("messages.report"),
       color: 'bg-red-500 hover:bg-red-600',
     },
     unblock: {
-      title: `Débloquer ${displayName}`,
-      description: `${displayName} pourra à nouveau vous envoyer des messages.`,
-      button: 'Débloquer',
+      title: t("messages.unblockUserTitle", { name: displayName }),
+      description: t("messages.unblockUserDesc", { name: displayName }),
+      button: t("messages.unblockUser", { name: displayName }),
       color: 'bg-green-700 hover:bg-green-800',
     },
   };
@@ -133,7 +135,7 @@ export function ConversationSettings({
     <div className="w-full h-full flex flex-col bg-gray-50">
       {/* Header */}
       <div className="shrink-0 p-4 bg-gray-50 border-b flex items-center justify-between h-[73px]">
-        <h3 className="text-lg font-semibold">Paramètres</h3>
+        <h3 className="text-lg font-semibold">{t("messages.settings")}</h3>
         <Button variant="ghost" size="icon" onClick={onClose} className='cursor-pointer'>
           {backButton ? <ArrowLeft className="h-5 w-5" /> : <X className="h-5 w-5" />}
         </Button>
@@ -145,14 +147,14 @@ export function ConversationSettings({
         <div className="bg-white rounded-xl border overflow-hidden">
           <div className="px-4 py-3 border-b">
             <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
-              Rechercher
+              {t("messages.searchInConversation")}
             </p>
           </div>
           <div className="p-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Rechercher dans la conversation..."
+                placeholder={t("messages.searchPlaceholder")}
                 className="pl-9 text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -171,16 +173,16 @@ export function ConversationSettings({
             {searchQuery.trim().length >= 2 && (
               <div className="mt-2">
                 {searchResults.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-3">Aucun résultat</p>
+                  <p className="text-xs text-gray-400 text-center py-3">{t("messages.noResults")}</p>
                 ) : (
                   <div className="space-y-1 max-h-48 overflow-y-auto">
                     <p className="text-xs text-gray-400 mb-2">
-                      {searchResults.length} résultat{searchResults.length > 1 ? 's' : ''}
+                      {searchResults.length > 1 ? t("messages.resultCountPlural", { count: searchResults.length }) : t("messages.resultCount", { count: searchResults.length })}
                     </p>
                     {searchResults.map((msg) => {
                       const senderName = msg.sender?.account_type === 'company'
                         ? msg.sender.company_name
-                        : msg.sender?.full_name || 'Moi';
+                        : msg.sender?.full_name || t("messages.me");
                       
                       // Highlight le mot recherché
                       const idx = msg.content.toLowerCase().indexOf(searchQuery.toLowerCase());
@@ -207,7 +209,7 @@ export function ConversationSettings({
                             {after.length > 30 ? after.substring(0, 30) + '...' : after}
                           </p>
                           <p className="text-xs text-gray-400 mt-0.5">
-                            {new Date(msg.created_at).toLocaleDateString('fr-FR', {
+                            {new Date(msg.created_at).toLocaleDateString(i18n.language, {
                               day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
                             })}
                           </p>
@@ -220,7 +222,7 @@ export function ConversationSettings({
             )}
 
             {searchQuery.trim().length === 1 && (
-              <p className="text-xs text-gray-400 text-center py-2">Entrez au moins 2 caractères</p>
+              <p className="text-xs text-gray-400 text-center py-2">{t("messages.minCharsRequired")}</p>
             )}
           </div>
         </div>
@@ -236,7 +238,7 @@ export function ConversationSettings({
               : <BellOff className="h-5 w-5 text-gray-500" />
             }
             <span className="text-sm text-gray-700 cursor-pointer">
-              {isMuted ? 'Réactiver les notifications' : 'Désactiver les notifications'}
+              {isMuted ? t("messages.unmuteNotifications") : t("messages.muteNotifications")}
             </span>
           </button>
 
@@ -250,7 +252,7 @@ export function ConversationSettings({
                 : <Archive className="h-5 w-5 text-gray-500" />
               }
               <span className="text-sm text-gray-700">
-                {isArchived ? 'Désarchiver la conversation' : 'Archiver la conversation'}
+                {isArchived ? t("messages.unarchiveConversation") : t("messages.archiveConversation")}
               </span>
             </button>
           )}
@@ -263,7 +265,7 @@ export function ConversationSettings({
             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left cursor-pointer"
           >
             <Trash2 className="h-5 w-5 text-gray-700" />
-            <span className="text-sm text-gray-700">Supprimer la conversation</span>
+            <span className="text-sm text-gray-700">{t("messages.deleteConversation")}</span>
           </button>
 
           {isBlocked ? (
@@ -272,7 +274,7 @@ export function ConversationSettings({
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left cursor-pointer"
             >
               <Ban className="h-5 w-5 text-green-600" />
-              <span className="text-sm text-green-600 font-medium">Débloquer {displayName}</span>
+              <span className="text-sm text-green-600 font-medium">{t("messages.unblockUser", { name: displayName })}</span>
             </button>
           ) : (
             <button
@@ -280,7 +282,7 @@ export function ConversationSettings({
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left cursor-pointer"
             >
               <Ban className="h-5 w-5 text-gray-700" />
-              <span className="text-sm text-gray-700">Bloquer {displayName}</span>
+              <span className="text-sm text-gray-700">{t("messages.blockUser", { name: displayName })}</span>
             </button>
           )}
 
@@ -289,7 +291,7 @@ export function ConversationSettings({
             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left cursor-pointer"
           >
             <Flag className="h-5 w-5 text-gray-700" />
-            <span className="text-sm text-gray-700">Signaler {displayName}</span>
+            <span className="text-sm text-gray-700">{t("messages.reportUser", { name: displayName })}</span>
           </button>
         </div>
       </div>
@@ -304,13 +306,13 @@ export function ConversationSettings({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button className='cursor-pointer' variant="outline" onClick={() => setConfirmAction(null)}>Annuler</Button>
+            <Button className='cursor-pointer' variant="outline" onClick={() => setConfirmAction(null)}>{t("common.cancel")}</Button>
             <Button
               className={`text-white cursor-pointer ${confirmAction && confirmTexts[confirmAction].color}`}
               onClick={handleConfirm}
               disabled={loading}
             >
-              {loading ? 'En cours...' : confirmAction && confirmTexts[confirmAction].button}
+              {loading ? t("messages.inProgress") : confirmAction && confirmTexts[confirmAction].button}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -320,30 +322,30 @@ export function ConversationSettings({
       <Dialog open={showReportModal} onOpenChange={setShowReportModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Signaler {displayName}</DialogTitle>
-            <DialogDescription>Dites-nous pourquoi vous signalez cet utilisateur.</DialogDescription>
+            <DialogTitle>{t("messages.reportUserTitle", { name: displayName })}</DialogTitle>
+            <DialogDescription>{t("messages.reportUserDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-2">Raison</label>
-              <Select value={reportReason} onValueChange={setReportReason} >
+              <label className="text-sm font-medium text-gray-700 block mb-2">{t("messages.reportReason")}</label>
+              <Select value={reportReason} onValueChange={setReportReason}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choisir une raison" />
+                  <SelectValue placeholder={t("messages.reportSelectReason")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="inappropriate">Comportement inapproprié</SelectItem>
-                  <SelectItem value="fraud">Fraude / Arnaque</SelectItem>
-                  <SelectItem value="harassment">Harcèlement</SelectItem>
-                  <SelectItem value="spam">Spam</SelectItem>
-                  <SelectItem value="fake">Faux profil</SelectItem>
-                  <SelectItem value="other">Autre</SelectItem>
+                  <SelectItem value="inappropriate">{t("messages.reportInappropriate")}</SelectItem>
+                  <SelectItem value="fraud">{t("messages.reportFraud")}</SelectItem>
+                  <SelectItem value="harassment">{t("messages.reportHarassment")}</SelectItem>
+                  <SelectItem value="spam">{t("messages.reportSpam")}</SelectItem>
+                  <SelectItem value="fake">{t("messages.reportFake")}</SelectItem>
+                  <SelectItem value="other">{t("messages.reportOther")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-2">Détails</label>
+              <label className="text-sm font-medium text-gray-700 block mb-2">{t("messages.reportDetails")}</label>
               <Textarea
-                placeholder="Décrivez le problème en détail..."
+                placeholder={t("messages.reportDetailsPlaceholder")}
                 className="min-h-[100px] resize-none"
                 value={reportDetails}
                 onChange={(e) => setReportDetails(e.target.value)}
@@ -351,13 +353,13 @@ export function ConversationSettings({
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button className='cursor-pointer' variant="outline" onClick={() => setShowReportModal(false)}>Annuler</Button>
+            <Button className='cursor-pointer' variant="outline" onClick={() => setShowReportModal(false)}>{t("common.cancel")}</Button>
             <Button
               className="bg-red-500 hover:bg-red-600 text-white cursor-pointer"
               onClick={handleReport}
               disabled={loading || !reportReason || !reportDetails.trim()}
             >
-              {loading ? 'Envoi...' : 'Envoyer le signalement'}
+              {loading ? t("messages.sending") : t("messages.sendReport")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -371,16 +373,16 @@ export function ConversationSettings({
               <Flag className="h-8 w-8 text-green-700" />
             </div>
             <DialogHeader>
-              <DialogTitle className="text-center">Signalement envoyé</DialogTitle>
+              <DialogTitle className="text-center">{t("messages.reportSent")}</DialogTitle>
               <DialogDescription className="text-center">
-                Merci de nous aider à garder Uneden sûr. Notre équipe va examiner votre signalement.
+                {t("messages.reportSentDesc")}
               </DialogDescription>
             </DialogHeader>
             <Button
               className="bg-green-700 hover:bg-green-800 text-white w-full cursor-pointer"
               onClick={() => { setShowSuccessModal(false); onClose(); }}
             >
-              Fermer
+              {t("common.close")}
             </Button>
           </div>
         </DialogContent>

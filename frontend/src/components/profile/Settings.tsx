@@ -19,44 +19,48 @@ import ChangePasswordPage from "./settings/ChangePasswordPage";
 import BlockedUsersPage from "./settings/BlockedUsersPage";
 import LogoutPage from "./settings/LogoutPage";
 import DeleteAccountPage from "./settings/DeleteAccountPage";
+import { useTranslation } from "react-i18next";
 
 type Screen = "default" | "changePassword" | "blockedUsers" | "paymentMethods" | "billingHistory" | "logout" | "deleteAccount";
 
 function PaymentMethodsPage({ onBack, onClose }: { onBack: () => void; onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="bg-gray-50">
       <div className="bg-white border-b relative">
         <button onClick={onClose} className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-500 hover:text-gray-900 text-xl cursor-pointer">✕</button>
         <button onClick={onBack} className="absolute top-3 left-3 sm:top-4 sm:left-4 text-gray-600 hover:text-gray-900 cursor-pointer text-sm sm:text-base">← Back</button>
         <div className="px-3 sm:px-4 py-4 sm:py-6 text-center">
-          <h1 className="text-lg sm:text-3xl font-bold text-gray-900 mt-6 sm:mt-0">Payment Methods</h1>
+          <h1 className="text-lg sm:text-3xl font-bold text-gray-900 mt-6 sm:mt-0">{t("settings.paymentMethods")}</h1>
         </div>
       </div>
       <div className="px-3 sm:px-4 py-4 sm:py-8">
-        <Card className="p-4 sm:p-6">Coming soon...</Card>
+        <Card className="p-4 sm:p-6">{t("settings.comingSoon")}</Card>
       </div>
     </div>
   );
 }
 
 function BillingHistoryPage({ onBack, onClose }: { onBack: () => void; onClose: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="bg-gray-50">
       <div className="bg-white border-b relative">
         <button onClick={onClose} className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-500 hover:text-gray-900 text-xl cursor-pointer">✕</button>
         <button onClick={onBack} className="absolute top-3 left-3 sm:top-4 sm:left-4 text-gray-600 hover:text-gray-900 cursor-pointer text-sm sm:text-base">← Back</button>
         <div className="px-3 sm:px-4 py-4 sm:py-6 text-center">
-          <h1 className="text-lg sm:text-3xl font-bold text-gray-900 mt-6 sm:mt-0">Billing History</h1>
+          <h1 className="text-lg sm:text-3xl font-bold text-gray-900 mt-6 sm:mt-0">{t("settings.billingHistory")}</h1>
         </div>
       </div>
       <div className="px-3 sm:px-4 py-4 sm:py-8">
-        <Card className="p-4 sm:p-6">Coming soon...</Card>
+        <Card className="p-4 sm:p-6">{t("settings.comingSoon")}</Card>
       </div>
     </div>
   );
 }
 
 export default function SettingsPage({ onClose, scrollRef }: { onClose: () => void; scrollRef?: React.RefObject<HTMLElement> }) {
+  const { t, i18n } = useTranslation();
   const { user, session } = useAuth();
   const [userProfilePicture, setUserProfilePicture] = useState(user?.user_metadata?.avatar_url || "");
   const [profileData, setProfileData] = useState<Record<string, string> | null>(() => {
@@ -85,7 +89,7 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
   const [emailPrefs, setEmailPrefs] = useState({
     email_messages: true, email_payments: true, email_listings: true, email_complaints: true,
   });
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState(i18n.language === "fr" ? "fr" : "en");
   const [region, setRegion] = useState("CA");
   const [connectedAccounts, setConnectedAccounts] = useState<{ provider: string }[]>([]);
 
@@ -120,7 +124,10 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
         }
         if (settingsRes.ok) {
           const data = await settingsRes.json();
-          if (data.language) setLanguage(data.language);
+          if (data.language) {
+            setLanguage(data.language);
+            i18n.changeLanguage(data.language);
+          }
           if (data.region) setRegion(data.region);
         }
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications/preferences`, {
@@ -137,6 +144,7 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
       }
     };
     fetchAll();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   useEffect(() => {
@@ -199,15 +207,15 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
         <button onClick={onClose} className="text-gray-500 hover:text-gray-900 text-xl absolute top-3 right-3 sm:top-4 sm:right-4 cursor-pointer">✕</button>
         <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pr-10">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Settings</h1>
+            <h1 className="text-xl sm:text-3xl font-bold text-gray-900">{t("settings.title")}</h1>
             {isCompany && (
               <Badge className="bg-blue-100 text-blue-700 border-blue-300 text-xs">
-                <Building2 className="h-3 w-3 mr-1" />Company Account
+                <Building2 className="h-3 w-3 mr-1" />{t("settings.companyAccount")}
               </Badge>
             )}
           </div>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">
-            Manage your {isPerson ? "account" : "company"} settings and preferences
+            {isPerson ? t("settings.manageAccount") : t("settings.manageCompany")}
           </p>
         </div>
       </div>
@@ -222,16 +230,16 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
                 {isPerson ? <User className="h-5 w-5 sm:h-6 sm:w-6 text-green-700 shrink-0" /> : <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-700 shrink-0" />}
                 <div>
                   <h2 className="text-base sm:text-xl font-bold text-gray-900">
-                    {isPerson ? "Profile Information" : "Company Information"}
+                    {isPerson ? t("settings.profileInfo") : t("settings.companyInfo")}
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-600">
-                    Update your {isPerson ? "personal" : "company"} details and profile picture
+                    {isPerson ? t("settings.updatePersonal") : t("settings.updateCompany")}
                   </p>
                 </div>
               </div>
-              <Link href="/profile/edit">
+              <Link href="/profile/edit" onClick={onClose}>
                 <Button variant="outline" size="sm" className="cursor-pointer shrink-0 text-xs sm:text-sm">
-                  Edit <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                  {t("settings.edit")} <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                 </Button>
               </Link>
             </div>
@@ -252,7 +260,7 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
                   <span className="font-medium text-sm sm:text-base truncate">
                     {displayName || <span className="inline-block h-4 w-32 bg-gray-200 rounded animate-pulse" />}
                   </span>
-                  {isCompany && <span className="text-xs text-gray-500 shrink-0">(Company Name)</span>}
+                  {isCompany && <span className="text-xs text-gray-500 shrink-0">({t("settings.companyNameLabel")})</span>}
                 </div>
                 <div className="flex items-center gap-3 text-gray-700">
                   <Mail className="h-4 w-4 text-gray-400 shrink-0" />
@@ -287,7 +295,7 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
                 {isCompany && profileData?.team_size && (
                   <div className="flex items-center gap-3 text-gray-700">
                     <Users className="h-4 w-4 text-gray-400 shrink-0" />
-                    <span className="text-sm sm:text-base">{profileData.team_size} employees</span>
+                    <span className="text-sm sm:text-base">{profileData.team_size} {t("settings.employees")}</span>
                   </div>
                 )}
               </div>
@@ -299,16 +307,16 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
             <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-green-700 shrink-0" />
               <div>
-                <h2 className="text-base sm:text-xl font-bold text-gray-900">Password & Security</h2>
-                <p className="text-xs sm:text-sm text-gray-600">Manage your password and blocked users</p>
+                <h2 className="text-base sm:text-xl font-bold text-gray-900">{t("settings.passwordSecurity")}</h2>
+                <p className="text-xs sm:text-sm text-gray-600">{t("settings.managePasswordBlocked")}</p>
               </div>
             </div>
             <div className="space-y-3">
               <Button variant="outline" className="w-full justify-between cursor-pointer text-sm" onClick={() => goToScreen("changePassword")}>
-                <span>Change Password</span><ChevronRight className="h-4 w-4" />
+                <span>{t("settings.changePassword")}</span><ChevronRight className="h-4 w-4" />
               </Button>
               <Button variant="outline" className="w-full justify-between cursor-pointer text-sm" onClick={() => goToScreen("blockedUsers")}>
-                <span>Blocked Users</span><ChevronRight className="h-4 w-4" />
+                <span>{t("settings.blockedUsers")}</span><ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </Card>
@@ -318,8 +326,8 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
             <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <Link2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-700 shrink-0" />
               <div>
-                <h2 className="text-base sm:text-xl font-bold text-gray-900">Connected Accounts</h2>
-                <p className="text-xs sm:text-sm text-gray-600">Manage your linked sign-in methods</p>
+                <h2 className="text-base sm:text-xl font-bold text-gray-900">{t("settings.connectedAccounts")}</h2>
+                <p className="text-xs sm:text-sm text-gray-600">{t("settings.manageLinkedSignIn")}</p>
               </div>
             </div>
             <div className="space-y-3">
@@ -329,14 +337,14 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
                     <Mail className="h-4 w-4 text-gray-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium text-gray-900 text-sm">Email & Password</p>
+                    <p className="font-medium text-gray-900 text-sm">{t("settings.emailPassword")}</p>
                     <p className="text-xs text-gray-500 truncate">{profileData?.email}</p>
                   </div>
                 </div>
                 {isEmailConnected ? (
-                  <Badge className="bg-green-100 text-green-700 border-green-300 text-xs shrink-0"><Check className="h-3 w-3 mr-1" />Connected</Badge>
+                  <Badge className="bg-green-100 text-green-700 border-green-300 text-xs shrink-0"><Check className="h-3 w-3 mr-1" />{t("settings.connected")}</Badge>
                 ) : (
-                  <Badge variant="outline" className="text-gray-500 text-xs shrink-0">Not connected</Badge>
+                  <Badge variant="outline" className="text-gray-500 text-xs shrink-0">{t("settings.notConnected")}</Badge>
                 )}
               </div>
               <div className="flex items-center justify-between p-3 sm:p-4 border rounded-lg gap-2">
@@ -351,15 +359,15 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
                   </div>
                   <div>
                     <p className="font-medium text-gray-900 text-sm">Google</p>
-                    <p className="text-xs text-gray-500">Sign in with Google</p>
+                    <p className="text-xs text-gray-500">{t("settings.signInWithGoogle")}</p>
                   </div>
                 </div>
                 {isGoogleConnected ? (
-                  <Badge className="bg-green-100 text-green-700 border-green-300 text-xs shrink-0"><Check className="h-3 w-3 mr-1" />Connected</Badge>
+                  <Badge className="bg-green-100 text-green-700 border-green-300 text-xs shrink-0"><Check className="h-3 w-3 mr-1" />{t("settings.connected")}</Badge>
                 ) : (
                   <Button variant="outline" size="sm" className="cursor-pointer text-xs shrink-0"
                     onClick={async () => { await supabase.auth.linkIdentity({ provider: "google", options: { redirectTo: `${window.location.origin}/auth/callback` } }); }}>
-                    Connect
+                    {t("settings.connect")}
                   </Button>
                 )}
               </div>
@@ -372,15 +380,15 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
                   </div>
                   <div>
                     <p className="font-medium text-gray-900 text-sm">Facebook</p>
-                    <p className="text-xs text-gray-500">Sign in with Facebook</p>
+                    <p className="text-xs text-gray-500">{t("settings.signInWithFacebook")}</p>
                   </div>
                 </div>
                 {isFacebookConnected ? (
-                  <Badge className="bg-green-100 text-green-700 border-green-300 text-xs shrink-0"><Check className="h-3 w-3 mr-1" />Connected</Badge>
+                  <Badge className="bg-green-100 text-green-700 border-green-300 text-xs shrink-0"><Check className="h-3 w-3 mr-1" />{t("settings.connected")}</Badge>
                 ) : (
                   <Button variant="outline" size="sm" className="cursor-pointer text-xs shrink-0"
                     onClick={async () => { await supabase.auth.linkIdentity({ provider: "facebook", options: { redirectTo: `${window.location.origin}/auth/callback` } }); }}>
-                    Connect
+                    {t("settings.connect")}
                   </Button>
                 )}
               </div>
@@ -392,17 +400,17 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
             <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <Bell className="h-5 w-5 sm:h-6 sm:w-6 text-green-700 shrink-0" />
               <div>
-                <h2 className="text-base sm:text-xl font-bold text-gray-900">Notifications</h2>
-                <p className="text-xs sm:text-sm text-gray-600">Choose how you want to be notified</p>
+                <h2 className="text-base sm:text-xl font-bold text-gray-900">{t("settings.notifications")}</h2>
+                <p className="text-xs sm:text-sm text-gray-600">{t("settings.chooseNotifications")}</p>
               </div>
             </div>
             <div className="space-y-3">
               {(
                 [
-                  { key: "email_messages",   label: "Messages",   desc: "New messages from other users" },
-                  { key: "email_payments",   label: "Payments",   desc: "Payment received & wallet updates" },
-                  { key: "email_listings",   label: "Bookings",   desc: "Booking requests, accepted & completed" },
-                  { key: "email_complaints", label: "Complaints", desc: "Disputes & complaint notifications" },
+                  { key: "email_messages",   label: t("settings.notifMessages"),   desc: t("settings.notifMessagesDesc") },
+                  { key: "email_payments",   label: t("settings.notifPayments"),   desc: t("settings.notifPaymentsDesc") },
+                  { key: "email_listings",   label: t("settings.notifBookings"),   desc: t("settings.notifBookingsDesc") },
+                  { key: "email_complaints", label: t("settings.notifComplaints"), desc: t("settings.notifComplaintsDesc") },
                 ] as { key: keyof typeof emailPrefs; label: string; desc: string }[]
               ).map(({ key, label, desc }) => (
                 <div key={key} className="flex items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 gap-3">
@@ -421,31 +429,27 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
             <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <Globe className="h-5 w-5 sm:h-6 sm:w-6 text-green-700 shrink-0" />
               <div>
-                <h2 className="text-base sm:text-xl font-bold text-gray-900">Language & Region</h2>
-                <p className="text-xs sm:text-sm text-gray-600">Set your preferred language and region</p>
+                <h2 className="text-base sm:text-xl font-bold text-gray-900">{t("settings.languageRegion")}</h2>
+                <p className="text-xs sm:text-sm text-gray-600">{t("settings.setLanguageRegion")}</p>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label className="mb-2 block text-sm">Language</Label>
-                <Select value={language} onValueChange={setLanguage}>
+                <Label className="mb-2 block text-sm">{t("settings.language")}</Label>
+                <Select value={language} onValueChange={(val) => { setLanguage(val); i18n.changeLanguage(val); localStorage.setItem("i18nextLng", val); }}>
                   <SelectTrigger className="cursor-pointer text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en" className="cursor-pointer">🇬🇧 English</SelectItem>
-                    <SelectItem value="fr" className="cursor-pointer">🇫🇷 Français</SelectItem>
+                    <SelectItem value="en" className="cursor-pointer">English</SelectItem>
+                    <SelectItem value="fr" className="cursor-pointer">Français</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="mb-2 block text-sm">Region</Label>
+                <Label className="mb-2 block text-sm">{t("settings.region")}</Label>
                 <Select value={region} onValueChange={setRegion}>
                   <SelectTrigger className="cursor-pointer text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="CA" className="cursor-pointer">🇨🇦 Canada</SelectItem>
-                    <SelectItem value="US" className="cursor-pointer">🇺🇸 United States</SelectItem>
-                    <SelectItem value="FR" className="cursor-pointer">🇫🇷 France</SelectItem>
-                    <SelectItem value="BE" className="cursor-pointer">🇧🇪 Belgium</SelectItem>
-                    <SelectItem value="CH" className="cursor-pointer">🇨🇭 Switzerland</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -457,16 +461,16 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
             <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-green-700 shrink-0" />
               <div>
-                <h2 className="text-base sm:text-xl font-bold text-gray-900">Billing & Payments</h2>
-                <p className="text-xs sm:text-sm text-gray-600">Manage your payment methods</p>
+                <h2 className="text-base sm:text-xl font-bold text-gray-900">{t("settings.billingPayments")}</h2>
+                <p className="text-xs sm:text-sm text-gray-600">{t("settings.managePaymentMethods")}</p>
               </div>
             </div>
             <div className="space-y-3">
               <Button variant="outline" className="w-full justify-between cursor-pointer text-sm" onClick={() => goToScreen("paymentMethods")}>
-                <span>Payment Methods</span><ChevronRight className="h-4 w-4" />
+                <span>{t("settings.paymentMethods")}</span><ChevronRight className="h-4 w-4" />
               </Button>
               <Button variant="outline" className="w-full justify-between cursor-pointer text-sm" onClick={() => goToScreen("billingHistory")}>
-                <span>Billing History</span><ChevronRight className="h-4 w-4" />
+                <span>{t("settings.billingHistory")}</span><ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </Card>
@@ -483,11 +487,11 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                 </svg>
-                Saving...
+                {t("settings.saving")}
               </span>
             ) : settingsSaved ? (
-              <span className="flex items-center gap-2"><Check className="h-5 w-5" /> Settings Saved!</span>
-            ) : "Save Settings"}
+              <span className="flex items-center gap-2"><Check className="h-5 w-5" /> {t("settings.settingsSaved")}</span>
+            ) : t("settings.saveSettings")}
           </Button>
 
           <div className="h-px bg-gray-200" />
@@ -496,16 +500,16 @@ export default function SettingsPage({ onClose, scrollRef }: { onClose: () => vo
           <Card className="p-4 sm:p-6 border-red-200">
             <div className="space-y-3">
               <Button variant="outline" className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50 cursor-pointer text-sm" onClick={() => goToScreen("logout")}>
-                <span className="flex items-center gap-2"><LogOut className="h-4 w-4" />Logout</span>
+                <span className="flex items-center gap-2"><LogOut className="h-4 w-4" />{t("settings.logout")}</span>
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <Button variant="outline" className="w-full justify-between border-red-200 text-red-600 hover:bg-red-50 cursor-pointer text-sm" onClick={() => goToScreen("deleteAccount")}>
-                <span className="flex items-center gap-2"><Trash2 className="h-4 w-4" />Delete Account</span>
+                <span className="flex items-center gap-2"><Trash2 className="h-4 w-4" />{t("settings.deleteAccount")}</span>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
             <p className="text-xs sm:text-sm text-gray-500 mt-3">
-              Deleting your {isPerson ? "account" : "company account"} is permanent and cannot be undone.
+              {isPerson ? t("settings.deleteAccountWarning") : t("settings.deleteCompanyAccountWarning")}
             </p>
           </Card>
 

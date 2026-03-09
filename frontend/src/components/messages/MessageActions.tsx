@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { EmojiPickerPopover } from './EmojiPickerPopover';
+import { useTranslation } from 'react-i18next';
 
 interface MessageActionsProps {
   messageKey: string;
@@ -41,6 +42,7 @@ export function MessageActions({
   onEdit,
   onEmojiOpenChange,
 }: MessageActionsProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-1 mt-1">
       {/* Bouton Réagir avec EmojiPicker + Tooltip */}
@@ -57,7 +59,7 @@ export function MessageActions({
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Réagir</p>
+          <p>{t("messages.react")}</p>
         </TooltipContent>
       </Tooltip>
 
@@ -78,7 +80,7 @@ export function MessageActions({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Répondre</p>
+          <p>{t("messages.reply")}</p>
         </TooltipContent>
       </Tooltip>
 
@@ -105,7 +107,7 @@ export function MessageActions({
             </DropdownMenuTrigger>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Plus</p>
+            <p>{t("common.more", "More")}</p>
           </TooltipContent>
         </Tooltip>
 
@@ -121,7 +123,7 @@ export function MessageActions({
               onReply?.();
             }}
           >
-            Répondre
+            {t("messages.reply")}
           </DropdownMenuItem>
 
           {onEdit && (
@@ -132,7 +134,7 @@ export function MessageActions({
                 onEdit?.();
               }}
             >
-              Modifier
+              {t("messages.edit")}
             </DropdownMenuItem>
           )}
 
@@ -143,7 +145,7 @@ export function MessageActions({
               onPin?.();
             }}
           >
-            {isPinned ? 'Désépingler' : 'Épingler'}
+            {isPinned ? t("messages.unpin") : t("messages.pin")}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -153,7 +155,7 @@ export function MessageActions({
               onDelete?.();
             }}
           >
-            Supprimer
+            {t("messages.delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

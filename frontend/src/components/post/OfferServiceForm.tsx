@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function OfferServiceForm({ onSuccess }: Props) {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const router = useRouter();
 
@@ -47,7 +49,7 @@ export default function OfferServiceForm({ onSuccess }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session?.access_token) {
-      toast.error("You must be logged in to post a service");
+      toast.error(t("post.mustBeLoggedInService"));
       router.push("/login");
       return;
     }
@@ -84,7 +86,7 @@ export default function OfferServiceForm({ onSuccess }: Props) {
       const data = await res.json();
       onSuccess(data.id);
     } catch (error: any) {
-      toast.error(`Failed to post service: ${error.message}`);
+      toast.error(t("post.failedPostService", { message: error.message }));
     } finally {
       setSubmitting(false);
     }
@@ -94,12 +96,12 @@ export default function OfferServiceForm({ onSuccess }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="serviceTitle" className="text-base font-medium text-gray-900">
-          Service Title <span className="text-red-500">*</span>
+          {t("post.serviceTitle")} <span className="text-red-500">*</span>
         </Label>
         <Input
           id="serviceTitle"
           type="text"
-          placeholder="Ex: Professional House Cleaning"
+          placeholder={t("post.serviceTitlePlaceholder")}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
@@ -109,11 +111,11 @@ export default function OfferServiceForm({ onSuccess }: Props) {
 
       <div className="space-y-2">
         <Label htmlFor="serviceDescription" className="text-base font-medium text-gray-900">
-          Description <span className="text-red-500">*</span>
+          {t("post.description")} <span className="text-red-500">*</span>
         </Label>
         <Textarea
           id="serviceDescription"
-          placeholder="Describe the service you offer…"
+          placeholder={t("post.descriptionPlaceholder")}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
@@ -123,14 +125,14 @@ export default function OfferServiceForm({ onSuccess }: Props) {
 
       <div className="space-y-2">
         <Label className="text-base font-medium text-gray-900">
-          Price Range <span className="text-red-500">*</span>
+          {t("post.priceRange")} <span className="text-red-500">*</span>
         </Label>
         <div className="flex gap-4">
           <div className="flex-1 relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
             <Input
               type="number"
-              placeholder="Amount"
+              placeholder={t("post.amount")}
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               required
@@ -140,19 +142,19 @@ export default function OfferServiceForm({ onSuccess }: Props) {
           </div>
         </div>
         {price && Number(price) <= 0 && (
-          <p className="text-red-600 text-sm">Price must be greater than zero.</p>
+          <p className="text-red-600 text-sm">{t("post.priceMustBePositive")}</p>
         )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="serviceLocation" className="text-base font-medium text-gray-900">
-          Location <span className="text-red-500">*</span>
+          {t("post.location")} <span className="text-red-500">*</span>
         </Label>
         <LocationAutocomplete
           id="serviceLocation"
           value={location}
           onChange={setLocation}
-          placeholder="City, region (ex: Toronto, ON)"
+          placeholder={t("post.locationPlaceholder")}
           required
         />
       </div>
@@ -177,10 +179,10 @@ export default function OfferServiceForm({ onSuccess }: Props) {
       />
 
       <div className="space-y-2">
-        <Label className="text-base font-medium text-gray-900">Approx. Job Duration</Label>
+        <Label className="text-base font-medium text-gray-900">{t("post.jobDuration")}</Label>
         <Input
           type="text"
-          placeholder="Ex: 2 hours, 1 day, 1 week"
+          placeholder={t("post.jobDurationPlaceholder")}
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
           className="h-12"
@@ -188,11 +190,11 @@ export default function OfferServiceForm({ onSuccess }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label className="text-base font-medium text-gray-900">Upload an Image (optional)</Label>
+        <Label className="text-base font-medium text-gray-900">{t("post.uploadImage")}</Label>
         <ImageUploader
           currentImage={image}
           onImageChange={setImage}
-          label="Upload Service Image"
+          label={t("post.uploadServiceImage")}
           aspectRatio={16 / 9}
         />
       </div>
@@ -202,8 +204,8 @@ export default function OfferServiceForm({ onSuccess }: Props) {
       <FormSubmitButton
         disabled={!isValid}
         submitting={submitting}
-        label="Post Service"
-        note="Your service will appear publicly after submission."
+        label={t("post.postService")}
+        note={t("post.servicePublicNote")}
       />
     </form>
   );

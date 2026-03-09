@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -25,7 +27,7 @@ export default function ForgotPasswordPage() {
       if (error) throw error;
       setSent(true);
     } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
+      setError(err.message || t("auth.resetError"));
     } finally {
       setLoading(false);
     }
@@ -40,9 +42,9 @@ export default function ForgotPasswordPage() {
               <Mail className="h-6 w-6 text-green-700" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Forgot password?</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t("auth.forgotPassword")}</CardTitle>
           <CardDescription>
-            Enter your email and we'll send you a reset link.
+            {t("auth.forgotPasswordDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -51,14 +53,14 @@ export default function ForgotPasswordPage() {
               <div className="flex justify-center">
                 <CheckCircle className="h-12 w-12 text-green-600" />
               </div>
-              <p className="text-gray-700 font-medium">Check your inbox!</p>
+              <p className="text-gray-700 font-medium">{t("auth.resetSent")}</p>
               <p className="text-sm text-gray-500">
                 We sent a password reset link to <span className="font-semibold">{email}</span>.
                 Check your spam folder if you don't see it.
               </p>
               <Link href="/login">
                 <Button variant="outline" className="w-full mt-2">
-                  <ArrowLeft className="h-4 w-4 mr-2" /> Back to login
+                  <ArrowLeft className="h-4 w-4 mr-2" /> {t("auth.backToLogin")}
                 </Button>
               </Link>
             </div>
@@ -68,7 +70,7 @@ export default function ForgotPasswordPage() {
                 <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">{error}</div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">{t("login.email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -84,11 +86,11 @@ export default function ForgotPasswordPage() {
                 className="w-full bg-green-800 hover:bg-green-900"
                 disabled={loading}
               >
-                {loading ? "Sending..." : "Send reset link"}
+                {loading ? t("auth.sending") : t("auth.sendResetLink")}
               </Button>
               <Link href="/login">
                 <Button variant="ghost" className="w-full text-gray-500">
-                  <ArrowLeft className="h-4 w-4 mr-2" /> Back to login
+                  <ArrowLeft className="h-4 w-4 mr-2" /> {t("auth.backToLogin")}
                 </Button>
               </Link>
             </form>

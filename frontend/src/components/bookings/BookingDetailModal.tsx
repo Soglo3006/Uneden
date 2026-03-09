@@ -8,6 +8,7 @@ import {
 import DisputeThread from "@/components/bookings/DisputeThread";
 import WorkerCustomizeSection from "./WorkerCustomizeSection";
 import BookingDetailFooter from "./BookingDetailFooter";
+import { useTranslation } from "react-i18next";
 
 type BookingStatus = "pending" | "accepted" | "active" | "completed" | "cancelled" | "rejected";
 
@@ -51,13 +52,13 @@ interface Props {
   onOpenDispute: (bookingId: string, title: string) => void;
 }
 
-const STATUS_CONFIG: Record<BookingStatus, { label: string; badge: string }> = {
-  pending:   { label: "Pending",   badge: "bg-amber-100 text-amber-800 border-amber-200" },
-  accepted:  { label: "Accepted",  badge: "bg-blue-100 text-blue-800 border-blue-200" },
-  active:    { label: "Active",    badge: "bg-indigo-100 text-indigo-800 border-indigo-200" },
-  completed: { label: "Completed", badge: "bg-green-100 text-green-800 border-green-200" },
-  cancelled: { label: "Cancelled", badge: "bg-gray-100 text-gray-600 border-gray-200" },
-  rejected:  { label: "Rejected",  badge: "bg-red-100 text-red-700 border-red-200" },
+const STATUS_BADGE: Record<BookingStatus, string> = {
+  pending:   "bg-amber-100 text-amber-800 border-amber-200",
+  accepted:  "bg-blue-100 text-blue-800 border-blue-200",
+  active:    "bg-indigo-100 text-indigo-800 border-indigo-200",
+  completed: "bg-green-100 text-green-800 border-green-200",
+  cancelled: "bg-gray-100 text-gray-600 border-gray-200",
+  rejected:  "bg-red-100 text-red-700 border-red-200",
 };
 
 function formatDate(dateStr: string) {
@@ -72,6 +73,7 @@ export default function BookingDetailModal({
   booking: initialBooking, userRole, accessToken,
   onClose, onUpdated, onMessage, onOpenReview, onOpenDispute,
 }: Props) {
+  const { t } = useTranslation();
   const [booking, setBooking] = useState(initialBooking);
   const [serviceDescription, setServiceDescription] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
@@ -119,7 +121,7 @@ export default function BookingDetailModal({
   };
 
   const currentUserId = userRole === "worker" ? booking.worker_id : booking.client_id;
-  const otherUserName = userRole === "worker" ? (booking.client_name ?? "Client") : (booking.worker_name ?? "Provider");
+  const otherUserName = userRole === "worker" ? (booking.client_name ?? t("bookings.clientLabel")) : (booking.worker_name ?? t("bookings.providerLabel"));
   const otherUserId = userRole === "worker" ? booking.client_id : booking.worker_id;
   const needsPayment = booking.status === "accepted" && (!booking.payment_status || booking.payment_status === "unpaid");
   const hasMarkedDone = userRole === "worker" ? booking.completed_by_worker : booking.completed_by_client;
@@ -133,22 +135,22 @@ export default function BookingDetailModal({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${STATUS_CONFIG[booking.status]?.badge}`}>
-              {STATUS_CONFIG[booking.status]?.label}
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${STATUS_BADGE[booking.status]}`}>
+              {t(`bookings.${booking.status}`)}
             </span>
             {booking.is_one_time && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                <Tag className="h-3 w-3" /> One-time
+                <Tag className="h-3 w-3" /> {t("bookings.oneTime")}
               </span>
             )}
             {booking.payment_status && booking.payment_status !== "unpaid" && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
                 <CreditCard className="h-3 w-3" />
-                {booking.payment_status === "transferred" ? "Paid out" : "Paid"}
+                {booking.payment_status === "transferred" ? t("bookings.paidOut") : t("bookings.paid")}
               </span>
             )}
           </div>
-          <button onClick={onClose} className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors">
+          <button type="button" onClick={onClose} aria-label={t("common.close")} className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -167,8 +169,8 @@ export default function BookingDetailModal({
             {/* Modification banner */}
             {userRole === "client" && booking.last_modified_at && (booking.modified_fields?.length ?? 0) > 0 && (
               <div className="bg-red-50 border border-red-300 rounded-lg px-4 py-3 text-sm text-red-800">
-                <p className="font-semibold mb-0.5">This request was recently modified</p>
-                <p className="text-xs">The provider updated: <span className="font-medium">{booking.modified_fields!.join(", ")}</span>. Please review carefully before paying.</p>
+                <p className="font-semibold mb-0.5">{t("bookings.recentlyModified")}</p>
+                <p className="text-xs">{t("bookings.providerUpdated")} <span className="font-medium">{booking.modified_fields!.join(", ")}</span>. {t("bookings.reviewBeforePaying")}</p>
               </div>
             )}
 
@@ -205,7 +207,7 @@ export default function BookingDetailModal({
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-xs text-gray-500">{userRole === "worker" ? "Request from" : "Service by"}</p>
+                <p className="text-xs text-gray-500">{userRole === "worker" ? t("bookings.requestFrom") : t("bookings.serviceBy")}</p>
                 <p className="text-sm font-semibold text-gray-900">{otherUserName}</p>
               </div>
             </div>
@@ -215,12 +217,12 @@ export default function BookingDetailModal({
               <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 space-y-1">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-700">
                   <FileText className="h-3.5 w-3.5" />
-                  {userRole === "worker" ? "Client's request details" : "Your request details"}
+                  {userRole === "worker" ? t("bookings.clientRequestDetails") : t("bookings.yourRequestDetails")}
                 </div>
                 <p className="text-sm text-blue-900 leading-relaxed whitespace-pre-line">{booking.client_description}</p>
               </div>
             ) : (
-              <p className="text-xs text-gray-400 italic">No request description provided.</p>
+              <p className="text-xs text-gray-400 italic">{t("bookings.noRequestDescription")}</p>
             )}
 
             {/* Worker customize */}
@@ -238,9 +240,9 @@ export default function BookingDetailModal({
             {/* Worker note → client */}
             {userRole === "client" && (booking.worker_note || booking.custom_price) && (
               <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 space-y-1">
-                <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Provider note</p>
+                <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">{t("bookings.providerNote")}</p>
                 {booking.custom_price && Number(booking.custom_price) !== Number(booking.price) && (
-                  <p className="text-sm text-gray-700">Adjusted price: <span className="font-semibold text-green-700">${Number(booking.custom_price)}</span></p>
+                  <p className="text-sm text-gray-700">{t("bookings.adjustedPrice")} <span className="font-semibold text-green-700">${Number(booking.custom_price)}</span></p>
                 )}
                 {booking.worker_note && <p className="text-sm text-gray-600 whitespace-pre-line">{booking.worker_note}</p>}
               </div>
@@ -248,23 +250,23 @@ export default function BookingDetailModal({
 
             <div className="flex items-center gap-1.5 text-xs text-gray-400">
               <CalendarDays className="h-3.5 w-3.5" />
-              Requested on {formatDate(booking.created_at)}
+              {t("bookings.requestedOn")} {formatDate(booking.created_at)}
             </div>
 
             {booking.status === "accepted" && userRole === "worker" && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-700">
-                Waiting for client to complete payment.
+                {t("bookings.waitingForPayment")}
               </div>
             )}
             {booking.status === "active" && (
               <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2 text-xs text-indigo-700 space-y-1">
-                <div className="flex items-center gap-1.5 font-medium">Job in progress — both parties must confirm completion.</div>
+                <div className="flex items-center gap-1.5 font-medium">{t("bookings.jobInProgress")}</div>
                 <div className="flex gap-4">
                   <span className={`flex items-center gap-1 ${booking.completed_by_worker ? "text-green-600" : "text-gray-400"}`}>
-                    <CheckCircle className="h-3.5 w-3.5" /> Provider {booking.completed_by_worker ? "✓" : "pending"}
+                    <CheckCircle className="h-3.5 w-3.5" /> {t("bookings.providerLabel")} {booking.completed_by_worker ? "✓" : t("bookings.pending")}
                   </span>
                   <span className={`flex items-center gap-1 ${booking.completed_by_client ? "text-green-600" : "text-gray-400"}`}>
-                    <CheckCircle className="h-3.5 w-3.5" /> Client {booking.completed_by_client ? "✓" : "pending"}
+                    <CheckCircle className="h-3.5 w-3.5" /> {t("bookings.clientLabel")} {booking.completed_by_client ? "✓" : t("bookings.pending")}
                   </span>
                 </div>
               </div>

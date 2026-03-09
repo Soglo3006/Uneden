@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ interface MyService {
 }
 
 export default function MyListingsPage() {
+  const { t } = useTranslation();
   const { user, session, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -81,11 +83,11 @@ export default function MyListingsPage() {
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">My Listings</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("myListings.title")}</h1>
           <Link href="/post">
             <Button className="bg-green-700 hover:bg-green-800 text-white gap-2">
               <Plus className="h-4 w-4" />
-              New Listing
+              {t("myListings.newListing")}
             </Button>
           </Link>
         </div>
@@ -107,9 +109,9 @@ export default function MyListingsPage() {
         ) : listings.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
             <Grid3x3 className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p className="font-medium text-gray-700">You have no listings yet.</p>
+            <p className="font-medium text-gray-700">{t("myListings.noListings")}</p>
             <Link href="/post" className="text-sm text-green-700 hover:underline mt-2 inline-block">
-              Post your first listing
+              {t("myListings.postFirstListing")}
             </Link>
           </div>
         ) : (
@@ -136,7 +138,7 @@ export default function MyListingsPage() {
                       </h3>
                     </Link>
                     {s.type === "looking" && (
-                      <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0 border-0">Looking</Badge>
+                      <Badge className="bg-blue-100 text-blue-700 text-xs flex-shrink-0 border-0">{t("myListings.looking")}</Badge>
                     )}
                   </div>
 
@@ -155,7 +157,7 @@ export default function MyListingsPage() {
 
                   <div className="mt-auto pt-3 border-t border-gray-100 flex flex-wrap gap-2">
                     <Button size="sm" variant="outline" className="gap-1.5 flex-1" onClick={() => setEditingService(s)}>
-                      Edit
+                      {t("myListings.edit")}
                     </Button>
                     {confirmDeleteId === s.id ? (
                       <>
@@ -165,9 +167,9 @@ export default function MyListingsPage() {
                           onClick={() => handleDelete(s.id)}
                           disabled={deletingId === s.id}
                         >
-                          {deletingId === s.id ? "…" : "Confirm"}
+                          {deletingId === s.id ? "…" : t("common.confirm")}
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+                        <Button size="sm" variant="outline" onClick={() => setConfirmDeleteId(null)}>{t("common.cancel")}</Button>
                       </>
                     ) : (
                       <Button
@@ -176,7 +178,7 @@ export default function MyListingsPage() {
                         className="text-red-600 border-red-200 hover:bg-red-50 gap-1.5 flex-1"
                         onClick={() => setConfirmDeleteId(s.id)}
                       >
-                        Delete
+                        {t("myListings.delete")}
                       </Button>
                     )}
                   </div>

@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import Link from "next/link"
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const [charging, setCharging] = useState(false);
 
   const { signInWithEmail, signInWithGoogle, signInWithFacebook } = useAuth();
+  const { t } = useTranslation();
 
   const { loading } = useProtectedRoute({
     requireAuth: false,
@@ -47,9 +49,9 @@ export default function LoginPage() {
     } catch (err: any) {
       setCharging(false);
       if (err.message.includes("Email not confirmed")) {
-        setError("Please verify your email before logging in. Check your inbox!");
+        setError(t("login.emailNotConfirmed"));
       } else {
-        setError("Login failed");
+        setError(t("login.loginFailed"));
       }
     }
   };
@@ -58,9 +60,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t("login.title")}</CardTitle>
           <CardDescription className="font-semibold text-xs">
-            Sign in to access local opportunities and community services
+            {t("login.subtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -72,7 +74,7 @@ export default function LoginPage() {
                 </div>
               )}
               <div className="grid gap-2">
-                <Label htmlFor="email" className="font-semibold text-sm">Email</Label>
+                <Label htmlFor="email" className="font-semibold text-sm">{t("login.email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -83,12 +85,12 @@ export default function LoginPage() {
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="password" className="font-semibold text-sm">Password</Label>
+                  <Label htmlFor="password" className="font-semibold text-sm">{t("login.password")}</Label>
                   <Link
                     href="/forgot-password"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline text-green-700"
                   >
-                    Forgot your password?
+                    {t("login.forgotPassword")}
                   </Link>
                 </div>
                 <Input
@@ -104,33 +106,33 @@ export default function LoginPage() {
                 className="w-full bg-green-800 hover:bg-green-900 cursor-pointer"
                 disabled={charging}
               >
-                {charging ? "Loading..." : "Login"}
+                {charging ? t("login.loading") : t("login.loginButton")}
               </Button>
             </div>
           </form>
           <div className="flex items-center my-3">
             <div className="flex-1 h-px bg-gray-400" />
             <span className="px-4 text-sm">
-              Or continue with
+              {t("login.orContinueWith")}
             </span>
             <div className="flex-1 h-px bg-gray-400" />
           </div>
           <div className="flex flex-col gap-2">
 <Button variant="outline" type="button" className="cursor-pointer w-full" onClick={()=> signInWithGoogle()}>
             <FcGoogle />
-            Login with Gooogle
+            {t("login.loginWithGoogle")}
           </Button>
           <Button variant="outline" type="button" className="cursor-pointer w-full" onClick={()=> signInWithFacebook()}>
             <FaFacebookF className="text-blue-600 h-5 w-5"/>
-            Login with Facebook
+            {t("login.loginWithFacebook")}
           </Button>
           </div>
         </CardContent>
         <CardFooter className="flex-col gap-2">
           <CardDescription>
-            Don&apos;t have an account?{" "}
+            {t("login.noAccount")}{" "}
             <Link href="/register" className="text-green-600 hover:underline cursor-pointer">
-              Sign in
+              {t("login.signUp")}
             </Link>
           </CardDescription>
         </CardFooter>

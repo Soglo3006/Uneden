@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function ReportUserPage({ profileId, displayName, onClose }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
@@ -23,7 +25,7 @@ export default function ReportUserPage({ profileId, displayName, onClose }: Prop
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async () => {
-    if (!user || !reason || !details.trim()) { toast.error("Please fill in all fields"); return; }
+    if (!user || !reason || !details.trim()) { toast.error(t("report.fillAllFields")); return; }
     setLoading(true);
     try {
       const { error } = await supabase.from("user_reports").insert({
@@ -34,7 +36,7 @@ export default function ReportUserPage({ profileId, displayName, onClose }: Prop
       setSuccess(true);
     } catch (err) {
       console.error("Error submitting report:", err);
-      toast.error("Failed to submit report. Please try again.");
+      toast.error(t("report.failedSubmit"));
     } finally {
       setLoading(false);
     }
@@ -46,41 +48,51 @@ export default function ReportUserPage({ profileId, displayName, onClose }: Prop
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
           <Check className="h-8 w-8 text-green-700" />
         </div>
-        <h3 className="text-xl font-bold text-gray-900">Report Received</h3>
+        <h3 className="text-xl font-bold text-gray-900">{t("report.received")}</h3>
         <p className="text-gray-600">
-          Thank you for reporting {displayName}. We've received your report and will review the account carefully.
-          If it violates our policies, we'll take the appropriate action.
+          {t("report.receivedUserDesc", { name: displayName })}
         </p>
-        <Button className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer" onClick={onClose}>Close</Button>
+        <Button className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer" onClick={onClose}>
+          {t("report.close")}
+        </Button>
       </Card>
     );
   }
 
   return (
     <Card className="p-6 space-y-4">
-      <p className="text-gray-600">Tell us why you want to report {displayName}.</p>
+      <p className="text-gray-600">{t("report.tellUsWhy", { name: displayName })}</p>
       <div>
-        <label className="text-sm font-medium text-gray-700 block mb-2">Reason</label>
+        <label className="text-sm font-medium text-gray-700 block mb-2">{t("report.reason")}</label>
         <Select value={reason} onValueChange={setReason}>
-          <SelectTrigger className="w-full cursor-pointer"><SelectValue placeholder="Select a reason" /></SelectTrigger>
+          <SelectTrigger className="w-full cursor-pointer">
+            <SelectValue placeholder={t("report.selectReason")} />
+          </SelectTrigger>
           <SelectContent>
-            <SelectItem value="inappropriate" className="cursor-pointer">Inappropriate behavior</SelectItem>
-            <SelectItem value="fraud" className="cursor-pointer">Fraud / Scam attempt</SelectItem>
-            <SelectItem value="harassment" className="cursor-pointer">Harassment</SelectItem>
-            <SelectItem value="spam" className="cursor-pointer">Spam</SelectItem>
-            <SelectItem value="fake" className="cursor-pointer">Fake profile</SelectItem>
-            <SelectItem value="other" className="cursor-pointer">Other</SelectItem>
+            <SelectItem value="inappropriate" className="cursor-pointer">{t("report.inappropriate")}</SelectItem>
+            <SelectItem value="fraud" className="cursor-pointer">{t("report.fraud")}</SelectItem>
+            <SelectItem value="harassment" className="cursor-pointer">{t("report.harassment")}</SelectItem>
+            <SelectItem value="spam" className="cursor-pointer">{t("report.spam")}</SelectItem>
+            <SelectItem value="fake" className="cursor-pointer">{t("report.fake")}</SelectItem>
+            <SelectItem value="other" className="cursor-pointer">{t("report.other")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div>
-        <label className="text-sm font-medium text-gray-700 block mb-2">Details</label>
-        <Textarea placeholder="Describe the issue in detail..." className="min-h-[120px] resize-none"
-          value={details} onChange={(e) => setDetails(e.target.value)} />
+        <label className="text-sm font-medium text-gray-700 block mb-2">{t("report.details")}</label>
+        <Textarea
+          placeholder={t("report.detailsPlaceholder")}
+          className="min-h-[120px] resize-none"
+          value={details}
+          onChange={(e) => setDetails(e.target.value)}
+        />
       </div>
-      <Button className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer"
-        onClick={handleSubmit} disabled={loading || !reason || !details.trim()}>
-        {loading ? "Submitting..." : "Submit Report"}
+      <Button
+        className="w-full bg-green-700 hover:bg-green-800 text-white cursor-pointer"
+        onClick={handleSubmit}
+        disabled={loading || !reason || !details.trim()}
+      >
+        {loading ? t("report.submitting") : t("report.submit")}
       </Button>
     </Card>
   );

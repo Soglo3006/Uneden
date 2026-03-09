@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { SubPageHeader } from "./SubPageHeader";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   onBack: () => void;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function ChangePasswordPage({ onBack, onClose }: Props) {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -22,12 +24,12 @@ export default function ChangePasswordPage({ onBack, onClose }: Props) {
 
   const validateForm = () => {
     const newErrors = { oldPassword: "", newPassword: "", confirmPassword: "" };
-    if (!formData.oldPassword) newErrors.oldPassword = "Current password is required";
-    if (!formData.newPassword) newErrors.newPassword = "New password is required";
-    else if (formData.newPassword.length < 8) newErrors.newPassword = "Password must be at least 8 characters";
-    if (!formData.confirmPassword) newErrors.confirmPassword = "Please confirm your password";
-    else if (formData.newPassword !== formData.confirmPassword) newErrors.confirmPassword = "Passwords do not match";
-    if (formData.oldPassword === formData.newPassword) newErrors.newPassword = "New password must be different from current password";
+    if (!formData.oldPassword) newErrors.oldPassword = t("settings.passwordRequired");
+    if (!formData.newPassword) newErrors.newPassword = t("settings.newPasswordRequired");
+    else if (formData.newPassword.length < 8) newErrors.newPassword = t("settings.newPasswordMinLength");
+    if (!formData.confirmPassword) newErrors.confirmPassword = t("settings.confirmPasswordRequired");
+    else if (formData.newPassword !== formData.confirmPassword) newErrors.confirmPassword = t("settings.passwordsMismatch");
+    if (formData.oldPassword === formData.newPassword) newErrors.newPassword = t("settings.passwordSameAsCurrent");
     setErrors(newErrors);
     return !Object.values(newErrors).some(e => e !== "");
   };
@@ -44,12 +46,12 @@ export default function ChangePasswordPage({ onBack, onClose }: Props) {
         body: JSON.stringify({ oldPassword: formData.oldPassword, newPassword: formData.newPassword }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to change password");
+      if (!response.ok) throw new Error(data.message || t("settings.passwordError"));
       setSuccess(true);
       setFormData({ oldPassword: "", newPassword: "", confirmPassword: "" });
       setTimeout(() => onBack(), 2000);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to change password");
+      setError(err instanceof Error ? err.message : t("settings.passwordError"));
     } finally {
       setLoading(false);
     }
@@ -57,36 +59,36 @@ export default function ChangePasswordPage({ onBack, onClose }: Props) {
 
   return (
     <div className="bg-gray-50">
-      <SubPageHeader title="Change Password" subtitle="Update your account password" onBack={onBack} onClose={onClose} />
+      <SubPageHeader title={t("settings.changePassword")} subtitle={t("settings.updatePassword")} onBack={onBack} onClose={onClose} />
       <div className="px-3 sm:px-4 py-4 sm:py-8">
         <Card className="p-4 sm:p-6">
-          {success && <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg"><p className="text-green-800 text-sm">Password changed successfully!</p></div>}
+          {success && <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg"><p className="text-green-800 text-sm">{t("settings.passwordUpdated")}</p></div>}
           {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg"><p className="text-red-800 text-sm">{error}</p></div>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="oldPassword" className="pb-2 text-sm">Current Password</Label>
+              <Label htmlFor="oldPassword" className="pb-2 text-sm">{t("settings.currentPassword")}</Label>
               <Input id="oldPassword" type="password" value={formData.oldPassword}
                 onChange={(e) => { setFormData({ ...formData, oldPassword: e.target.value }); setErrors({ ...errors, oldPassword: "" }); }}
                 className={errors.oldPassword ? "border-red-500" : ""} disabled={loading} />
               {errors.oldPassword && <p className="text-xs text-red-500 mt-1">{errors.oldPassword}</p>}
             </div>
             <div>
-              <Label htmlFor="newPassword" className="pb-2 text-sm">New Password</Label>
+              <Label htmlFor="newPassword" className="pb-2 text-sm">{t("settings.newPassword")}</Label>
               <Input id="newPassword" type="password" value={formData.newPassword}
                 onChange={(e) => { setFormData({ ...formData, newPassword: e.target.value }); setErrors({ ...errors, newPassword: "" }); }}
                 className={errors.newPassword ? "border-red-500" : ""} disabled={loading} />
               {errors.newPassword && <p className="text-xs text-red-500 mt-1">{errors.newPassword}</p>}
-              <p className="text-xs text-gray-500 mt-1">Must be at least 8 characters</p>
+              <p className="text-xs text-gray-500 mt-1">{t("settings.passwordMinLength")}</p>
             </div>
             <div>
-              <Label htmlFor="confirmPassword" className="pb-2 text-sm">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword" className="pb-2 text-sm">{t("settings.confirmPassword")}</Label>
               <Input id="confirmPassword" type="password" value={formData.confirmPassword}
                 onChange={(e) => { setFormData({ ...formData, confirmPassword: e.target.value }); setErrors({ ...errors, confirmPassword: "" }); }}
                 className={errors.confirmPassword ? "border-red-500" : ""} disabled={loading} />
               {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
             </div>
             <Button type="submit" className="w-full bg-green-700 text-white hover:bg-green-800 cursor-pointer text-sm" disabled={loading}>
-              {loading ? "Updating..." : "Update Password"}
+              {loading ? t("settings.updating") : t("settings.updatePassword")}
             </Button>
           </form>
         </Card>

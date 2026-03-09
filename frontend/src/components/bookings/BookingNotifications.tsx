@@ -12,25 +12,17 @@ import {
 import { useUnreadBookings } from "@/hooks/useUnreadBookings";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  pending:   { label: "Pending",   color: "text-orange-600 bg-orange-50",  icon: <Clock className="h-3 w-3" /> },
-  accepted:  { label: "Accepted",  color: "text-green-700 bg-green-50",    icon: <CheckCircle className="h-3 w-3" /> },
-  refused:   { label: "Refused",   color: "text-red-600 bg-red-50",        icon: <XCircle className="h-3 w-3" /> },
-  completed: { label: "Completed", color: "text-blue-600 bg-blue-50",      icon: <Star className="h-3 w-3" /> },
+const STATUS_CONFIG: Record<string, { color: string; icon: React.ReactNode }> = {
+  pending:   { color: "text-orange-600 bg-orange-50",  icon: <Clock className="h-3 w-3" /> },
+  accepted:  { color: "text-green-700 bg-green-50",    icon: <CheckCircle className="h-3 w-3" /> },
+  refused:   { color: "text-red-600 bg-red-50",        icon: <XCircle className="h-3 w-3" /> },
+  completed: { color: "text-blue-600 bg-blue-50",      icon: <Star className="h-3 w-3" /> },
 };
 
-function formatTime(dateString: string) {
-  const date = new Date(dateString);
-  const diff = Date.now() - date.getTime();
-  if (diff < 60000) return "Just now";
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`;
-  if (diff < 7 * 86400000) return `${Math.floor(diff / 86400000)}d`;
-  return date.toLocaleDateString("en-CA", { month: "short", day: "numeric" });
-}
-
 export default function BookingNotifications() {
+  const { t, i18n } = useTranslation();
   const { notifs, loading, unseenCount, markSeen, markAllSeen } = useUnreadBookings();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -49,11 +41,22 @@ export default function BookingNotifications() {
     router.push("/bookings");
   };
 
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const diff = Date.now() - date.getTime();
+    if (diff < 60000) return t("messages.justNow");
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`;
+    if (diff < 7 * 86400000) return `${Math.floor(diff / 86400000)}d`;
+    return date.toLocaleDateString(i18n.language, { month: "short", day: "numeric" });
+  };
+
   const NotifRow = ({ notif }: { notif: typeof notifs[0] }) => {
     const cfg = STATUS_CONFIG[notif.status] || STATUS_CONFIG.pending;
+    const statusLabel = t(`bookings.${notif.status}`, { defaultValue: notif.status });
     const label = notif.role === "worker"
-      ? `From ${notif.other_name}`
-      : `By ${notif.other_name}`;
+      ? t("bookings.fromUser", { name: notif.other_name })
+      : t("bookings.byUser", { name: notif.other_name });
 
     return (
       <div
@@ -79,7 +82,7 @@ export default function BookingNotifications() {
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded-full", cfg.color)}>
-              {cfg.icon}{cfg.label}
+              {cfg.icon}{statusLabel}
             </span>
             <p className="text-[12px] text-gray-500 truncate">{label}</p>
           </div>
@@ -90,7 +93,7 @@ export default function BookingNotifications() {
             type="button"
             onClick={(e) => { e.stopPropagation(); markSeen(notif.id); }}
             className="cursor-pointer shrink-0 group flex items-center justify-center h-8 w-8 rounded-full hover:bg-orange-100 transition-colors"
-            title="Mark as read"
+            title={t("messages.markAsRead")}
           >
             <span className="block group-hover:hidden h-2.5 w-2.5 rounded-full bg-orange-400" />
             <Check className="hidden group-hover:block h-4 w-4 text-orange-600" />
@@ -117,14 +120,14 @@ export default function BookingNotifications() {
         {/* Header */}
         <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900">
-            Bookings
+            {t("header.bookings")}
             {unseenCount > 0 && (
-              <span className="ml-1.5 text-xs font-normal text-gray-500">({unseenCount} new)</span>
+              <span className="ml-1.5 text-xs font-normal text-gray-500">({t("bookings.newCount", { count: unseenCount })})</span>
             )}
           </h3>
           {unseenCount > 0 && (
             <button type="button" onClick={markAllSeen} className="text-xs text-green-700 hover:underline cursor-pointer">
-              Mark all as read
+              {t("bookings.markAllRead")}
             </button>
           )}
         </div>
@@ -139,7 +142,7 @@ export default function BookingNotifications() {
               tab === "received" ? "text-green-700 border-b-2 border-green-700" : "text-gray-500 hover:text-gray-700"
             )}
           >
-            Received
+            {t("bookings.received")}
             {receivedUnseen > 0 && (
               <span className="ml-1.5 text-[10px] bg-red-500 text-white rounded-full px-1.5 py-0.5">{receivedUnseen}</span>
             )}
@@ -152,7 +155,7 @@ export default function BookingNotifications() {
               tab === "sent" ? "text-green-700 border-b-2 border-green-700" : "text-gray-500 hover:text-gray-700"
             )}
           >
-            Sent
+            {t("bookings.sent")}
             {sentUnseen > 0 && (
               <span className="ml-1.5 text-[10px] bg-red-500 text-white rounded-full px-1.5 py-0.5">{sentUnseen}</span>
             )}
@@ -169,7 +172,7 @@ export default function BookingNotifications() {
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
               <CalendarDays className="h-10 w-10 text-gray-300 mb-2" />
               <p className="text-sm text-gray-500">
-                {tab === "received" ? "No incoming booking requests" : "No sent bookings"}
+                {tab === "received" ? t("bookings.noIncoming") : t("bookings.noSent")}
               </p>
             </div>
           ) : (
@@ -184,7 +187,7 @@ export default function BookingNotifications() {
             onClick={() => { setOpen(false); router.push("/bookings"); }}
             className="text-sm font-medium text-green-700 hover:text-green-800 hover:underline w-full text-center transition-colors cursor-pointer"
           >
-            See All Bookings
+            {t("bookings.seeAll")}
           </button>
         </div>
       </DropdownMenuContent>
