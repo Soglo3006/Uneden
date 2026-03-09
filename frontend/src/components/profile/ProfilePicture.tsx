@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { toast } from "sonner";
 
 interface ProfilePictureUploaderProps {
 currentProfilePicture: string;
@@ -43,7 +44,7 @@ export default function ProfilePictureUploader({
             if (!file) return;
 
             if (!file.type.startsWith("image/")) {
-            alert("Please upload an image.");
+            toast.error("Please upload an image.");
             return;
             }
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, Trash2, Camera, Plus, X } from "lucide-react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { toast } from "sonner";
 
 interface PortfolioItem {
   id: number;
@@ -33,8 +34,8 @@ export default function EditPortfolioCard({ portfolio, isPerson, onAdd, onRemove
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) { alert("Please upload an image."); return; }
-    if (file.size > 5 * 1024 * 1024) { alert("File size must be less than 5MB."); return; }
+    if (!file.type.startsWith("image/")) { toast.error("Please upload an image."); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("File size must be less than 5MB."); return; }
     const reader = new FileReader();
     reader.onloadend = () => {
       setImage(reader.result as string);
@@ -55,7 +56,7 @@ export default function EditPortfolioCard({ portfolio, isPerson, onAdd, onRemove
       onAdd({ id: newId, image: cropped, title: title.trim() });
       closeModal();
     } catch {
-      alert("Failed to crop image. Please try again.");
+      toast.error("Failed to crop image. Please try again.");
     }
   };
 

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getOrCreateDirectChat } from '@/lib/chatUtils';
+import { toast } from 'sonner';
 
 export function useStartConversation() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export function useStartConversation() {
 
     if (user.id === otherUserId) {
       // Ne pas créer de conversation avec soi-même
-      alert("You cannot message yourself!");
+      toast.error("You cannot message yourself!");
       return;
     }
 
@@ -32,11 +33,11 @@ export function useStartConversation() {
         // Rediriger vers la page messages avec ce chat ouvert
         router.push(`/messages?chat=${chatId}`);
       } else {
-        alert('Failed to create conversation. Please try again.');
+        toast.error('Failed to create conversation. Please try again.');
       }
     } catch (error) {
       console.error('Error starting conversation:', error);
-      alert('An error occurred. Please try again.');
+      toast.error('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

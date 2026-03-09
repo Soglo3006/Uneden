@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import Header from "@/components/home/Header";
 import CategoryNav from "@/components/home/Category";
@@ -34,7 +35,7 @@ export default function ConditionalShell({ children }: { children: React.ReactNo
   if (isNoCategoryPage) {
     return (
       <>
-        <Header />
+        <Suspense><Header /></Suspense>
         <main className="flex-1">{children}</main>
         <Footer />
         <SupportButton floating />

@@ -5,75 +5,91 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Grid3x3, MapPin, HeartOff } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface FavoriteService {
   id: string;
   title: string;
   price: number;
   location: string;
-  category: string | null;
+  category_name: string | null;
   subcategory: string | null;
   image_url: string | null;
 }
 
 export default function FavoritesPage() {
-  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const { user, session } = useAuth();
   const [items, setItems] = useState<FavoriteService[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load saved IDs from localStorage
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("savedListings");
-      const arr: string[] = raw ? JSON.parse(raw) : [];
-      setSavedIds(arr);
-    } catch {
-      setSavedIds([]);
-    }
-  }, []);
+  const token = session?.access_token;
 
-  // Fetch details for saved IDs
   useEffect(() => {
-    const fetchAll = async () => {
-      if (!savedIds.length) {
-        setItems([]);
-        setLoading(false);
-        return;
-      }
+    const load = async () => {
       setLoading(true);
-      const results: FavoriteService[] = [];
-      await Promise.all(
-        savedIds.map(async (id) => {
-          try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services/${id}`);
-            if (res.ok) {
-              const data = await res.json();
-              results.push({
-                id: data.id,
-                title: data.title,
-                price: Number(data.price),
-                location: data.location,
-                category: data.category_name ?? data.category ?? null,
-                subcategory: data.subcategory ?? null,
-                image_url: data.image_url ?? null,
-              });
-            }
-          } catch {}
-        })
-      );
-      setItems(results);
+      if (user && token) {
+        // Authenticated: fetch from backend
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/favorites`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setItems(data);
+          }
+        } catch {}
+      } else {
+        // Guest: load from localStorage then fetch details
+        try {
+          const raw = localStorage.getItem("savedListings");
+          const ids: string[] = raw ? JSON.parse(raw) : [];
+          if (!ids.length) {
+            setItems([]);
+            setLoading(false);
+            return;
+          }
+          const results: FavoriteService[] = [];
+          await Promise.all(
+            ids.map(async (id) => {
+              try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services/${id}`);
+                if (res.ok) {
+                  const data = await res.json();
+                  results.push({
+                    id: data.id,
+                    title: data.title,
+                    price: Number(data.price),
+                    location: data.location,
+                    category_name: data.category_name ?? data.category ?? null,
+                    subcategory: data.subcategory ?? null,
+                    image_url: data.image_url ?? null,
+                  });
+                }
+              } catch {}
+            })
+          );
+          setItems(results);
+        } catch {}
+      }
       setLoading(false);
     };
-    fetchAll();
-  }, [savedIds]);
+    load();
+  }, [user?.id, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const remove = (id: string) => {
-    try {
-      const next = savedIds.filter((x) => x !== id);
-      localStorage.setItem("savedListings", JSON.stringify(next));
-      setSavedIds(next);
-      setItems((prev) => prev.filter((i) => i.id !== id));
-    } catch {}
+  const remove = async (id: string) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    if (user && token) {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/favorites/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    } else {
+      try {
+        const raw = localStorage.getItem("savedListings");
+        const arr: string[] = raw ? JSON.parse(raw) : [];
+        localStorage.setItem("savedListings", JSON.stringify(arr.filter((x) => x !== id)));
+      } catch {}
+    }
   };
 
   return (
@@ -125,16 +141,16 @@ export default function FavoritesPage() {
                     </h3>
                   </Link>
 
-                  <p className="text-green-700 font-bold text-lg mb-2">${s.price}</p>
+                  <p className="text-green-700 font-bold text-lg mb-2">${Number(s.price)}</p>
 
                   <div className="flex items-center text-sm text-gray-500 mb-2">
-                    <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
+                    <MapPin className="h-4 w-4 mr-1 shrink-0" />
                     <span className="line-clamp-1">{s.location}</span>
                   </div>
 
-                  {s.category && (
+                  {s.category_name && (
                     <p className="text-xs text-gray-500 line-clamp-1 mb-3">
-                      {s.category}{s.subcategory && ` • ${s.subcategory}`}
+                      {s.category_name}{s.subcategory && ` • ${s.subcategory}`}
                     </p>
                   )}
 

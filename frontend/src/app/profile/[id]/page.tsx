@@ -17,6 +17,7 @@ import ProfilePortfolio from "@/components/profile/ProfilePortfolio";
 import ProfileListings from "@/components/profile/ProfileListings";
 import ProfileReviews from "@/components/profile/ProfileReviews";
 import BlockedBanner from "@/components/profile/BlockedBanner";
+import { toast } from "sonner";
 
 export default function UserProfilePage() {
   const params = useParams();
@@ -157,7 +158,7 @@ export default function UserProfilePage() {
       await supabase.from("blocked_users").delete().eq("blocker_id", user.id).eq("blocked_user_id", profileId);
       setIsBlocked(false);
     } catch {
-      alert("Failed to unblock user. Please try again.");
+      toast.error("Failed to unblock user. Please try again.");
     } finally {
       setBlockLoading(false);
     }

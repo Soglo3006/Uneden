@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, Trash2 } from "lucide-react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { toast } from "sonner";
 
 interface ImageUploaderProps {
   currentImage: string | null;
@@ -30,12 +31,12 @@ export default function ImageUploader({
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Please upload an image.");
+      toast.error("Please upload an image.");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("File size must be less than 5MB.");
+      toast.error("File size must be less than 5MB.");
       return;
     }
 
@@ -56,7 +57,7 @@ export default function ImageUploader({
       setZoom(1);
     } catch (err) {
       console.error(err);
-      alert("Failed to crop image. Please try again.");
+      toast.error("Failed to crop image. Please try again.");
     }
   };
 

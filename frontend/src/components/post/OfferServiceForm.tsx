@@ -11,6 +11,7 @@ import OneTimeCheckbox from "@/components/post/OneTimeCheckbox";
 import FormSubmitButton from "@/components/post/FormSubmitButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface Props {
   onSuccess: (id: string) => void;
@@ -46,7 +47,7 @@ export default function OfferServiceForm({ onSuccess }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session?.access_token) {
-      alert("You must be logged in to post a service");
+      toast.error("You must be logged in to post a service");
       router.push("/login");
       return;
     }
@@ -83,7 +84,7 @@ export default function OfferServiceForm({ onSuccess }: Props) {
       const data = await res.json();
       onSuccess(data.id);
     } catch (error: any) {
-      alert(`Failed to post service: ${error.message}`);
+      toast.error(`Failed to post service: ${error.message}`);
     } finally {
       setSubmitting(false);
     }

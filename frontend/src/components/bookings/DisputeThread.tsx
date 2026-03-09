@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AlertTriangle, ImagePlus, Send, X, Loader2, Lock } from "lucide-react";
+import { toast } from "sonner";
 
 interface Attachment { url: string; name: string; }
 
@@ -112,7 +113,7 @@ export default function DisputeThread({ bookingId, currentUserId, accessToken }:
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err.message || "Failed to send message.");
+        toast.error(err.message || "Failed to send message.");
         return;
       }
       const msg = await res.json();

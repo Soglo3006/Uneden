@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const urgencyLevels = [
   { value: "anytime", label: "Anytime" },
@@ -57,7 +58,7 @@ export default function LookingForWorkerForm({ onSuccess }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session?.access_token) {
-      alert("You must be logged in to post a job request");
+      toast.error("You must be logged in to post a job request");
       router.push("/login");
       return;
     }
@@ -95,7 +96,7 @@ export default function LookingForWorkerForm({ onSuccess }: Props) {
       const data = await res.json();
       onSuccess(data.id);
     } catch (error: any) {
-      alert(`Failed to post job request: ${error.message}`);
+      toast.error(`Failed to post job request: ${error.message}`);
     } finally {
       setSubmitting(false);
     }

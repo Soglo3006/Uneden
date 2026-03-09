@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
 interface Listing { id: string; title: string; price: number; image_url?: string; }
 
@@ -26,7 +27,7 @@ export default function ReportListingPage({ profileId, displayName, userListings
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async () => {
-    if (!user || !selectedListingId || !reason || !details.trim()) { alert("Please fill in all fields"); return; }
+    if (!user || !selectedListingId || !reason || !details.trim()) { toast.error("Please fill in all fields"); return; }
     setLoading(true);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reports/listing`, {
@@ -40,7 +41,7 @@ export default function ReportListingPage({ profileId, displayName, userListings
       if (!response.ok) throw new Error("Failed to submit");
       setSuccess(true);
     } catch {
-      alert("Failed to submit report. Please try again.");
+      toast.error("Failed to submit report. Please try again.");
     } finally {
       setLoading(false);
     }

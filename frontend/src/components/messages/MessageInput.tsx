@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, X, Paperclip, Mic } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Popover,
   PopoverContent,
@@ -115,7 +116,7 @@ export function MessageInput({
       drawWave();
 
     } catch (err) {
-      alert('Microphone non accessible');
+      toast.error('Microphone not accessible');
     }
   };
 

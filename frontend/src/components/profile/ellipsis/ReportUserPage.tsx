@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
 interface Props {
   profileId: string;
@@ -22,7 +23,7 @@ export default function ReportUserPage({ profileId, displayName, onClose }: Prop
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async () => {
-    if (!user || !reason || !details.trim()) { alert("Please fill in all fields"); return; }
+    if (!user || !reason || !details.trim()) { toast.error("Please fill in all fields"); return; }
     setLoading(true);
     try {
       const { error } = await supabase.from("user_reports").insert({
@@ -33,7 +34,7 @@ export default function ReportUserPage({ profileId, displayName, onClose }: Prop
       setSuccess(true);
     } catch (err) {
       console.error("Error submitting report:", err);
-      alert("Failed to submit report. Please try again.");
+      toast.error("Failed to submit report. Please try again.");
     } finally {
       setLoading(false);
     }

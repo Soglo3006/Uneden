@@ -50,6 +50,7 @@ export default function CategoryNav() {
           {categories.map((category) => (
             <Select
               key={category.name}
+              value=""
               onValueChange={(sub) =>
                 router.push(
                   `/listings?category=${encodeURIComponent(category.name)}&subcategory=${encodeURIComponent(sub)}`

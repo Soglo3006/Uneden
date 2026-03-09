@@ -25,6 +25,7 @@ import { useConversationActions } from '@/hooks/useConversationActions';
 import { ConversationSettings } from '@/components/messages/ConversationSettings';
 import { ChatHeader } from '@/components/messages/ChatHeader';
 import { ChatInputArea } from '@/components/messages/ChatInputArea';
+import { toast } from 'sonner';
 
 function MessagesContent() {
   const { user } = useProtectedRoute({ requireAuth: true, requireProfileCompleted: true });
@@ -163,12 +164,12 @@ function MessagesContent() {
     if (!file) return;
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
-      alert('Type de fichier non autorisé. Formats acceptés : JPEG, PNG, GIF, WebP, PDF');
+      toast.error('Invalid file type. Accepted formats: JPEG, PNG, GIF, WebP, PDF');
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      alert(`Fichier trop volumineux. Taille maximum : 5MB (votre fichier : ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+      toast.error(`File too large. Maximum size: 5MB`);
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
@@ -196,7 +197,7 @@ function MessagesContent() {
         const fileExt = attachedFile.name.split('.').pop();
         const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage.from('chat-attachments').upload(fileName, attachedFile);
-        if (uploadError) { alert('Failed to upload file'); return; }
+        if (uploadError) { toast.error('Failed to upload file'); return; }
         const { data } = supabase.storage.from('chat-attachments').getPublicUrl(fileName);
         fileUrl = data.publicUrl;
       }
@@ -216,7 +217,7 @@ function MessagesContent() {
       removeAttachment();
       setReplyingTo(null);
     } catch {
-      alert('Failed to send message');
+      toast.error('Failed to send message');
     }
   };
 
@@ -246,7 +247,7 @@ function MessagesContent() {
       await sendMessage(audioContent, null);
       if (activeChatId) updateLastMessage(activeChatId, audioContent, user?.id || '', new Date().toISOString());
     } catch {
-      alert("Échec de l'envoi du message vocal");
+      toast.error("Failed to send voice message");
     }
   };
 

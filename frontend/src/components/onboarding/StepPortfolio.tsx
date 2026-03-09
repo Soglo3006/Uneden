@@ -8,6 +8,7 @@ import { Plus, Trash2, ImageIcon } from "lucide-react";
 import Cropper from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { PortfolioItem } from "./onboardingTypes";
+import { toast } from "sonner";
 
 interface Props {
   portfolio: PortfolioItem[];
@@ -28,7 +29,7 @@ export default function StepPortfolio({ portfolio, onAdd, onRemove, onUpdate }: 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) { alert("Please upload an image file."); return; }
+    if (!file.type.startsWith("image/")) { toast.error("Please upload an image file."); return; }
     const reader = new FileReader();
     reader.onloadend = () => {
       setImage(reader.result as string);
@@ -47,7 +48,7 @@ export default function StepPortfolio({ portfolio, onAdd, onRemove, onUpdate }: 
       onAdd({ id: portfolio.length + 1, image: cropped, title: title.trim(), description: "" });
       closeModal();
     } catch {
-      alert("Failed to crop image.");
+      toast.error("Failed to crop image.");
     }
   };
 

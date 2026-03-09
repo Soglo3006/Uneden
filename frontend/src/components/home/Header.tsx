@@ -23,7 +23,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Badge } from "@/components/ui/badge";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import SettingsPage from "@/components/profile/Settings";
@@ -47,6 +47,13 @@ interface SearchResult {
 export default function Header() {
   const { user, signOut, session } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Controlled value for Post Type select — resets when leaving /listings
+  const isOnListings = pathname === "/listings";
+  const urlType = searchParams.get("type");
+  const postTypeValue = isOnListings && urlType ? (urlType === "offer" ? "find" : urlType === "looking" ? "hire" : "all") : "";
 
   const [showSettings, setShowSettings] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -323,9 +330,13 @@ export default function Header() {
 
             {/* Selects + Toggle — desktop seulement */}
             <div className="hidden lg:flex items-center gap-3">
-              <Select defaultValue="all">
+              <Select value={postTypeValue} onValueChange={(val) => {
+                if (val === "all") router.push("/listings");
+                else if (val === "find") router.push("/listings?type=offer");
+                else if (val === "hire") router.push("/listings?type=looking");
+              }}>
                 <SelectTrigger className="w-[130px] xl:w-[140px] border-gray-300 rounded-lg cursor-pointer">
-                  <SelectValue placeholder="Category" />
+                  <SelectValue placeholder="Post Type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" className="cursor-pointer">All Posts</SelectItem>
@@ -394,9 +405,13 @@ export default function Header() {
 
           {/* ── RANGÉE 2 : Filtres centrés — mobile/tablette seulement ── */}
           <div className="flex lg:hidden items-center justify-center gap-2 pb-3">
-            <Select defaultValue="all">
+            <Select value={postTypeValue} onValueChange={(val) => {
+              if (val === "all") router.push("/listings");
+              else if (val === "find") router.push("/listings?type=offer");
+              else if (val === "hire") router.push("/listings?type=looking");
+            }}>
               <SelectTrigger className="w-[110px] shrink-0 border-gray-300 rounded-lg cursor-pointer text-xs">
-                <SelectValue placeholder="Category" />
+                <SelectValue placeholder="Post Type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all" className="cursor-pointer">All Posts</SelectItem>

@@ -16,6 +16,7 @@ import StepSkillsServices from "@/components/onboarding/StepSkillsServices";
 import StepExperience from "@/components/onboarding/StepExperience";
 import StepPortfolio from "@/components/onboarding/StepPortfolio";
 import StepSummary from "@/components/onboarding/StepSummary";
+import { toast } from "sonner";
 
 function OnboardingContent() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -124,7 +125,7 @@ function OnboardingContent() {
     setLoading(true);
     try {
       const token = session?.access_token;
-      if (!token) { alert("Authentication error. Please login again."); router.push("/login"); return; }
+      if (!token) { toast.error("Authentication error. Please login again."); router.push("/login"); return; }
 
       const payload = {
         account_type: data.accountType,
@@ -157,7 +158,7 @@ function OnboardingContent() {
       setShowSuccess(true);
       setTimeout(() => router.push("/"), 2000);
     } catch (err: any) {
-      alert(`Failed to complete profile: ${err.message}`);
+      toast.error(`Failed to complete profile: ${err.message}`);
     } finally {
       setLoading(false);
     }

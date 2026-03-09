@@ -14,6 +14,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import walletRoutes from './routes/walletRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import metricsRoutes from './routes/metricsRoutes.js';
+import favoriteRoutes from './routes/favoriteRoutes.js';
 import { startMessageReminderJob } from './jobs/messageReminderJob.js';
 
 dotenv.config();
@@ -44,6 +45,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin/metrics', metricsRoutes);
+app.use('/api/favorites', favoriteRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

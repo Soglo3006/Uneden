@@ -27,6 +27,7 @@ function ListingsContent() {
   const urlSearch = searchParams.get("search") ?? "";
   const urlCategory = searchParams.get("category") ?? "";
   const urlSubcategory = searchParams.get("subcategory") ?? "";
+  const urlType = searchParams.get("type") ?? "all";
   useEffect(() => {
     setSearch(urlSearch);
     setDebouncedSearch(urlSearch);
@@ -36,6 +37,9 @@ function ListingsContent() {
     setSelectedSubcategory(urlSubcategory);
     if (urlCategory) setExpandedCategories([urlCategory]);
   }, [urlCategory, urlSubcategory]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setServiceType(urlType);
+  }, [urlType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced values — prevent API call on every keystroke/drag
   const [debouncedSearch, setDebouncedSearch] = useState(search);

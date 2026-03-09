@@ -9,6 +9,7 @@ import { ChevronRight, Building2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import EditBasicInfoCard from "@/components/profile/EditBasicInfoCard";
 import EditPortfolioCard from "@/components/profile/EditPortfolioCard";
+import { toast } from "sonner";
 
 interface FormData {
   email: string;
@@ -84,7 +85,7 @@ export default function EditProfilePage() {
         setFormData(profile);
         setInitialData(JSON.parse(JSON.stringify(profile)));
       } catch (err: any) {
-        alert(err.message);
+        toast.error(err.message);
       } finally {
         setLoading(false);
       }
@@ -120,7 +121,7 @@ export default function EditProfilePage() {
       if (!res.ok) { const e = await res.json(); throw new Error(e.message || "Failed to update profile"); }
       router.push(`/profile/${user?.id}`);
     } catch {
-      alert("Failed to save profile. Please try again.");
+      toast.error("Failed to save profile. Please try again.");
     } finally {
       setSaving(false);
     }

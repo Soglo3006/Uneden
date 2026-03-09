@@ -15,7 +15,7 @@ export default function Footer() {
           </div>
 
           {/* Nav links */}
-          <nav className="flex flex-wrap justify-center sm:justify-start gap-x-6 gap-y-2 text-sm font-medium text-gray-400">
+          <nav className="flex flex-wrap justify-center sm:justify-start gap-x-6 gap-y-2 text-sm font-medium ">
             <a href="#" className="hover:text-white transition-colors cursor-pointer">About</a>
             <a href="#" className="hover:text-white transition-colors cursor-pointer">Contact</a>
             <a href="#" className="hover:text-white transition-colors cursor-pointer">Privacy Policy</a>
@@ -32,7 +32,7 @@ export default function Footer() {
 
         {/* Séparateur */}
         <div className="border-t border-green-800 mt-8 pt-5 text-center">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-white">
             © {new Date().getFullYear()} FieldHearts. All rights reserved.
           </p>
         </div>
