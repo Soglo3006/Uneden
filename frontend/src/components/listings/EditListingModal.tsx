@@ -264,7 +264,7 @@ export default function EditListingModal({ service, accessToken, onClose, onSave
                   <SelectValue placeholder="Select a subcategory" />
                 </SelectTrigger>
                 <SelectContent>
-                  {selectedCat?.subcategories.map((sub) => (
+                  {selectedCat?.subcategories?.map((sub) => (
                     <SelectItem key={sub} value={sub} className="cursor-pointer">
                       {sub}
                     </SelectItem>
