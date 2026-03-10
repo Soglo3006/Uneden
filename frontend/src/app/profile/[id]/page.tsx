@@ -43,7 +43,7 @@ export default function UserProfilePage() {
   const [isBlockedByOther, setIsBlockedByOther] = useState(false);
   const [blockLoading, setBlockLoading] = useState(false);
 
-  const settingsScrollRef = useRef<HTMLElement>(null);
+  const settingsScrollRef = useRef<HTMLDivElement>(null);
   const isOwner = user?.id === profileId;
   const { startConversation, loading: sendMessageLoading } = useStartConversation();
   const { t } = useTranslation();
