@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SearchX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-export default function NotFound() {
+function NotFoundContent() {
   const { t } = useTranslation();
 
   return (
@@ -37,5 +38,13 @@ export default function NotFound() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function NotFound() {
+  return (
+    <Suspense>
+      <NotFoundContent />
+    </Suspense>
   );
 }
