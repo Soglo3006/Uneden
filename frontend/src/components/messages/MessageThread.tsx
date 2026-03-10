@@ -47,7 +47,7 @@ interface Message {
   reactions?: MessageReaction[];
   replied_to?: { id: string; content: string; user_id: string; sender_name?: string; deleted_at?: string | null } | null;
   replied_to_message_id?: string | null;
-  sender?: { account_type?: string; company_name?: string; full_name?: string; avatar_url?: string } | null;
+  sender?: { account_type?: string; company_name?: string; full_name?: string; avatar_url?: string | null } | null;
   client_temp_id?: string;
 }
 
@@ -55,7 +55,7 @@ interface MessageThreadProps {
   messages: Message[];
   loading: boolean;
   currentUserId: string;
-  otherUser?: { id?: string; full_name?: string; company_name?: string; account_type?: string; avatar_url?: string } | null;
+  otherUser?: { id?: string; full_name?: string; company_name?: string; account_type?: string; avatar_url?: string | null } | null;
   hoveredMessageId: string | null;
   setHoveredMessageId: (key: string | null) => void;
   openMenuKey: string | null;

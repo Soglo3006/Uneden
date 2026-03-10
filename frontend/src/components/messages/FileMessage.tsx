@@ -47,7 +47,7 @@ interface FileMessageProps {
   onReplyClick?: (messageId: string) => void;
   reactions?: Reaction[]; 
   otherUser?: {
-    avatar_url?: string;
+    avatar_url?: string | null;
     account_type?: string;
     company_name?: string;
     full_name?: string;

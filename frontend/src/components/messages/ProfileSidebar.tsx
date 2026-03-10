@@ -18,7 +18,7 @@ interface ProfileSidebarProps {
     full_name?: string;
     company_name?: string;
     account_type?: string;
-    avatar_url?: string;
+    avatar_url?: string | null;
     bio?: string;
     created_at?: string;
   } | null;

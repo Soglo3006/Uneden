@@ -31,7 +31,7 @@ interface MessageBubbleProps {
   } | null;
   onReplyClick?: (messageId: string) => void;
   otherUser?: {
-    avatar_url?: string;
+    avatar_url?: string | null;
     account_type?: string;
     company_name?: string;
     full_name?: string;

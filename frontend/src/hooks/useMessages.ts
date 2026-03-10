@@ -23,7 +23,7 @@ export interface Message {
     full_name?: string;
     company_name?: string;
     account_type?: string;
-    avatar_url?: string;
+    avatar_url?: string | null;
   } | null;
   replied_to?: {
     id: string;

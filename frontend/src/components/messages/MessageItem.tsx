@@ -35,7 +35,7 @@ interface Message {
   reactions?: MessageReaction[];
   replied_to?: RepliedTo | null;
   replied_to_message_id?: string | null;
-  sender?: { account_type?: string; company_name?: string; full_name?: string; avatar_url?: string } | null;
+  sender?: { account_type?: string; company_name?: string; full_name?: string; avatar_url?: string | null } | null;
   client_temp_id?: string;
 }
 
@@ -44,7 +44,7 @@ interface OtherUser {
   full_name?: string;
   company_name?: string;
   account_type?: string;
-  avatar_url?: string;
+  avatar_url?: string | null;
 }
 
 interface Props {

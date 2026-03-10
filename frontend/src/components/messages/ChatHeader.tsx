@@ -10,7 +10,7 @@ interface OtherUser {
   full_name?: string;
   company_name?: string;
   account_type?: string;
-  avatar_url?: string;
+  avatar_url?: string | null;
 }
 
 interface Props {
