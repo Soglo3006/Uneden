@@ -30,7 +30,7 @@ interface Props {
   attachmentPreview: string | null;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveAttachment: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
 export function ChatInputArea({
