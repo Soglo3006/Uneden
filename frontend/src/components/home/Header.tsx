@@ -60,8 +60,15 @@ export default function Header() {
 
   const [showSettings, setShowSettings] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [profileData, setProfileData] = useState(null);
-  const settingsScrollRef = useRef(null);
+  const [profileData, setProfileData] = useState<{
+    account_type?: string;
+    full_name?: string;
+    company_name?: string;
+    avatar?: string;
+    profession?: string;
+    industry?: string;
+  } | null>(null);
+  const settingsScrollRef = useRef<HTMLDivElement>(null);
 
   // Live search
   const [headerSearch, setHeaderSearch] = useState("");

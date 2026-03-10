@@ -27,6 +27,11 @@ function ListingsContent({ username }: { username?: string }) {
   );
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+  // Debounced values — prevent API call on every keystroke/drag
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const [debouncedLocation, setDebouncedLocation] = useState(location);
+  const [debouncedPrice, setDebouncedPrice] = useState<[number, number]>(priceRange);
+
   // Sync all filters from URL when CategoryNav or header search navigates here
   const urlSearch = searchParams.get("search") ?? "";
   const urlCategory = searchParams.get("category") ?? "";
@@ -44,11 +49,6 @@ function ListingsContent({ username }: { username?: string }) {
   useEffect(() => {
     setServiceType(urlType);
   }, [urlType]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Debounced values — prevent API call on every keystroke/drag
-  const [debouncedSearch, setDebouncedSearch] = useState(search);
-  const [debouncedLocation, setDebouncedLocation] = useState(location);
-  const [debouncedPrice, setDebouncedPrice] = useState<[number, number]>(priceRange);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 400);
