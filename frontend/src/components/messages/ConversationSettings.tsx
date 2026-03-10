@@ -11,6 +11,17 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 
+interface Message {
+  id: string;
+  content: string;
+  created_at: string;
+  sender?: {
+    full_name?: string;
+    company_name?: string;
+    account_type?: string;
+  } | null;
+}
+
 interface ConversationSettingsProps {
   otherUser?: {
     id?: string;
@@ -18,7 +29,7 @@ interface ConversationSettingsProps {
     company_name?: string;
     account_type?: string;
   } | null;
-  messages?: any[];
+  messages?: Message[];
   onClose: () => void;
   onDeleteConversation: () => Promise<void>;
   onBlockUser: () => Promise<void>;

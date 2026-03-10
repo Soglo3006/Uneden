@@ -1,4 +1,3 @@
-// frontend/src/lib/chatUtils.ts
 import { supabase } from '@/lib/supabaseClient';
 
 /**

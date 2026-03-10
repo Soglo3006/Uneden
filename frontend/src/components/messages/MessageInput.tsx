@@ -23,7 +23,7 @@ interface MessageInputProps {
   attachmentPreview: string | null;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveAttachment: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   onVoiceMessage?: (audioBlob: Blob, duration: number) => Promise<void>;
 }
 

@@ -11,8 +11,8 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isLoggingOut: boolean;
-  profilesById: Record<string, any>;
-  setProfileInCache: (id: string, profile: any) => void;
+  profilesById: Record<string, unknown>;
+  setProfileInCache: (id: string, profile: unknown) => void;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, fullName: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -28,9 +28,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [profilesById, setProfilesById] = useState<Record<string, any>>({});
+  const [profilesById, setProfilesById] = useState<Record<string, unknown>>({});
 
-  const setProfileInCache = (id: string, profile: any) => {
+  const setProfileInCache = (id: string, profile: unknown) => {
     setProfilesById((prev) => ({ ...prev, [id]: profile }));
   };
 

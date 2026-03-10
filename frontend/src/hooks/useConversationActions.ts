@@ -74,7 +74,7 @@ export function useConversationActions({
     if (error && error.code !== "23505") throw error;
     setIsBlocked(true);
     setShowSettings(false);
-  }, [otherUser?.id, userId, setIsBlocked, setShowSettings]);
+  }, [otherUser, userId, setIsBlocked, setShowSettings]);
 
   const handleReportUser = useCallback(async (reason: string, details: string) => {
     if (!otherUser?.id) return;
@@ -88,7 +88,7 @@ export function useConversationActions({
         status: "pending",
       });
     if (error) throw error;
-  }, [otherUser?.id, userId]);
+  }, [otherUser, userId]);
 
   const handleArchive = useCallback(async () => {
     if (!activeChatId || !userId) return;

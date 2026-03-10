@@ -2,11 +2,11 @@
 
 import { useEffect } from "react";
 import usePlacesAutocomplete from "use-places-autocomplete";
-import { useJsApiLoader } from "@react-google-maps/api";
+import { useJsApiLoader, type Libraries } from "@react-google-maps/api";
 import { Input } from "@/components/ui/input";
 import { MapPin } from "lucide-react";
 
-const LIBRARIES = ["places"] as const;
+const LIBRARIES: Libraries = ["places"];
 
 interface Props {
   value: string;

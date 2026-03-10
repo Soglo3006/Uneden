@@ -86,8 +86,8 @@ export default function EditProfilePage() {
         };
         setFormData(profile);
         setInitialData(JSON.parse(JSON.stringify(profile)));
-      } catch (err: any) {
-        toast.error(err.message);
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : String(err));
       } finally {
         setLoading(false);
       }

@@ -45,8 +45,8 @@ export default function ResetPasswordPage() {
       if (error) throw error;
       setDone(true);
       setTimeout(() => router.push("/login"), 3000);
-    } catch (err: any) {
-      setError(err.message || "Failed to reset password. Try requesting a new link.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to reset password. Try requesting a new link.");
     } finally {
       setLoading(false);
     }

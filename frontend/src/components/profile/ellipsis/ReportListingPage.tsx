@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 
-interface Listing { id: string; title: string; price: number; image_url?: string; }
+interface Listing { id: string; title: string; price: string | number; image_url?: string | null; }
 
 interface Props {
   profileId: string;

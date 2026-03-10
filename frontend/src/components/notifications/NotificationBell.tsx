@@ -85,6 +85,7 @@ function NotifRow({
   onDelete: () => void;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   const cfg = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.booking_request;
   const isUnread = !notif.read_at;
 

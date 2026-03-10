@@ -1,4 +1,3 @@
-// frontend/src/hooks/useUnreadMessages.ts
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +14,6 @@ export interface UnreadChat {
   account_type: string | null;
 }
 
-// Petit helper pour jouer le son de notification
 function playNotificationSound() {
   try {
     const audio = new Audio('/sounds/notification.mp3');
@@ -41,7 +39,7 @@ export function useUnreadMessages() {
 
     const fetchMessages = async (playSound = false) => {
       try {
-        // 1. Récupérer tous les chats de l'user (non supprimés)
+        // Récupérer tous les chats de l'user (non supprimés)
         const { data: memberData } = await supabase
           .from('chat_room_member')
           .select('chat_room_id')
@@ -57,7 +55,7 @@ export function useUnreadMessages() {
 
         const chatRoomIds = memberData.map(m => m.chat_room_id);
 
-        // 2. Pour chaque chat, récupérer le dernier message + compter les non-lus via read_at
+        // Pour chaque chat, récupérer le dernier message + compter les non-lus via read_at
         const allChats = await Promise.all(
           chatRoomIds.map(async (chatId) => {
             // Dernier message du chat

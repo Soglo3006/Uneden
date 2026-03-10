@@ -20,7 +20,7 @@ export default function AdminDashboard() {
     if (loading) return;
     if (!user) { router.push("/login"); return; }
     if (!isAdminUser(user)) { router.replace("/"); return; }
-    setAllowed(true);
+    Promise.resolve().then(() => setAllowed(true));
   }, [user, loading, router]);
 
   useEffect(() => {
@@ -30,12 +30,12 @@ export default function AdminDashboard() {
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/disputes`, { headers })
       .then((r) => r.json())
-      .then((data) => setOpenDisputes(Array.isArray(data) ? data.filter((d: any) => d.status === "open").length : 0))
+      .then((data) => setOpenDisputes(Array.isArray(data) ? data.filter((d: { status?: string }) => d.status === "open").length : 0))
       .catch(() => setOpenDisputes(0));
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/support`, { headers })
       .then((r) => r.json())
-      .then((data) => setOpenTickets(Array.isArray(data) ? data.filter((t: any) => t.status === "open").length : 0))
+      .then((data) => setOpenTickets(Array.isArray(data) ? data.filter((t: { status?: string }) => t.status === "open").length : 0))
       .catch(() => setOpenTickets(0));
   }, [allowed, session]);
 

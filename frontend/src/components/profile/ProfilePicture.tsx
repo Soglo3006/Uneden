@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
 import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { toast } from "sonner";
 import { useScrollLock } from "@/hooks/useScrollLock";
@@ -33,7 +34,7 @@ export default function ProfilePictureUploader({
         const [crop, setCrop] = useState({ x: 0, y: 0 });
         useScrollLock(showCropper);
         const [zoom, setZoom] = useState(1);
-        const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+        const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
         const sizeClasses = {
             sm: "w-16 h-16",
@@ -61,6 +62,7 @@ export default function ProfilePictureUploader({
         };
 
         const saveCroppedImage = async () => {
+            if (!croppedAreaPixels) return;
             try {
             const croppedImage = await getCroppedImg(imageToCrop!, croppedAreaPixels);
             onProfileChange(croppedImage);

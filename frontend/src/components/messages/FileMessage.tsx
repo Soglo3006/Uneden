@@ -113,7 +113,7 @@ export function FileMessage({
               setHoveredMessageId(null);
             }
           }}
-          onClick={() => !isSending && setSelectedMessageKey(prev => (prev === keyText ? null : keyText))}
+          onClick={() => !isSending && setSelectedMessageKey(selectedMessageKey === keyText ? null : keyText)}
           className={`flex gap-2 items-start ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}
         >
           {/* Actions */}
@@ -198,7 +198,7 @@ export function FileMessage({
               setHoveredMessageId(null);
             }
           }}
-          onClick={() => !isSending && setSelectedMessageKey(prev => (prev === keyImage ? null : keyImage))}
+          onClick={() => !isSending && setSelectedMessageKey(selectedMessageKey === keyImage ? null : keyImage)}
           className={`flex gap-2 items-center ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}
         >
           {/* Actions */}

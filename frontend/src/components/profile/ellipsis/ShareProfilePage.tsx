@@ -44,7 +44,7 @@ export default function ShareProfilePage({ profileId, displayName }: Props) {
           {copied ? <><Check className="h-4 w-4 mr-2" />{t("common.copied")}</> : <><Copy className="h-4 w-4 mr-2" />{t("common.copy")}</>}
         </Button>
       </div>
-      {navigator.share && (
+      {typeof navigator !== "undefined" && 'share' in navigator && (
         <Button variant="outline" className="w-full cursor-pointer" onClick={handleShare}>
           <Share2 className="h-4 w-4 mr-2" /> {t("profile.shareViaDevice")}
         </Button>

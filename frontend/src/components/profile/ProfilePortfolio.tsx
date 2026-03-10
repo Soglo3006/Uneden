@@ -4,14 +4,20 @@ import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+interface PortfolioItem {
+  id?: string | number;
+  image: string;
+  title: string;
+}
+
 interface Props {
-  portfolio: any[];
+  portfolio: PortfolioItem[];
   isPerson: boolean;
 }
 
 export default function ProfilePortfolio({ portfolio, isPerson }: Props) {
   const { t } = useTranslation();
-  const [selected, setSelected] = useState<any>(null);
+  const [selected, setSelected] = useState<PortfolioItem | null>(null);
 
   if (portfolio.length === 0) return null;
 
@@ -22,7 +28,7 @@ export default function ProfilePortfolio({ portfolio, isPerson }: Props) {
           {isPerson ? t("profile.portfolio") : t("profile.ourProjects")}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {portfolio.map((item: any, index: number) => (
+          {portfolio.map((item, index) => (
             <div
               key={item.id || index}
               className="group cursor-pointer"

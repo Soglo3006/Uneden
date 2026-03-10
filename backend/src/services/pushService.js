@@ -72,7 +72,7 @@ export const pushNewBooking = (workerId, clientName, serviceTitle) =>
 
 export const pushBookingStatus = (clientId, status, serviceTitle) =>
   sendPushToUser(clientId, {
-    title: status === "accepted" ? "Booking accepted! 🎉" : "Booking update",
+    title: status === "accepted" ? "Booking accepted! " : "Booking update",
     body:
       status === "accepted"
         ? `Your request for "${serviceTitle}" was accepted.`

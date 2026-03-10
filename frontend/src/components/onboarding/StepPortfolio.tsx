@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, ImageIcon } from "lucide-react";
 import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { PortfolioItem } from "./onboardingTypes";
 import { toast } from "sonner";
@@ -25,7 +26,7 @@ export default function StepPortfolio({ portfolio, onAdd, onRemove, onUpdate }: 
   useScrollLock(showModal);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedPixels, setCroppedPixels] = useState<any>(null);
+  const [croppedPixels, setCroppedPixels] = useState<Area | null>(null);
   const [error, setError] = useState(false);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,7 +45,7 @@ export default function StepPortfolio({ portfolio, onAdd, onRemove, onUpdate }: 
   };
 
   const handleSave = async () => {
-    if (!image || !title.trim()) { setError(true); return; }
+    if (!image || !title.trim() || !croppedPixels) { setError(true); return; }
     try {
       const cropped = await getCroppedImg(image, croppedPixels);
       onAdd({ id: portfolio.length + 1, image: cropped, title: title.trim(), description: "" });

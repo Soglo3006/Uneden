@@ -46,9 +46,10 @@ export default function LoginPage() {
 
     try {
       await signInWithEmail(email, password);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setCharging(false);
-      if (err.message.includes("Email not confirmed")) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("Email not confirmed")) {
         setError(t("login.emailNotConfirmed"));
       } else {
         setError(t("login.loginFailed"));

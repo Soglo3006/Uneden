@@ -160,7 +160,7 @@ export function MessageBubble({
         if (!isSending) setHoveredMessageId(messageId);
       }}
       onMouseLeave={handleMouseLeave}
-      onClick={() => !isSending && setSelectedMessageKey(prev => (prev === messageId ? null : messageId))}
+      onClick={() => !isSending && setSelectedMessageKey(isSelected ? null : messageId)}
       className={`flex gap-2 items-start ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}
     >
   {/* Avatar + Message */}

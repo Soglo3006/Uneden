@@ -1,4 +1,3 @@
-// frontend/src/hooks/useStartConversation.ts
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';

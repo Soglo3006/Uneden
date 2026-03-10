@@ -52,9 +52,7 @@ export default function CategorySubcategoryFields({
               <SelectValue placeholder={t("post.selectSubcategory")} />
             </SelectTrigger>
             <SelectContent>
-              {categories
-                .find((c) => c.name === category)
-                ?.subcategories.map((sub) => (
+              {(categories.find((c) => c.name === category)?.subcategories ?? []).map((sub) => (
                   <SelectItem key={sub} value={sub} className="cursor-pointer">
                     {t(`categories.${toKey(category)}_${toKey(sub)}`, { defaultValue: sub })}
                   </SelectItem>

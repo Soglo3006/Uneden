@@ -159,8 +159,8 @@ function OnboardingContent() {
 
       setShowSuccess(true);
       setTimeout(() => router.push("/"), 2000);
-    } catch (err: any) {
-      toast.error(t("onboarding.profileSaveFailed", { message: err.message }));
+    } catch (err: unknown) {
+      toast.error(t("onboarding.profileSaveFailed", { message: err instanceof Error ? err.message : String(err) }));
     } finally {
       setLoading(false);
     }

@@ -18,7 +18,7 @@ interface FormData {
   city: string;
   province: string;
   skills: string[];
-  languages: any[];
+  languages: (string | { language: string; proficiency: string })[];
   fullName: string;
   profession: string;
   companyName: string;

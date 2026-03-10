@@ -5,12 +5,19 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Users } from "lucide-react";
 
+interface ProfileUser {
+  bio?: string;
+  team_size?: string;
+  profession?: string;
+  industry?: string;
+}
+
 interface Props {
-  profileUser: any;
+  profileUser: ProfileUser;
   isPerson: boolean;
   isCompany: boolean;
   skills: string[];
-  languages: any[];
+  languages: (string | { language: string; proficiency: string })[];
   memberSince: string;
 }
 
@@ -49,7 +56,7 @@ export default function ProfileAbout({ profileUser, isPerson, isCompany, skills,
             </h3>
             <p className="text-gray-700">
               {languages
-                .map((lang: any) =>
+                .map((lang) =>
                   typeof lang === "string" ? lang : `${lang.language} (${lang.proficiency})`
                 )
                 .join(", ")}

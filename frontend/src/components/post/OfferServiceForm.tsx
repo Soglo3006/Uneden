@@ -85,8 +85,8 @@ export default function OfferServiceForm({ onSuccess }: Props) {
       }
       const data = await res.json();
       onSuccess(data.id);
-    } catch (error: any) {
-      toast.error(t("post.failedPostService", { message: error.message }));
+    } catch (error: unknown) {
+      toast.error(t("post.failedPostService", { message: error instanceof Error ? error.message : String(error) }));
     } finally {
       setSubmitting(false);
     }

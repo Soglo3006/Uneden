@@ -33,7 +33,7 @@ export default function StepBasicInfo({ data, accountType, onChange }: Props) {
             <div className="flex flex-col items-center">
               <ProfilePictureUploader
                 currentProfilePicture={data.avatar}
-                userName={data.fullName}
+                userName={data.fullName || ""}
                 onProfileChange={(pic) => onChange({ avatar: pic })}
                 size="xl"
                 showLabel={true}
@@ -57,7 +57,7 @@ export default function StepBasicInfo({ data, accountType, onChange }: Props) {
             <div className="flex flex-col items-center">
               <ProfilePictureUploader
                 currentProfilePicture={data.avatar}
-                userName={data.companyName}
+                userName={data.companyName || ""}
                 onProfileChange={(pic) => onChange({ avatar: pic })}
                 size="xl"
                 showLabel={true}

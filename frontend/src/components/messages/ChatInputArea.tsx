@@ -24,7 +24,7 @@ interface Props {
   onMessageChange: (val: string) => void;
   onSend: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
-  onVoiceMessage: (blob: Blob, duration: number) => void;
+  onVoiceMessage: (blob: Blob, duration: number) => Promise<void>;
   sending: boolean;
   attachedFile: File | null;
   attachmentPreview: string | null;

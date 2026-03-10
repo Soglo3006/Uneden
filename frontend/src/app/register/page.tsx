@@ -63,8 +63,8 @@ export default function RegisterPage() {
     try {
       await signUpWithEmail(email, password, fullName);
       setShowSuccess(true);
-    } catch (err: any) {
-      setError(err.message || t("register.registrationFailed"));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("register.registrationFailed"));
     } finally {
       setChargement(false);
     }

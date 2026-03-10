@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Upload, Trash2, Camera, Plus, X } from "lucide-react";
 import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 import { toast } from "sonner";
 import { useScrollLock } from "@/hooks/useScrollLock";
@@ -32,7 +33,7 @@ export default function EditPortfolioCard({ portfolio, isPerson, onAdd, onRemove
   const [title, setTitle] = useState("");
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedPixels, setCroppedPixels] = useState<any>(null);
+  const [croppedPixels, setCroppedPixels] = useState<Area | null>(null);
   const [error, setError] = useState(false);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +54,7 @@ export default function EditPortfolioCard({ portfolio, isPerson, onAdd, onRemove
   };
 
   const handleSave = async () => {
-    if (!image || !title.trim()) { setError(true); return; }
+    if (!image || !title.trim() || !croppedPixels) { setError(true); return; }
     try {
       const cropped = await getCroppedImg(image, croppedPixels);
       const newId = portfolio.length > 0 ? Math.max(...portfolio.map((p) => p.id)) + 1 : 1;

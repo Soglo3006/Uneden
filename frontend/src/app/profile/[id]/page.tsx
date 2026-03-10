@@ -19,20 +19,46 @@ import ProfileListings from "@/components/profile/ProfileListings";
 import ProfileReviews from "@/components/profile/ProfileReviews";
 import BlockedBanner from "@/components/profile/BlockedBanner";
 import { toast } from "sonner";
+import { type Service as Listing } from "@/components/listings/EditListingModal";
+
+interface ProfileUser {
+  account_type?: string;
+  full_name?: string;
+  company_name?: string;
+  profession?: string;
+  industry?: string;
+  created_at?: string;
+  skills?: string | string[];
+  languages?: string | string[];
+  portfolio?: string | unknown[];
+  avatar?: string;
+  city?: string;
+  province?: string;
+  team_size?: string;
+  stats?: { average_rating?: number; total_reviews?: number };
+}
+
+interface Review {
+  id?: string | number;
+  reviewer_name?: string;
+  created_at?: string;
+  rating?: number;
+  comment?: string;
+}
 
 export default function UserProfilePage() {
   const params = useParams();
   const profileId = params.id as string;
   const { user, session, isLoggingOut } = useAuth();
 
-  const [profileUser, setProfileUser] = useState<any>(null);
+  const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const hasFetchedRef = useRef(false);
 
-  const [userListings, setUserListings] = useState<any[]>([]);
+  const [userListings, setUserListings] = useState<Listing[]>([]);
   const [listingsLoading, setListingsLoading] = useState(true);
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
 
   const [showSettings, setShowSettings] = useState(false);
@@ -67,8 +93,8 @@ export default function UserProfilePage() {
         if (!res.ok) throw new Error("Profile not found");
         setProfileUser(await res.json());
         hasFetchedRef.current = true;
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : t("profile.profileNotFound"));
       } finally {
         setLoading(false);
       }
@@ -144,8 +170,8 @@ export default function UserProfilePage() {
 
   const isPerson = profileUser.account_type === "person";
   const isCompany = profileUser.account_type === "company";
-  const displayName = isPerson ? profileUser.full_name : profileUser.company_name;
-  const displayTitle = isPerson ? profileUser.profession : profileUser.industry;
+  const displayName = (isPerson ? profileUser.full_name : profileUser.company_name) || "";
+  const displayTitle = (isPerson ? profileUser.profession : profileUser.industry) || "";
   const memberSince = profileUser.created_at
     ? new Date(profileUser.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })
     : "Recently";

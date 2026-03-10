@@ -148,7 +148,7 @@ function MessagesContent() {
       if (cancelled) return;
       setIsBlocked(!!iBlockedThem);
       setIsBlockedByOther(!!theyBlockedMe);
-      setIsMuted(!!(memberRow as any)?.is_muted);
+      setIsMuted(!!(memberRow as { is_muted?: boolean } | null)?.is_muted);
       setBlockCheckLoading(false);
     })().catch(() => { if (!cancelled) setBlockCheckLoading(false); });
     return () => { cancelled = true; };

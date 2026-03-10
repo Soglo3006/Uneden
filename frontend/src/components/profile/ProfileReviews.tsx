@@ -4,12 +4,20 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Star, UserStar } from "lucide-react";
 
+interface Review {
+  id?: string | number;
+  reviewer_name?: string;
+  created_at?: string;
+  rating?: number;
+  comment?: string;
+}
+
 interface Props {
-  reviews: any[];
+  reviews: Review[];
   reviewsLoading: boolean;
 }
 
-function ReviewCard({ r, idx, full, t }: { r: any; idx: number; full?: boolean; t: (key: string) => string }) {
+function ReviewCard({ r, idx, full, t }: { r: Review; idx: number; full?: boolean; t: (key: string) => string }) {
   return (
     <div key={r.id || idx} className="border rounded-lg p-4 bg-white">
       <div className="flex items-center justify-between mb-2">

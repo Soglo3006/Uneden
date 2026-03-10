@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 
 const toKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 
-function formatRelativeDate(dateStr: string, t: (key: string, opts?: any) => string) {
+function formatRelativeDate(dateStr: string, t: (key: string, opts?: Record<string, unknown>) => string) {
   try {
     const diff = Date.now() - new Date(dateStr).getTime();
     const days = Math.floor(diff / 86400000);
@@ -39,7 +39,7 @@ interface Listing {
   category_name?: string;
 }
 
-function ListingCard({ listing, t }: { listing: Listing; t: (key: string, opts?: any) => string }) {
+function ListingCard({ listing, t }: { listing: Listing; t: (key: string, opts?: Record<string, unknown>) => string }) {
   return (
     <Link href={`/serviceDetail/${listing.id}`}>
       <div className="border rounded-xl shadow-sm bg-white flex flex-col overflow-hidden hover:shadow-md transition-shadow cursor-pointer">

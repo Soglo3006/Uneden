@@ -15,7 +15,6 @@ export function useFavorites() {
 
   // Load favorites on mount / auth change
   useEffect(() => {
-    setLoaded(false);
     if (user && token) {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/favorites/ids`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -27,17 +26,19 @@ export function useFavorites() {
         })
         .catch(() => setLoaded(true));
     } else {
-      // Guest: use localStorage
-      try {
-        const raw = localStorage.getItem("savedListings");
-        const arr: string[] = raw ? JSON.parse(raw) : [];
-        setIds(new Set(arr));
-      } catch {
-        setIds(new Set());
-      }
-      setLoaded(true);
+      // Guest: use localStorage (deferred to avoid synchronous setState in effect)
+      Promise.resolve().then(() => {
+        try {
+          const raw = localStorage.getItem("savedListings");
+          const arr: string[] = raw ? JSON.parse(raw) : [];
+          setIds(new Set(arr));
+        } catch {
+          setIds(new Set());
+        }
+        setLoaded(true);
+      });
     }
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isSaved = useCallback(
     (serviceId: string) => ids.has(serviceId),

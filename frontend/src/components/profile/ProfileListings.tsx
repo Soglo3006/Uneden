@@ -10,11 +10,11 @@ import {
   Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Grid3x3, MapPin } from "lucide-react";
-import EditListingModal from "@/components/listings/EditListingModal";
+import EditListingModal, { type Service as Listing } from "@/components/listings/EditListingModal";
 
 interface Props {
-  userListings: any[];
-  setUserListings: (fn: (prev: any[]) => any[]) => void;
+  userListings: Listing[];
+  setUserListings: (fn: (prev: Listing[]) => Listing[]) => void;
   listingsLoading: boolean;
   isOwner: boolean;
   isPerson: boolean;
@@ -27,7 +27,7 @@ export default function ProfileListings({
   isOwner, isPerson, profileId, accessToken,
 }: Props) {
   const { t } = useTranslation();
-  const [editingListing, setEditingListing] = useState<any>(null);
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 

@@ -26,8 +26,8 @@ export default function ForgotPasswordPage() {
       });
       if (error) throw error;
       setSent(true);
-    } catch (err: any) {
-      setError(err.message || t("auth.resetError"));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t("auth.resetError"));
     } finally {
       setLoading(false);
     }

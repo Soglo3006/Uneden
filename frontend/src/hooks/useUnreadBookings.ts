@@ -5,11 +5,11 @@ import { useAuth } from "@/contexts/AuthContext";
 export interface BookingNotif {
   id: string;
   service_title: string;
-  other_name: string;   // client name (for worker) or worker name (for client)
+  other_name: string;  
   other_avatar: string | null;
   status: string;
   created_at: string;
-  role: "worker" | "client"; // perspective of current user
+  role: "worker" | "client";
   seen: boolean;
 }
 
@@ -34,7 +34,7 @@ export function useUnreadBookings() {
   const [loading, setLoading] = useState(true);
 
   const fetchNotifs = useCallback(async () => {
-    if (!user) { setNotifs([]); setLoading(false); return; }
+    if (!user) return;
 
     const seenIds = getSeenIds(user.id);
 
@@ -128,9 +128,13 @@ export function useUnreadBookings() {
   }, [user]);
 
   useEffect(() => {
-    fetchNotifs();
+    if (!user) {
+      Promise.resolve().then(() => { setNotifs([]); setLoading(false); });
+      return;
+    }
 
-    if (!user) return;
+    Promise.resolve().then(() => fetchNotifs());
+
     const channel = supabase
       .channel("booking-notifs")
       .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, fetchNotifs)

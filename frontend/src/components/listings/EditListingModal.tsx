@@ -24,7 +24,7 @@ const URGENCY_LEVELS = [
   { value: "urgent", label: "Urgent" },
 ];
 
-interface Service {
+export interface Service {
   id: string;
   type: "offer" | "looking";
   title: string;

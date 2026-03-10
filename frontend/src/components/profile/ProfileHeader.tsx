@@ -10,8 +10,19 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+interface ProfileUser {
+  avatar?: string;
+  city?: string;
+  province?: string;
+  team_size?: string;
+  stats?: {
+    average_rating?: number;
+    total_reviews?: number;
+  };
+}
+
 interface Props {
-  profileUser: any;
+  profileUser: ProfileUser;
   displayName: string;
   displayTitle: string;
   isPerson: boolean;

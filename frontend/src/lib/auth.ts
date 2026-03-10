@@ -29,15 +29,15 @@ export function isAdminUser(user: User | null | undefined): boolean {
   if (userId && idList.includes(userId)) return true;
 
   // Metadata-based role checks
-  const um = (user.user_metadata || {}) as any;
-  const am = (user.app_metadata || {}) as any;
+  const um: Record<string, unknown> = user.user_metadata || {};
+  const am: Record<string, unknown> = user.app_metadata || {};
 
   const metaRole = String(um.role || am.role || "").toLowerCase();
   if (metaRole === "admin") return true;
 
-  const roles = (
-    (Array.isArray(um.roles) ? um.roles : []) || (Array.isArray(am.roles) ? am.roles : [])
-  ) as string[];
+  const umRoles = Array.isArray(um.roles) ? (um.roles as unknown[]) : [];
+  const amRoles = Array.isArray(am.roles) ? (am.roles as unknown[]) : [];
+  const roles = umRoles.length ? umRoles : amRoles;
   if (roles.map((r) => String(r).toLowerCase()).includes("admin")) return true;
 
   return false;
