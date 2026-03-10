@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
 import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { toast } from "sonner";
+import { useScrollLock } from "@/hooks/useScrollLock";
+import { useTranslation } from "react-i18next";
 
 interface ProfilePictureUploaderProps {
 currentProfilePicture: string;
@@ -24,11 +28,13 @@ export default function ProfilePictureUploader({
     showLabel = true,
     readOnly = false,
     }: ProfilePictureUploaderProps) {
+        const { t } = useTranslation();
         const [showCropper, setShowCropper] = useState(false);
         const [imageToCrop, setImageToCrop] = useState<string | null>(null);
         const [crop, setCrop] = useState({ x: 0, y: 0 });
+        useScrollLock(showCropper);
         const [zoom, setZoom] = useState(1);
-        const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+        const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
         const sizeClasses = {
             sm: "w-16 h-16",
@@ -43,7 +49,7 @@ export default function ProfilePictureUploader({
             if (!file) return;
 
             if (!file.type.startsWith("image/")) {
-            alert("Please upload an image.");
+            toast.error("Please upload an image.");
             return;
             }
 
@@ -56,6 +62,7 @@ export default function ProfilePictureUploader({
         };
 
         const saveCroppedImage = async () => {
+            if (!croppedAreaPixels) return;
             try {
             const croppedImage = await getCroppedImg(imageToCrop!, croppedAreaPixels);
             onProfileChange(croppedImage);
@@ -88,10 +95,10 @@ export default function ProfilePictureUploader({
                 type="button"
             >
                 <Camera className="h-4 w-4" />
-                Upload Image
+                {t("profile.uploadImageLabel")}
             </Button>
             {showLabel && (
-                <p className="text-xs text-gray-500">JPG, PNG or GIF. Max 2MB.</p>
+                <p className="text-xs text-gray-500">{t("profile.imageHint")}</p>
             )}
             </div>
             )}
@@ -99,9 +106,9 @@ export default function ProfilePictureUploader({
 
         {/* Cropper Modal */}
         {showCropper && imageToCrop && (
-            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-[90%] max-w-xl">
-                <h2 className="text-lg font-semibold mb-4">Adjust your profile photo</h2>
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                <h2 className="text-lg font-semibold mb-4">{t("profile.adjustPhoto")}</h2>
 
                 <div className="relative w-full h-64 bg-gray-200 rounded-xl overflow-hidden">
                 <Cropper
@@ -118,11 +125,25 @@ export default function ProfilePictureUploader({
                 />
                 </div>
 
-                <div className="mt-4 flex justify-between">
-                <Button variant="outline" onClick={() => setShowCropper(false)} type="button" className="cursor-pointer">
-                    Cancel
+                <div className="mt-4 mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">{t("profile.zoom")}</label>
+                  <input
+                    type="range"
+                    title={t("profile.zoom")}
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    value={zoom}
+                    onChange={(e) => setZoom(Number(e.target.value))}
+                    className="w-full cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setShowCropper(false)} type="button" className="flex-1 cursor-pointer">
+                    {t("profile.cancel")}
                 </Button>
-                <Button onClick={saveCroppedImage} type="button" className="cursor-pointer">Save</Button>
+                <Button onClick={saveCroppedImage} type="button" className="flex-1 cursor-pointer">{t("profile.save")}</Button>
                 </div>
             </div>
             </div>

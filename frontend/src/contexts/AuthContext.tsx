@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { isAdminUser } from "@/lib/auth";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
@@ -10,8 +11,8 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isLoggingOut: boolean;
-  profilesById: Record<string, any>;
-  setProfileInCache: (id: string, profile: any) => void;
+  profilesById: Record<string, unknown>;
+  setProfileInCache: (id: string, profile: unknown) => void;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, fullName: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -27,9 +28,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [profilesById, setProfilesById] = useState<Record<string, any>>({});
+  const [profilesById, setProfilesById] = useState<Record<string, unknown>>({});
 
-  const setProfileInCache = (id: string, profile: any) => {
+  const setProfileInCache = (id: string, profile: unknown) => {
     setProfilesById((prev) => ({ ...prev, [id]: profile }));
   };
 
@@ -56,13 +57,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signInWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) throw new Error(error.message);
-    router.push("/");
+    router.push(isAdminUser(data.user) ? "/admin" : "/");
   };
 
   const signUpWithEmail = async (email: string, password: string, fullName: string) => {
@@ -79,9 +80,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) throw new Error(error.message);
-    
-    alert("Account created! Check your email to verify your account.");
-    router.push("/auth/verify-email");
   };
 
   const signInWithGoogle = async () => {

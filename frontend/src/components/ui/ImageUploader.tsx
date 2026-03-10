@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Trash2 } from "lucide-react";
-import Cropper from "react-easy-crop";
+import Cropper, { type Area } from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
+import { toast } from "sonner";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface ImageUploaderProps {
   currentImage: string | null;
@@ -22,20 +24,21 @@ export default function ImageUploader({
   const [showCropper, setShowCropper] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
+  useScrollLock(showCropper);
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Please upload an image.");
+      toast.error("Please upload an image.");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      alert("File size must be less than 5MB.");
+      toast.error("File size must be less than 5MB.");
       return;
     }
 
@@ -48,6 +51,7 @@ export default function ImageUploader({
   };
 
   const saveCroppedImage = async () => {
+    if (!croppedAreaPixels) return;
     try {
       const croppedImage = await getCroppedImg(imageToCrop!, croppedAreaPixels);
       onImageChange(croppedImage);
@@ -56,7 +60,7 @@ export default function ImageUploader({
       setZoom(1);
     } catch (err) {
       console.error(err);
-      alert("Failed to crop image. Please try again.");
+      toast.error("Failed to crop image. Please try again.");
     }
   };
 
@@ -92,7 +96,7 @@ export default function ImageUploader({
             <button
             type="button"
             onClick={() => onImageChange("")}
-            className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow hover:bg-red-700 transition"
+            className="cursor-pointer absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow hover:bg-red-700 transition"
             >
             <Trash2 className="w-4 h-4" />
             </button>
@@ -101,8 +105,8 @@ export default function ImageUploader({
       </div>
 
       {showCropper && imageToCrop && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[90%] max-w-xl">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold mb-4">Adjust your image</h2>
 
             <div className="relative w-full h-64 bg-gray-200 rounded-xl overflow-hidden mb-4">
@@ -126,6 +130,7 @@ export default function ImageUploader({
               </label>
               <input
                 type="range"
+                title="Zoom"
                 min={1}
                 max={3}
                 step={0.1}

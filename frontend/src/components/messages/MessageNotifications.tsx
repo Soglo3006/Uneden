@@ -10,14 +10,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 export default function MessageNotifications() {
+  const { t, i18n } = useTranslation();
   const { unreadChats, unreadCount, loading, markAsRead } = useUnreadMessages();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
   const handleMessageClick = (chatRoomId: string) => {
     markAsRead(chatRoomId);
+    setOpen(false);
     router.push(`/messages?chat=${chatRoomId}`);
   };
 
@@ -31,7 +36,7 @@ export default function MessageNotifications() {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
 
-    if (diff < 60000) return 'À l\'instant';
+    if (diff < 60000) return t("messages.justNow");
     if (diff < 3600000) {
       const mins = Math.floor(diff / 60000);
       return `${mins}m`;
@@ -40,11 +45,11 @@ export default function MessageNotifications() {
       const hours = Math.floor(diff / 3600000);
       return `${hours}h`;
     }
-    return date.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' });
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -67,7 +72,7 @@ export default function MessageNotifications() {
         <div className="border-b border-gray-200 px-4 py-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-900">
-              Inbox
+              {t("messages.inbox")}
               {unreadCount > 0 && (
                 <span className="ml-1.5 text-xs font-normal text-gray-500">
                   ({unreadCount})
@@ -86,7 +91,7 @@ export default function MessageNotifications() {
           ) : unreadChats.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
               <MessageCircle className="h-10 w-10 text-gray-300 mb-2" />
-              <p className="text-sm text-gray-500">Aucun nouveau message</p>
+              <p className="text-sm text-gray-500">{t("messages.noNewMessages")}</p>
             </div>
           ) : (
             <div>
@@ -142,8 +147,8 @@ export default function MessageNotifications() {
                   {!chat.is_read ? (
                     <button
                       onClick={(e) => handleMarkAsRead(e, chat.chat_room_id)}
-                      className="shrink-0 group flex items-center justify-center h-8 w-8 rounded-full hover:bg-blue-100 transition-colors"
-                      title="Marquer comme lu"
+                      className="cursor-pointer shrink-0 group flex items-center justify-center h-8 w-8 rounded-full hover:bg-blue-100 transition-colors"
+                      title={t("messages.markAsRead")}
                     >
                       {/* Blue dot that becomes a check on hover */}
                       <span className="block group-hover:hidden h-2.5 w-2.5 rounded-full bg-blue-500" />
@@ -161,10 +166,10 @@ export default function MessageNotifications() {
         {/* Footer — See All in Inbox */}
         <div className="border-t border-gray-200 px-4 py-3">
           <button
-            onClick={() => router.push('/messages')}
+            onClick={() => { setOpen(false); router.push('/messages'); }}
             className="text-sm font-medium text-green-700 hover:text-green-800 hover:underline w-full text-center transition-colors cursor-pointer"
           >
-            See All in Inbox
+            {t("messages.seeAllInbox")}
           </button>
         </div>
       </DropdownMenuContent>

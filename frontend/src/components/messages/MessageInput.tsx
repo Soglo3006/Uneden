@@ -1,9 +1,11 @@
 "use client";
 
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, X, Paperclip, Mic } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Popover,
   PopoverContent,
@@ -21,7 +23,7 @@ interface MessageInputProps {
   attachmentPreview: string | null;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveAttachment: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   onVoiceMessage?: (audioBlob: Blob, duration: number) => Promise<void>;
 }
 
@@ -38,6 +40,7 @@ export function MessageInput({
   fileInputRef,
   onVoiceMessage,
 }: MessageInputProps) {
+  const { t } = useTranslation();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -115,7 +118,7 @@ export function MessageInput({
       drawWave();
 
     } catch (err) {
-      alert('Microphone non accessible');
+      toast.error(t("messages.microphoneNotAccessible"));
     }
   };
 
@@ -234,7 +237,7 @@ export function MessageInput({
                   className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-sm text-gray-700 w-full text-left cursor-pointer"
                 >
                   <Paperclip className="h-4 w-4 text-gray-500" />
-                  Fichier
+                  {t("messages.fileAttachment")}
                 </button>
                 <button
                   onMouseDown={startRecording}
@@ -242,7 +245,7 @@ export function MessageInput({
                   className="flex items-center gap-3  px-3 py-2 rounded-lg hover:bg-gray-100 text-sm text-gray-700 w-full text-left cursor-pointer"
                 >
                   <Mic className="h-4 w-4 text-gray-500" />
-                  Message vocal
+                  {t("messages.voiceMessage")}
                 </button>
               </div>
             </PopoverContent>
@@ -308,7 +311,7 @@ export function MessageInput({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyPress={onKeyPress}
-            placeholder="Aa"
+            placeholder={t("messages.typeMessage")}
             disabled={disabled}
             className="flex-1"
           />

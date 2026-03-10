@@ -38,10 +38,10 @@ export const createReview = async (req, res) => {
     );
 
     const users = await pool.query(
-      `SELECT 
-        u1.email as target_email, 
-        u1.full_name as target_name,
-        u2.full_name as reviewer_name
+      `SELECT
+        u1.email as target_email,
+        CASE WHEN u1.account_type = 'company' THEN u1.company_name ELSE u1.full_name END as target_name,
+        CASE WHEN u2.account_type = 'company' THEN u2.company_name ELSE u2.full_name END as reviewer_name
        FROM users u1, users u2
        WHERE u1.id = $1 AND u2.id = $2`,
       [target_id, req.user.id]
@@ -64,7 +64,8 @@ export const getUserReviews = async (req, res) => {
     const { userId } = req.params;
 
     const result = await pool.query(
-      `SELECT r.*, u.full_name AS reviewer_name
+      `SELECT r.*,
+              CASE WHEN u.account_type = 'company' THEN u.company_name ELSE u.full_name END AS reviewer_name
        FROM reviews r
        JOIN users u ON r.reviewer_id = u.id
        WHERE r.target_id = $1

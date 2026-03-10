@@ -43,15 +43,16 @@ export function useChats() {
     try {
       const { data: chatRoomMembers, error: membersError } = await supabase
         .from('chat_room_member')
-        .select('chat_room_id, is_archived')
-        .eq('user_id', user.id);
+        .select('chat_room_id, is_archived, is_deleted')
+        .eq('user_id', user.id)
+        .eq('is_deleted', false);
 
       if (membersError) throw membersError;
 
-      const chatRoomIds = (chatRoomMembers || []).map((m: { chat_room_id: string; is_archived?: boolean }) => m.chat_room_id);
+      const chatRoomIds = (chatRoomMembers || []).map((m: { chat_room_id: string; is_archived?: boolean; is_deleted?: boolean }) => m.chat_room_id);
 
       const archivedByChat: Record<string, boolean> = {};
-      (chatRoomMembers || []).forEach((m: { chat_room_id: string; is_archived?: boolean }) => {
+      (chatRoomMembers || []).forEach((m: { chat_room_id: string; is_archived?: boolean; is_deleted?: boolean }) => {
         if (m.is_archived) archivedByChat[m.chat_room_id] = true;
       });
 
@@ -98,14 +99,14 @@ export function useChats() {
               .from('profiles')
               .select('id, full_name, company_name, account_type, avatar_url, bio, created_at')
               .eq('id', otherUserId)
-              .single(),
+              .maybeSingle(),
             supabase
               .from('messages')
               .select('content, created_at, user_id')
               .eq('chat_room_id', room.id)
               .order('created_at', { ascending: false })
               .limit(1)
-              .single(),
+              .maybeSingle(),
           ]);
 
           return {
@@ -128,7 +129,7 @@ export function useChats() {
         return timeB - timeA;
       });
 
-      setChats(chatsWithDetails as ChatRoom[]);
+      setChats(chatsWithDetails as unknown as ChatRoom[]);
     } catch (error) {
       console.error('Error fetching chats:', error);
     } finally {
@@ -154,14 +155,19 @@ export function useChats() {
           const msg = payload.new as { chat_room_id: string; content: string; created_at: string; user_id: string };
           const currentUserId = userIdRef.current;
 
-          setChats((prev) =>
-            prev
+          setChats((prev) => {
+            const exists = prev.some(c => c.id === msg.chat_room_id);
+            // New conversation not yet in state — refetch to add it
+            if (!exists) {
+              fetchChats();
+              return prev;
+            }
+            return prev
               .map((chat) => {
                 if (chat.id !== msg.chat_room_id) return chat;
                 return {
                   ...chat,
                   last_message: { content: msg.content, created_at: msg.created_at, user_id: msg.user_id },
-                  // Only increment badge for messages from the other person
                   unread_count: msg.user_id !== currentUserId
                     ? (chat.unread_count || 0) + 1
                     : chat.unread_count,
@@ -175,8 +181,8 @@ export function useChats() {
                   ? new Date(b.last_message.created_at).getTime()
                   : new Date(b.created_at).getTime();
                 return timeB - timeA;
-              })
-          );
+              });
+          });
         }
       )
       .on(
@@ -190,7 +196,7 @@ export function useChats() {
             .eq('chat_room_id', updated.chat_room_id)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
           if (!lastMessage) return;
           setChats((prev) =>
@@ -202,11 +208,11 @@ export function useChats() {
       )
       .on(
         'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'chat_room_member' },
+        { event: 'UPDATE', schema: 'public', table: 'chat_room_member' },
         (payload) => {
-          const deleted = payload.old as { user_id: string; chat_room_id: string };
-          if (deleted.user_id === user.id) {
-            setChats((prev) => prev.filter(c => c.id !== deleted.chat_room_id));
+          const updated = payload.new as { user_id: string; chat_room_id: string; is_deleted?: boolean };
+          if (updated.user_id === user.id && updated.is_deleted) {
+            setChats((prev) => prev.filter(c => c.id !== updated.chat_room_id));
           }
         }
       )
@@ -239,5 +245,31 @@ export function useChats() {
     );
   }, []);
 
-  return { chats, loading, clearUnreadCount, archiveChat };
+  /** Instantly remove a chat from the list (optimistic delete) */
+  const removeChat = useCallback((chatId: string) => {
+    setChats((prev) => prev.filter(c => c.id !== chatId));
+  }, []);
+
+  /** Optimistically update last message preview — call immediately after sender sends */
+  const updateLastMessage = useCallback((chatId: string, content: string, userId: string, createdAt: string) => {
+    setChats((prev) =>
+      prev
+        .map((c) =>
+          c.id === chatId
+            ? { ...c, last_message: { content, created_at: createdAt, user_id: userId } }
+            : c
+        )
+        .sort((a, b) => {
+          const timeA = a.last_message?.created_at
+            ? new Date(a.last_message.created_at).getTime()
+            : new Date(a.created_at).getTime();
+          const timeB = b.last_message?.created_at
+            ? new Date(b.last_message.created_at).getTime()
+            : new Date(b.created_at).getTime();
+          return timeB - timeA;
+        })
+    );
+  }, []);
+
+  return { chats, loading, clearUnreadCount, archiveChat, removeChat, updateLastMessage };
 }

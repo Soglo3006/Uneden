@@ -29,7 +29,7 @@ export function useUserPresence(otherUserId?: string) {
         table: 'user_presence',
         filter: `user_id=eq.${otherUserId}`,
       }, (payload) => {
-        setIsOnline((payload.new as any).is_online);
+        setIsOnline((payload.new as { is_online?: boolean }).is_online ?? false);
       })
       .subscribe();
 

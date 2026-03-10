@@ -27,7 +27,7 @@ export function MessageReactions({
     <button
       onClick={() => onReactionClick(userReaction.emoji)}
       className={`
-        h-7 w-7 rounded-full border-2 border-white shadow-md
+        cursor-pointer h-7 w-7 rounded-full border-2 border-white shadow-md
         flex items-center justify-center
         transition-all hover:scale-110 active:scale-95
         ${isOwn ? 'bg-green-700' : 'bg-white'}

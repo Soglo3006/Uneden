@@ -13,20 +13,22 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { sanitizeMessage } from '@/lib/sanitize';
+import { useTranslation } from 'react-i18next';
 
 interface Chat {
   id: string;
-  name?: string;
+  name?: string | null;
   last_message?: {
     content: string;
     created_at: string;
     user_id?: string;
   };
   other_user?: {
+    id?: string;
     full_name?: string;
     company_name?: string;
     account_type?: string;
-    avatar_url?: string;
+    avatar_url?: string | null;
   };
   unread_count?: number; 
   is_archived?: boolean; 
@@ -41,19 +43,20 @@ interface ConversationListProps {
   currentUserId: string | null;
 }
 
-function ConversationItem({ 
-  chat, 
-  isActive, 
-  currentUserId, 
+function ConversationItem({
+  chat,
+  isActive,
+  currentUserId,
   onSelect,
   now,
-}: { 
-  chat: Chat; 
-  isActive: boolean; 
-  currentUserId: string | null; 
+}: {
+  chat: Chat;
+  isActive: boolean;
+  currentUserId: string | null;
   onSelect: () => void;
   now: number;
 }) {
+  const { t } = useTranslation();
 
   const unreadCount = chat.unread_count ?? 0;
 
@@ -61,31 +64,33 @@ function ConversationItem({
   const isCompany = chat.other_user?.account_type === 'company';
 
   const displayName = isPerson
-    ? chat.other_user?.full_name
+    ? chat.other_user?.full_name || chat.name || 'Unknown'
     : isCompany
-    ? chat.other_user?.company_name
+    ? chat.other_user?.company_name || chat.name || 'Unknown'
     : chat.other_user?.full_name || chat.name || 'Unknown';
 
   const lastMessagePreview = (() => {
-  if (!chat.last_message?.content) return 'No messages yet';
-  
+  if (!chat.last_message?.content) return t("messages.noMessagesYet");
+
   const content = chat.last_message.content;
-  
+
   if (content.includes('[AUDIO:')) {
     const isOwn = chat.last_message.user_id === currentUserId;
     const senderName = chat.other_user?.account_type === 'company'
       ? chat.other_user?.company_name
       : chat.other_user?.full_name;
-    return isOwn ? ' Vous avez envoyé un message vocal' : ` ${senderName} a envoyé un message vocal`;
+    return isOwn
+      ? t("messages.sentVoiceMessage")
+      : t("messages.sentVoiceMessageOther", { name: senderName });
   }
-  
+
   if (content.includes('[FILE:')) {
     const match = content.match(/\[FILE:(.*?)\]/);
     const fileUrl = match ? match[1] : '';
     const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
-    return isImage ? ' Photo' : ' Fichier';
+    return isImage ? t("messages.photo") : t("messages.file");
   }
-  
+
   return content;
 })();
 
@@ -102,13 +107,13 @@ function ConversationItem({
     const diffMonths = Math.floor(diffDays / 30);
     const diffYears = Math.floor(diffDays / 365);
 
-    if (diffMins < 1) return diffMs < 30_000 ? "À l'instant" : "1 min";
-    if (diffMins < 60) return `${diffMins} min`;
-    if (diffHours < 24) return `${diffHours} h`;
-    if (diffDays < 7) return `${diffDays} j`;
-    if (diffWeeks < 4) return `${diffWeeks} sem`;
-    if (diffMonths < 12) return `${diffMonths} mois`;
-    return `${diffYears} an${diffYears > 1 ? 's' : ''}`;
+    if (diffMins < 1) return diffMs < 30_000 ? t("messages.justNow") : t("messages.minutesAgo", { count: 1 });
+    if (diffMins < 60) return t("messages.minutesAgo", { count: diffMins });
+    if (diffHours < 24) return t("messages.hoursAgo", { count: diffHours });
+    if (diffDays < 7) return t("messages.daysAgoShort", { count: diffDays });
+    if (diffWeeks < 4) return t("messages.weeksAgoShort", { count: diffWeeks });
+    if (diffMonths < 12) return t("messages.monthsAgoShort", { count: diffMonths });
+    return t("messages.yearsAgoShort", { count: diffYears });
   })();
 
 
@@ -170,6 +175,7 @@ export function ConversationList({
   onChatSelect,
   currentUserId,
 }: ConversationListProps) {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<string>('all');
   const [now, setNow] = useState(() => Date.now());
 
@@ -214,7 +220,7 @@ export function ConversationList({
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search conversations..."
+            placeholder={t("messages.searchConversations")}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-10 w-full"
@@ -225,30 +231,30 @@ export function ConversationList({
       {/* Title + Filter Select sticky */}
       <div className="sticky top-[72px] z-10 px-4 py-3 border-b bg-white">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-semibold text-gray-900 whitespace-nowrap">Messages</h2>
+          <h2 className="font-semibold text-gray-900 whitespace-nowrap">{t("messages.title")}</h2>
           <Select value={filter} onValueChange={setFilter}>
             <SelectTrigger className="w-[140px] h-9 cursor-pointer">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Messages</SelectItem>
-              <SelectItem value="unread">Unread</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
+              <SelectItem value="all">{t("messages.filterAll")}</SelectItem>
+              <SelectItem value="unread">{t("messages.filterUnread")}</SelectItem>
+              <SelectItem value="archived">{t("messages.filterArchived")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
       {/* Conversations list */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         {filteredChats.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <p>
-              {filter === 'unread' 
-                ? 'No unread messages' 
+              {filter === 'unread'
+                ? t("messages.noUnread")
                 : filter === 'archived'
-                ? 'No archived conversations'
-                : 'No conversations yet'}
+                ? t("messages.noArchived")
+                : t("messages.noConversations")}
             </p>
           </div>
         ) : (

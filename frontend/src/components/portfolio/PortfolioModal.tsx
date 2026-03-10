@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
 import getCroppedImg from "@/utils/cropImage";
 
 interface PortfolioModalProps {
@@ -18,7 +19,7 @@ export default function PortfolioModal({ open, onClose, onSave }: PortfolioModal
   const [image, setImage] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -26,7 +27,7 @@ export default function PortfolioModal({ open, onClose, onSave }: PortfolioModal
 
   if (!open) return null;
 
-  const handleImageUpload = (e: any) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -36,7 +37,7 @@ export default function PortfolioModal({ open, onClose, onSave }: PortfolioModal
   };
 
   const handleSave = async () => {
-    if (!title.trim()) {
+    if (!title.trim() || !croppedAreaPixels) {
       setError(true);
       return;
     }

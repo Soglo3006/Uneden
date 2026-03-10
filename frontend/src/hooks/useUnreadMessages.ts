@@ -1,4 +1,3 @@
-// frontend/src/hooks/useUnreadMessages.ts
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +14,6 @@ export interface UnreadChat {
   account_type: string | null;
 }
 
-// Petit helper pour jouer le son de notification
 function playNotificationSound() {
   try {
     const audio = new Audio('/sounds/notification.mp3');
@@ -41,11 +39,12 @@ export function useUnreadMessages() {
 
     const fetchMessages = async (playSound = false) => {
       try {
-        // 1. Récupérer tous les chats de l'user
+        // Récupérer tous les chats de l'user (non supprimés)
         const { data: memberData } = await supabase
           .from('chat_room_member')
           .select('chat_room_id')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('is_deleted', false);
 
         if (!memberData || memberData.length === 0) {
           setUnreadChats([]);
@@ -56,7 +55,7 @@ export function useUnreadMessages() {
 
         const chatRoomIds = memberData.map(m => m.chat_room_id);
 
-        // 2. Pour chaque chat, récupérer le dernier message + compter les non-lus via read_at
+        // Pour chaque chat, récupérer le dernier message + compter les non-lus via read_at
         const allChats = await Promise.all(
           chatRoomIds.map(async (chatId) => {
             // Dernier message du chat
@@ -66,7 +65,7 @@ export function useUnreadMessages() {
               .eq('chat_room_id', chatId)
               .order('created_at', { ascending: false })
               .limit(1)
-              .single();
+              .maybeSingle();
 
             if (!lastMsg) return null;
 
@@ -87,7 +86,7 @@ export function useUnreadMessages() {
               .eq('chat_room_id', chatId)
               .neq('user_id', user.id)
               .limit(1)
-              .single();
+              .maybeSingle();
 
             const displayUserId = otherMember?.user_id || lastMsg.user_id;
 
@@ -96,7 +95,7 @@ export function useUnreadMessages() {
               .from('profiles')
               .select('id, full_name, company_name, account_type, avatar_url')
               .eq('id', displayUserId)
-              .single();
+              .maybeSingle();
 
             // Préfixer "Vous: " si le dernier message est le nôtre
             const messagePreview = lastMsg.user_id === user.id
@@ -175,8 +174,22 @@ export function useUnreadMessages() {
           table: 'messages',
         },
         () => {
-          // Update (read_at changé) → re-fetch sans son
           fetchMessages(false);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_room_member',
+        },
+        (payload) => {
+          // Re-fetch quand is_deleted ou is_archived change pour cet user
+          const row = payload.new as { user_id: string; is_deleted?: boolean; is_archived?: boolean };
+          if (row.user_id === user.id) {
+            fetchMessages(false);
+          }
         }
       )
       .subscribe();

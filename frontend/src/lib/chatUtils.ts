@@ -1,4 +1,3 @@
-// frontend/src/lib/chatUtils.ts
 import { supabase } from '@/lib/supabaseClient';
 
 /**
@@ -8,7 +7,9 @@ import { supabase } from '@/lib/supabaseClient';
  */
 export async function getOrCreateDirectChat(otherUserId: string): Promise<string | null> {
   try {
-    // Utiliser la fonction SQL que nous avons créée
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
     const { data, error } = await supabase
       .rpc('get_or_create_direct_chat', {
         other_user_id: otherUserId
@@ -19,7 +20,15 @@ export async function getOrCreateDirectChat(otherUserId: string): Promise<string
       return null;
     }
 
-    return data; // Retourne l'UUID de la conversation
+    // If the user had previously deleted this conversation, restore it
+    await supabase
+      .from('chat_room_member')
+      .update({ is_deleted: false })
+      .eq('chat_room_id', data)
+      .eq('user_id', user.id)
+      .eq('is_deleted', true);
+
+    return data;
   } catch (err) {
     console.error('Unexpected error:', err);
     return null;
@@ -55,7 +64,7 @@ export async function findExistingChat(
         .from('chat_room')
         .select('is_group')
         .eq('id', chatId)
-        .single();
+        .maybeSingle();
 
       // Seulement les chats directs (pas de groupe)
       if (chatRoom && !chatRoom.is_group) {

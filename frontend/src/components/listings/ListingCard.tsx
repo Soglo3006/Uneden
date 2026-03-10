@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Clock } from "lucide-react";
+import { MapPin, Clock, Grid3x3 } from "lucide-react";
 
 interface ListingCardProps {
     title?: string;
@@ -9,15 +9,19 @@ interface ListingCardProps {
     postedTime?: string;
     imageUrl?: string;
     completedCount?: number;
+    category?: string;
+    subcategory?: string;
 }
 
 export default function ListingCard({
-    title = "Professional House Cleaning Service",
-    price = 75,
-    location = "Toronto, ON",
-    postedTime = "2 hours ago",
-    imageUrl = "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&q=80",
+    title = "Service Listing",
+    price = 0,
+    location = "",
+    postedTime = "",
+    imageUrl,
     completedCount,
+    category,
+    subcategory,
     }: ListingCardProps) {
     const formatCompleted = (n?: number) => {
         if (!n || n <= 0) return "";
@@ -26,12 +30,18 @@ export default function ListingCard({
     };
     return (
         <div className="cursor-pointer bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex flex-col sm:flex-row">
-        <div className="w-full h-40 sm:w-40 sm:h-32 shrink-0">
-            <img
-            src={imageUrl}
-            alt={title}
-            className="w-full h-full object-cover"
-            />
+        <div className="w-full h-40 sm:w-40 sm:h-full shrink-0 overflow-hidden bg-gray-100">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Grid3x3 className="h-10 w-10 text-gray-300" />
+              </div>
+            )}
         </div>
         <div className="flex-1 p-4 flex flex-col justify-between">
             <div>
@@ -39,6 +49,11 @@ export default function ListingCard({
                 {title}
                 <span className="text-gray-500 font-normal">{formatCompleted(completedCount)}</span>
             </h3>
+            {(category || subcategory) && (
+                <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
+                    {[category, subcategory].filter(Boolean).join(" | ")}
+                </p>
+            )}
             <p className="text-xl font-bold text-brand-green text-green-700 mt-1">
                 ${price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
             </p>

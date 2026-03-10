@@ -1,11 +1,14 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 
 export default function VerifyEmailPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
       <Card className="w-full max-w-md">
@@ -15,9 +18,9 @@ export default function VerifyEmailPage() {
               <Mail className="h-12 w-12 text-green-700" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t("auth.verifyEmail")}</CardTitle>
           <CardDescription className="text-base mt-2">
-            We've sent you a confirmation link to verify your email address.
+            {t("auth.verifyEmailDesc")}
           </CardDescription>
         </CardHeader>
 
@@ -40,7 +43,7 @@ export default function VerifyEmailPage() {
 
           <Link href="/login" className="block">
             <Button className="w-full bg-green-700 hover:bg-green-800 cursor-pointer">
-              Go to Login
+              {t("auth.backToLogin")}
             </Button>
           </Link>
         </CardContent>

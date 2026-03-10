@@ -4,6 +4,15 @@ import { supabase } from '@/lib/supabaseClient';
 export function useTypingIndicator(chatId: string | null, currentUserId: string | null) {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const stopTyping = useCallback(async () => {
+    if (!chatId || !currentUserId) return;
+    await supabase
+      .from('typing_indicators')
+      .delete()
+      .eq('chat_room_id', chatId)
+      .eq('user_id', currentUserId);
+  }, [chatId, currentUserId]);
+
   // Envoyer le statut "en train d'écrire"
   const sendTyping = useCallback(async () => {
     if (!chatId || !currentUserId) return;
@@ -19,16 +28,7 @@ export function useTypingIndicator(chatId: string | null, currentUserId: string 
     // Auto-stop après 3s sans frappe
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => stopTyping(), 3000);
-  }, [chatId, currentUserId]);
-
-  const stopTyping = useCallback(async () => {
-    if (!chatId || !currentUserId) return;
-    await supabase
-      .from('typing_indicators')
-      .delete()
-      .eq('chat_room_id', chatId)
-      .eq('user_id', currentUserId);
-  }, [chatId, currentUserId]);
+  }, [chatId, currentUserId, stopTyping]);
 
   // Cleanup quand on change de conv
   useEffect(() => {

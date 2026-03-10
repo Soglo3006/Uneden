@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { isAdminUser } from "@/lib/auth";
 
 interface UseProtectedRouteOptions {
   requireAuth?: boolean;
@@ -37,11 +38,11 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
     }
 
     if (!requireAuth && user) {
-      const profileCompleted = user.user_metadata?.profile_completed;
-      if (profileCompleted) {
-        router.push("/");
+      if (isAdminUser(user)) {
+        router.push("/admin");
       } else {
-        router.push("/choose_type");
+        const profileCompleted = user.user_metadata?.profile_completed;
+        router.push(profileCompleted ? "/" : "/choose_type");
       }
     }
   }, [user, loading, router, requireAuth, requireProfileCompleted, redirectTo]);

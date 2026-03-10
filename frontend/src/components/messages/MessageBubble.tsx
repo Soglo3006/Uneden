@@ -31,7 +31,7 @@ interface MessageBubbleProps {
   } | null;
   onReplyClick?: (messageId: string) => void;
   otherUser?: {
-    avatar_url?: string;
+    avatar_url?: string | null;
     account_type?: string;
     company_name?: string;
     full_name?: string;
@@ -160,7 +160,7 @@ export function MessageBubble({
         if (!isSending) setHoveredMessageId(messageId);
       }}
       onMouseLeave={handleMouseLeave}
-      onClick={() => !isSending && setSelectedMessageKey(prev => (prev === messageId ? null : messageId))}
+      onClick={() => !isSending && setSelectedMessageKey(isSelected ? null : messageId)}
       className={`flex gap-2 items-start ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}
     >
   {/* Avatar + Message */}

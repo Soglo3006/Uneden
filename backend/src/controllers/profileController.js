@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import { createClient } from '@supabase/supabase-js';
+import { notifyWelcome } from '../services/emailService.js';
 
 
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -34,14 +35,12 @@ export const completeProfile = async (req, res) => {
             industry,
             team_size,
             
-            // Portfolio (commun)
             portfolio
         } = req.body;
 
         const userId = req.user.id;
         const fullName = req.user.full_name;
 
-        console.log("Completing profile for user:", userId);
 
         //Préparer les métadonnées pour auth.users
         const metaData = account_type === 'person' 
@@ -72,8 +71,6 @@ export const completeProfile = async (req, res) => {
                 profile_completed: true,
             };
 
-        // Mettre à jour auth.users.raw_user_meta_data
-        console.log("Updating auth.users metadata...");
         const { error: metaError } = await supabaseAdmin.auth.admin.updateUserById(
             userId,
             { user_metadata: metaData }
@@ -87,8 +84,6 @@ export const completeProfile = async (req, res) => {
             });
         }
 
-        // Mettre à jour public.users (comme avant)
-        console.log("Updating public.users table...");
         const result = await pool.query(
             `UPDATE users 
             SET 
@@ -135,9 +130,14 @@ export const completeProfile = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        res.json({ 
+        const u = result.rows[0];
+        const displayName = u.account_type === "company" ? u.company_name : u.full_name;
+        notifyWelcome(u.email, displayName || u.email)
+          .catch((err) => console.error("Welcome email failed:", err.message));
+
+        res.json({
             message: "Profile completed successfully",
-            user: result.rows[0]
+            user: u
         });
     } catch (err) {
         console.error("Error completing profile:", err);
@@ -266,9 +266,15 @@ export const UpdateMyProfile = async (req, res) => {
     }
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const getUserProfile = async (req, res) => {
     try {
         const { id } = req.params;
+
+        if (!UUID_REGEX.test(id)) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
         const userResult = await pool.query(
             `SELECT 

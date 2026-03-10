@@ -4,6 +4,66 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const PAGE_SIZE = 40;
 
+export interface Message {
+  id: string;
+  content: string;
+  user_id: string;
+  chat_room_id: string;
+  created_at: string;
+  read_at?: string | null;
+  edited_at?: string | null;
+  pinned_at?: string | null;
+  replied_to_message_id?: string | null;
+  client_temp_id?: string;
+  deleted_at?: string | null;
+  status?: "sending" | "sent" | "failed";
+  reactions?: { emoji: string; user_ids: string[] }[];
+  sender?: {
+    id?: string;
+    full_name?: string;
+    company_name?: string;
+    account_type?: string;
+    avatar_url?: string | null;
+  } | null;
+  replied_to?: {
+    id: string;
+    content: string;
+    user_id: string;
+    sender_name?: string;
+    deleted_at?: string | null;
+  } | null;
+}
+
+interface CachedProfile {
+  id: string;
+  email?: string;
+  full_name?: string;
+  company_name?: string;
+  account_type?: string;
+  avatar_url?: string | null;
+}
+
+interface RawMessage {
+  id: string;
+  content: string;
+  user_id: string;
+  chat_room_id: string;
+  created_at: string;
+  read_at?: string | null;
+  edited_at?: string | null;
+  pinned_at?: string | null;
+  replied_to_message_id?: string | null;
+  client_temp_id?: string;
+  deleted_at?: string | null;
+  reactions?: { emoji: string; user_ids: string[] }[];
+  replied_to?: {
+    id: string;
+    content: string;
+    user_id: string;
+    deleted_at?: string | null;
+  } | null;
+}
+
 export function useMessages(chatRoomId: string | null) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -15,7 +75,7 @@ export function useMessages(chatRoomId: string | null) {
 
   const requestIdRef = useRef(0);
   const messagesCacheRef = useRef<Map<string, Message[]>>(new Map());
-  const profilesCacheRef = useRef<Map<string, any>>(new Map());
+  const profilesCacheRef = useRef<Map<string, CachedProfile>>(new Map());
 
   // Stable refs for use inside async callbacks and stable event handlers
   const hasMoreRef = useRef(false);
@@ -29,7 +89,7 @@ export function useMessages(chatRoomId: string | null) {
   const makeTempId = () =>
     `tmp_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
-  const ensureProfiles = async (ids: string[]) => {
+  const ensureProfiles = useCallback(async (ids: string[]) => {
     const missing = ids.filter((id) => !profilesCacheRef.current.has(id));
     if (!missing.length) return;
 
@@ -38,20 +98,20 @@ export function useMessages(chatRoomId: string | null) {
       .select('id, email, full_name, company_name, account_type, avatar_url')
       .in('id', missing);
 
-    (data || []).forEach((p) => profilesCacheRef.current.set(p.id, p));
-  };
+    (data || []).forEach((p) => profilesCacheRef.current.set(p.id, p as CachedProfile));
+  }, []);
 
-  const enrichMessages = async (rawMessages: any[]): Promise<Message[]> => {
-    const senderIds = [...new Set(rawMessages.map((m: any) => m.user_id))];
+  const enrichMessages = useCallback(async (rawMessages: RawMessage[]): Promise<Message[]> => {
+    const senderIds = [...new Set(rawMessages.map((m) => m.user_id))];
     const repliedUserIds = [...new Set(
       rawMessages
-        .filter((m: any) => m.replied_to?.user_id)
-        .map((m: any) => m.replied_to.user_id)
+        .filter((m) => m.replied_to?.user_id)
+        .map((m) => m.replied_to!.user_id)
     )];
 
     await ensureProfiles([...senderIds, ...repliedUserIds]);
 
-    return rawMessages.map((msg: any) => {
+    return rawMessages.map((msg) => {
       let repliedToData = null;
       if (msg.replied_to) {
         const repliedProfile = profilesCacheRef.current.get(msg.replied_to.user_id);
@@ -68,12 +128,12 @@ export function useMessages(chatRoomId: string | null) {
       }
       return {
         ...msg,
-        status: 'sent',
+        status: 'sent' as const,
         sender: profilesCacheRef.current.get(msg.user_id) || null,
         replied_to: repliedToData,
       };
     });
-  };
+  }, [ensureProfiles]);
 
   // Stable fetch — called on initial load, on channel SUBSCRIBED (reconnect), and on browser online
   const fetchMessages = useCallback(async () => {
@@ -131,7 +191,7 @@ export function useMessages(chatRoomId: string | null) {
     } finally {
       if (currentRequestId === requestIdRef.current) setLoading(false);
     }
-  }, [chatRoomId]);
+  }, [chatRoomId, enrichMessages]);
 
   // Initial load — fetch last PAGE_SIZE messages
   useEffect(() => {
@@ -200,7 +260,7 @@ export function useMessages(chatRoomId: string | null) {
     } finally {
       if (capturedRequestId === requestIdRef.current) setLoadingMore(false);
     }
-  }, [chatRoomId]);
+  }, [chatRoomId, enrichMessages]);
 
   // INSERT listener — also re-fetches on reconnect (SUBSCRIBED fires after channel recovery)
   useEffect(() => {
@@ -217,7 +277,7 @@ export function useMessages(chatRoomId: string | null) {
           filter: `chat_room_id=eq.${chatRoomId}`,
         },
         async (payload) => {
-          const row = payload.new as any;
+          const row = payload.new as RawMessage;
           const activeId = chatRoomId;
 
           await ensureProfiles([row.user_id]);
@@ -244,7 +304,7 @@ export function useMessages(chatRoomId: string | null) {
             ...row,
             sender: profilesCacheRef.current.get(row.user_id) || null,
             replied_to: repliedToData,
-            status: 'sent',
+            status: 'sent' as const,
           };
 
           setMessages((prev) => {
@@ -273,7 +333,7 @@ export function useMessages(chatRoomId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [chatRoomId, fetchMessages]);
+  }, [chatRoomId, fetchMessages, ensureProfiles]);
 
   // UPDATE listener
   useEffect(() => {
@@ -290,7 +350,7 @@ export function useMessages(chatRoomId: string | null) {
           filter: `chat_room_id=eq.${chatRoomId}`,
         },
         (payload) => {
-          const updated = payload.new as any;
+          const updated = payload.new as RawMessage;
           const activeId = chatRoomId;
 
           setMessages((prev) => {
@@ -348,7 +408,7 @@ export function useMessages(chatRoomId: string | null) {
       content: trimmed,
       created_at: nowIso,
       replied_to_message_id: repliedToMessageId || null,
-      status: 'sending',
+      status: 'sending' as const,
       replied_to: repliedToMessageId
         ? (() => {
             const target = messagesRef.current.find((m) => m.id === repliedToMessageId);
@@ -377,7 +437,7 @@ export function useMessages(chatRoomId: string | null) {
       });
       if (error) throw error;
 
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/messages/notify`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/messages/notify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -390,7 +450,7 @@ export function useMessages(chatRoomId: string | null) {
     } catch (err) {
       console.error('Error sending message:', err);
       setMessages((prev) => {
-        const next = prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' } : m));
+        const next = prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' as const } : m));
         messagesCacheRef.current.set(chatRoomId, next);
         return next;
       });

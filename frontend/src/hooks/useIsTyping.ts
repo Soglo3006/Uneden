@@ -16,12 +16,12 @@ export function useIsTyping(chatId: string | null, otherUserId?: string) {
         filter: `chat_room_id=eq.${chatId}`,
       }, (payload) => {
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-          if ((payload.new as any).user_id === otherUserId) {
+          if ((payload.new as { user_id?: string }).user_id === otherUserId) {
             setIsTyping(true);
           }
         }
         if (payload.eventType === 'DELETE') {
-          if ((payload.old as any).user_id === otherUserId) {
+          if ((payload.old as { user_id?: string }).user_id === otherUserId) {
             setIsTyping(false);
           }
         }

@@ -1,9 +1,8 @@
 import pool from "../config/db.js";
 import bcrypt from "bcryptjs";
+import { notifyPasswordChanged } from "../services/emailService.js";
 
 export const changePassword = async (req, res) => {
-    console.log(req.body);
-    console.log(req.user);
     try {
         const { oldPassword, newPassword } = req.body;
         const userId = req.user.id;
@@ -56,8 +55,13 @@ export const changePassword = async (req, res) => {
             [hashedPassword, userId]
         );
 
-        res.json({ 
-            message: "Password changed successfully" 
+        // Notify user by email
+        const displayName = user.account_type === "company" ? user.company_name : user.full_name;
+        notifyPasswordChanged(user.email, displayName || user.email)
+          .catch((err) => console.error("Password changed email failed:", err.message));
+
+        res.json({
+            message: "Password changed successfully"
         });
 
     } catch (err) {
