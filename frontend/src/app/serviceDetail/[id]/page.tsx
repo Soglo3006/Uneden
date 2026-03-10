@@ -317,7 +317,7 @@ export default function ServiceDetailPage() {
           accessToken={session.access_token}
           onClose={() => setShowEditModal(false)}
           onSaved={(updated) => {
-            setService((prev) => prev ? { ...prev, ...updated } : prev);
+            setService((prev) => prev ? { ...prev, ...updated, price: Number(updated.price) } : prev);
             setShowEditModal(false);
           }}
         />
