@@ -24,10 +24,11 @@ interface Chat {
     user_id?: string;
   };
   other_user?: {
+    id?: string;
     full_name?: string;
     company_name?: string;
     account_type?: string;
-    avatar_url?: string;
+    avatar_url?: string | null;
   };
   unread_count?: number; 
   is_archived?: boolean; 
