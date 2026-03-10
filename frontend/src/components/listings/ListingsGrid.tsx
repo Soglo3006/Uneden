@@ -29,6 +29,7 @@ export interface ListingsFilters {
   minPrice?: number;
   maxPrice?: number;
   serviceType?: string;
+  username?: string;
 }
 
 function formatRelativeDate(dateStr: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
@@ -71,6 +72,7 @@ export default function ListingsGrid({ filters }: { filters?: ListingsFilters })
         if (filters?.minPrice && filters.minPrice > 0)     params.set("minPrice", String(filters.minPrice));
         if (filters?.maxPrice && filters.maxPrice < 1000)  params.set("maxPrice", String(filters.maxPrice));
         if (filters?.serviceType && filters.serviceType !== "all") params.set("type", filters.serviceType);
+        if (filters?.username)                                      params.set("username", filters.username);
 
         const query = params.toString();
         const url = `${process.env.NEXT_PUBLIC_API_URL}/services${query ? `?${query}` : ""}`;
@@ -95,6 +97,7 @@ export default function ListingsGrid({ filters }: { filters?: ListingsFilters })
     filters?.minPrice,
     filters?.maxPrice,
     filters?.serviceType,
+    filters?.username,
   ]);
 
   const totalPages = Math.ceil(listings.length / LISTINGS_PER_PAGE);

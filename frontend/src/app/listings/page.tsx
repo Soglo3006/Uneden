@@ -12,7 +12,7 @@ import ListingsGrid from "@/components/listings/ListingsGrid";
 const toKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 
 // ── Inner component (needs useSearchParams inside Suspense) ──────────────────
-function ListingsContent() {
+function ListingsContent({ username }: { username?: string }) {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
 
@@ -308,6 +308,7 @@ function ListingsContent() {
               minPrice: debouncedPrice[0],
               maxPrice: debouncedPrice[1],
               serviceType,
+              username,
             }}
           />
         </div>
@@ -317,7 +318,7 @@ function ListingsContent() {
 }
 
 // ── Page wrapper ─────────────────────────────────────────────────────────────
-export default function ListingsPage() {
+export default function ListingsPage({ username }: { username?: string }) {
   const { t } = useTranslation();
   return (
     <div className="bg-white min-h-screen text-black">
@@ -338,7 +339,7 @@ export default function ListingsPage() {
             </div>
           }
         >
-          <ListingsContent />
+          <ListingsContent username={username} />
         </Suspense>
       </main>
     </div>
