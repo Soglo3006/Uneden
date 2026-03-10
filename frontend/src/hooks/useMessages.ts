@@ -16,7 +16,7 @@ export interface Message {
   replied_to_message_id?: string | null;
   client_temp_id?: string;
   deleted_at?: string | null;
-  status?: string;
+  status?: "sending" | "sent" | "failed";
   reactions?: { emoji: string; user_ids: string[] }[];
   sender?: {
     id?: string;
