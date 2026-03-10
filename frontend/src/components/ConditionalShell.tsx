@@ -54,7 +54,7 @@ export default function ConditionalShell({ children }: { children: React.ReactNo
 
   return (
     <>
-      <Header />
+      <Suspense><Header /></Suspense>
       <CategoryNav />
       <main className="flex-1">{children}</main>
       <Footer />
