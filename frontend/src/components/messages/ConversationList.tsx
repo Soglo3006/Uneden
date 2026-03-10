@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 
 interface Chat {
   id: string;
-  name?: string;
+  name?: string | null;
   last_message?: {
     content: string;
     created_at: string;
