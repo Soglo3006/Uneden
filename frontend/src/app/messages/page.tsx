@@ -88,7 +88,7 @@ function MessagesContent() {
 
   const activeChat = chats.find(c => c.id === activeChatId);
   usePresence(user?.id || null);
-  const { sendTyping } = useTypingIndicator(activeChatId, user?.id);
+  const { sendTyping } = useTypingIndicator(activeChatId, user?.id ?? null);
   const isTyping = useIsTyping(activeChatId, activeChat?.other_user?.id);
   const isOtherOnline = useUserPresence(activeChat?.other_user?.id);
 
